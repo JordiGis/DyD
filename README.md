@@ -58,3 +58,7 @@ Este proyecto está configurado como una base limpia. Puedes:
 - [Vue Router](https://router.vuejs.org/)
 - [Pinia](https://pinia.vuejs.org/)
 - [Bootstrap 5](https://getbootstrap.com/)
+
+## 🌐 Demo
+
+La aplicación está desplegada en: [https://jordigis.github.io/DyD/](https://jordigis.github.io/DyD/)
