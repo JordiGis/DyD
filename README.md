@@ -1,64 +1,130 @@
-# Aplicación Base Vue.js
+# Aplicación de Combate D&D - Escanor
 
-Esta es una aplicación base construida con Vue 3, Vite, Vue Router y Pinia. Perfecta para usar como punto de partida para nuevos proyectos.
+Esta es una aplicación especializada para gestionar el combate de Escanor, el León del Orgullo, en sesiones de Dungeons & Dragons.
 
-## 🚀 Características
+## 🦁 Características del Personaje
 
-- **Vue 3** con Composition API (`<script setup>`)
+- **Puntos de Vida**: 246 HP máximos con gestión completa de daño y curación
+- **Sistema de Furia**: Contador de furia con máximo de 3 cargas
+- **Estados del Personaje**: 4 estados diferentes que afectan las estadísticas
+- **Resistencias**: Sistema de resistencias activado por la furia
+
+## ⚔️ Funcionalidades de Combate
+
+### Gestión de Vida
+- Barra de vida visual con colores dinámicos
+- Entrada manual de HP
+- Botones de daño y curación rápidos
+- Acciones rápidas con valores personalizables
+
+### Sistema de Furia
+- **Contador**: Máximo 3 cargas, con botones para añadir/quitar
+- **Activación**: La furia debe activarse manualmente usando las cargas
+- **Resistencias**: Cuando está activa, otorga resistencia a:
+  - Daño contundente
+  - Daño perforante  
+  - Daño cortante
+
+### Estados del Personaje
+1. **Noche** - Estado más débil
+2. **Amanecer** - Despertar del poder
+3. **Día** - Poder creciente
+4. **El Cenit (The One)** - Poder absoluto
+
+Cada estado tiene su imagen característica y color temático.
+
+### Descansos
+- **Descanso Largo**: Restaura HP completo y todas las cargas de furia
+- **Descanso Corto**: Recupera 25% de HP y añade 1 carga de furia
+
+## 🚀 Tecnologías Utilizadas
+
+- **Vue 3** con Composition API
 - **Vite** para desarrollo rápido
 - **Vue Router** para navegación
 - **Pinia** para gestión de estado
-- **Bootstrap 5** para estilos
-- **Bootstrap Icons** incluidos
+- **Bootstrap 5** para estilos y componentes
+- **Bootstrap Icons** para iconografía
 
-## 📦 Instalación
+## 📦 Instalación y Uso
 
 ```bash
+# Instalar dependencias
 npm install
-```
 
-## 🛠️ Desarrollo
-
-```bash
+# Desarrollo
 npm run dev
-```
 
-## 🏗️ Construcción
-
-```bash
+# Construcción para producción
 npm run build
+
+# Vista previa de la construcción
+npm run preview
+
+# Despliegue en GitHub Pages
+npm run deploy
 ```
+
+## 🎮 Navegación
+
+- **Inicio**: Vista principal con resumen del estado del personaje
+- **Combate**: Interface completa de gestión de combate
+- **Header**: Navegación con estado del personaje en tiempo real
+
+## 🎨 Diseño
+
+La aplicación utiliza una paleta de colores inspirada en Escanor:
+- **Dorado/Naranja**: Poder del sol (#f39c12, #e67e22)
+- **Azul Oscuro**: Noche y misterio (#1a1a2e, #16213e)
+- **Rojo**: Furia y combate (#e94560)
+
+## 🌐 Demo
+
+La aplicación está desplegada en: [https://jordigis.github.io/DyD/](https://jordigis.github.io/DyD/)
 
 ## 📋 Estructura del Proyecto
 
 ```
 src/
-├── components/     # Componentes reutilizables
-├── views/         # Vistas/páginas
-├── router/        # Configuración de rutas
-├── stores/        # Estados globales (Pinia)
-├── assets/        # Recursos estáticos
-├── App.vue        # Componente raíz
-└── main.js        # Punto de entrada
+├── components/
+│   ├── AppHeader.vue       # Navegación con estado del personaje
+│   └── ExampleComponent.vue
+├── views/
+│   ├── HomeView.vue        # Página principal temática
+│   └── CombatView.vue      # Interface de combate completa
+├── stores/
+│   └── useGameStore.js     # Estado global del personaje
+├── router/
+│   ├── index.js
+│   └── routes.js
+├── assets/
+└── App.vue
 ```
 
-## 🎨 Personalización
+## 🔧 Estado del Personaje
 
-Este proyecto está configurado como una base limpia. Puedes:
+El estado se gestiona mediante Pinia y incluye:
 
-1. Agregar nuevas vistas en `src/views/`
-2. Crear componentes en `src/components/`
-3. Definir rutas en `src/router/routes.js`
-4. Gestionar estado global en `src/stores/`
+```javascript
+character: {
+    name: 'Escanor',
+    currentHp: 246,
+    maxHp: 246,
+    furyCount: 0,
+    maxFury: 3,
+    isFuryActive: false,
+    currentState: 'noche'
+}
+```
 
-## 📚 Documentación
+## 🎯 Próximas Características
 
-- [Vue 3](https://vuejs.org/)
-- [Vite](https://vitejs.dev/)
-- [Vue Router](https://router.vuejs.org/)
-- [Pinia](https://pinia.vuejs.org/)
-- [Bootstrap 5](https://getbootstrap.com/)
+- [ ] Modificadores de estadísticas por estado
+- [ ] Sistema de hechizos y habilidades
+- [ ] Historial de combate
+- [ ] Efectos y condiciones de estado
+- [ ] Calculadora de daño avanzada
 
-## 🌐 Demo
+---
 
-La aplicación está desplegada en: [https://jordigis.github.io/DyD/](https://jordigis.github.io/DyD/)
+*"¿Quién decidió eso? Solo hay una persona en este mundo que puede decidir lo que hago... y esa persona soy yo."* - Escanor
