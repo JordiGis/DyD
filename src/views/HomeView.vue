@@ -14,7 +14,7 @@
                             </p>
                             
                             <div class="d-grid gap-3 col-md-6 mx-auto">
-                                <router-link :to="{ path: '/DyD/', query: { combat: '' } }" class="btn btn-warning btn-lg shadow-lg">
+                                <router-link :to="{ path: '/', query: { combat: '' } }" class="btn btn-warning btn-lg shadow-lg">
                                     <i class="bi bi-sword"></i> Entrar en Combate
                                 </router-link>
                                 <button class="btn btn-outline-light btn-lg" @click="showCharacterInfo = !showCharacterInfo">

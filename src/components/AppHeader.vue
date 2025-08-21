@@ -1,7 +1,7 @@
 <template>
     <nav class="navbar navbar-expand-lg navbar-dark escanor-navbar">
         <div class="container">
-            <router-link class="navbar-brand d-flex align-items-center" :to="{ path: '/DyD/' }">
+            <router-link class="navbar-brand d-flex align-items-center" :to="{ path: '/' }">
                 <img :src="getImageUrl('icon.png')" alt="Escanor" width="32" height="32" class="me-2 rounded-circle">
                 <span class="golden-text fw-bold">ESCANOR</span>
             </router-link>
@@ -20,14 +20,14 @@
                     <li class="nav-item">
                         <router-link class="nav-link" 
                                      :class="{ active: isHomeActive }"
-                                     :to="{ path: '/DyD/' }">
+                                     :to="{ path: '/' }">
                             <i class="bi bi-house-door"></i> Inicio
                         </router-link>
                     </li>
                     <li class="nav-item">
                         <router-link class="nav-link" 
                                      :class="{ active: isCombatActive }"
-                                     :to="{ path: '/DyD/', query: { combat: '' } }">
+                                     :to="{ path: '/', query: { combat: '' } }">
                             <i class="bi bi-sword"></i> Combate
                         </router-link>
                     </li>
