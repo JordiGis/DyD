@@ -1,22 +1,13 @@
 // src/router/routes.js
-import HomeView from '../views/HomeView.vue'
-import CombatView from '../views/CombatView.vue'
+import AppView from '../views/AppView.vue'
 
 const routes = [
-    { 
-        path: '/', 
-        component: HomeView, 
-        name: 'home' 
-    },
-    { 
-        path: '/combat', 
-        component: CombatView, 
-        name: 'combat' 
-    },
+    { path: '/', redirect: '/DyD/' },
+    { path: '/DyD/', component: AppView, name: 'app' },
     // Redirección para cualquier ruta no encontrada
     { 
         path: '/:pathMatch(.*)*', 
-        redirect: '/' 
+        redirect: '/DyD/' 
     }
 ]
 

@@ -1,7 +1,7 @@
 <template>
     <nav class="navbar navbar-expand-lg navbar-dark escanor-navbar">
         <div class="container">
-            <router-link class="navbar-brand d-flex align-items-center" to="/">
+            <router-link class="navbar-brand d-flex align-items-center" :to="{ path: '/DyD/' }">
                 <img :src="getImageUrl('icon.png')" alt="Escanor" width="32" height="32" class="me-2 rounded-circle">
                 <span class="golden-text fw-bold">ESCANOR</span>
             </router-link>
@@ -18,12 +18,16 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <router-link class="nav-link" to="/">
+                        <router-link class="nav-link" 
+                                     :class="{ active: isHomeActive }"
+                                     :to="{ path: '/DyD/' }">
                             <i class="bi bi-house-door"></i> Inicio
                         </router-link>
                     </li>
                     <li class="nav-item">
-                        <router-link class="nav-link" to="/combat">
+                        <router-link class="nav-link" 
+                                     :class="{ active: isCombatActive }"
+                                     :to="{ path: '/DyD/', query: { combat: '' } }">
                             <i class="bi bi-sword"></i> Combate
                         </router-link>
                     </li>
@@ -60,13 +64,24 @@
 <script setup>
 import { computed } from 'vue'
 import { useGameStore } from '../stores/useGameStore.js'
+import { useRoute } from 'vue-router'
 import { getImageUrl } from '../utils/imageHelper'
 
 const gameStore = useGameStore()
+const route = useRoute()
 
 // Computed properties
 const character = computed(() => gameStore.character)
 const currentStateData = computed(() => gameStore.currentStateData)
+
+// Determinar la vista activa basada en query parameters
+const isHomeActive = computed(() => {
+    return !route.query.hasOwnProperty('combat')
+})
+
+const isCombatActive = computed(() => {
+    return route.query.hasOwnProperty('combat')
+})
 </script>
 
 <style scoped>
@@ -106,7 +121,8 @@ const currentStateData = computed(() => gameStore.currentStateData)
     color: #f39c12 !important;
 }
 
-.nav-link.router-link-active {
+.nav-link.router-link-active,
+.nav-link.active {
     background-color: rgba(243, 156, 18, 0.3);
     color: #f39c12 !important;
     font-weight: bold;
