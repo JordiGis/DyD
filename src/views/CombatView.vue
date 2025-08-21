@@ -8,7 +8,7 @@
                         <div class="card-body">
                             <div class="row align-items-center">
                                 <div class="col-md-2 text-center">
-                                    <img :src="`/${currentStateData.image}`" :alt="character.name" 
+                                    <img :src="getImageUrl(currentStateData.image)" :alt="character.name" 
                                          class="character-image rounded-circle shadow" width="80" height="80">
                                 </div>
                                 <div class="col-md-6">
@@ -231,6 +231,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useGameStore } from '../stores/useGameStore'
+import { getImageUrl } from '../utils/imageHelper'
 
 const gameStore = useGameStore()
 

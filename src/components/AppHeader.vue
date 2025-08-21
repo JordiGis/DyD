@@ -2,7 +2,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark escanor-navbar">
         <div class="container">
             <router-link class="navbar-brand d-flex align-items-center" to="/">
-                <img src="/icon.png" alt="Escanor" width="32" height="32" class="me-2 rounded-circle">
+                <img :src="getImageUrl('icon.png')" alt="Escanor" width="32" height="32" class="me-2 rounded-circle">
                 <span class="golden-text fw-bold">ESCANOR</span>
             </router-link>
             
@@ -60,6 +60,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useGameStore } from '../stores/useGameStore.js'
+import { getImageUrl } from '../utils/imageHelper'
 
 const gameStore = useGameStore()
 

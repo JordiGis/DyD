@@ -6,7 +6,7 @@
                 <div class="col-lg-8 d-flex align-items-center justify-content-center">
                     <div class="text-center text-white">
                         <div class="hero-content">
-                            <img src="/Escanor.png" alt="Escanor" class="character-portrait mb-4">
+                            <img :src="getImageUrl('Escanor.png')" alt="Escanor" class="character-portrait mb-4">
                             <h1 class="display-2 fw-bold mb-3 golden-text">ESCANOR</h1>
                             <h3 class="mb-4 text-warning">El León del Orgullo</h3>
                             <p class="lead mb-5">
@@ -36,7 +36,7 @@
                             <div class="mb-4">
                                 <h5 class="text-warning">Estado Actual</h5>
                                 <div class="d-flex align-items-center mb-2">
-                                    <img :src="`/${currentStateData.image}`" 
+                                    <img :src="getImageUrl(currentStateData.image)" 
                                          alt="Estado actual" 
                                          class="state-icon me-3"
                                          width="40" height="40">
@@ -85,7 +85,7 @@
                                                     type="button" 
                                                     :data-bs-toggle="`collapse`" 
                                                     :data-bs-target="`#collapse${key}`">
-                                                <img :src="`/${state.image}`" 
+                                                <img :src="getImageUrl(state.image)" 
                                                      width="20" height="20" 
                                                      class="me-2 rounded-circle">
                                                 {{ state.name }}
@@ -119,6 +119,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useGameStore } from '../stores/useGameStore'
+import { getImageUrl } from '../utils/imageHelper'
 
 const gameStore = useGameStore()
 const showCharacterInfo = ref(false)
@@ -162,7 +163,9 @@ onMounted(() => {
     left: 0;
     right: 0;
     bottom: 0;
-    background: url('/Escanor.png') no-repeat center center;
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="50" font-size="50" opacity="0.1">⚔️</text></svg>');
+    background-repeat: no-repeat;
+    background-position: center center;
     background-size: cover;
     opacity: 0.1;
     z-index: 1;
