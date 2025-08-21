@@ -11,12 +11,12 @@
         
         // Si no estamos en /DyD/, redirigir allí
         if (!pathName.startsWith('/DyD/')) {
-            const newPath = '/DyD' + pathName + search + hash;
+            const newPath = '/DyD/' + search + hash;
             window.location.replace(newPath);
         } else {
-            // Si ya estamos en /DyD/, redirigir a index.html
-            const route = pathName.replace('/DyD', '') || '/';
-            const newUrl = '/DyD/index.html?route=' + encodeURIComponent(route + search + hash);
+            // Si ya estamos en /DyD/, redirigir a index.html con parámetros
+            const route = pathName.replace('/DyD/', '') || '';
+            const newUrl = '/DyD/index.html?route=' + encodeURIComponent('/' + route + search + hash);
             window.location.replace(newUrl);
         }
     </script>
