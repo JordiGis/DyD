@@ -95,7 +95,7 @@ const loadExistingCharacter = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: calc(100vh - 56px);
+  min-height: calc(100vh - 60px);
   padding: 20px;
 }
 
@@ -209,11 +209,16 @@ const loadExistingCharacter = () => {
   transition: all 0.3s ease;
   min-width: 250px;
   justify-content: center;
+  min-height: 56px; /* Better touch target */
 }
 
 .btn:hover {
   transform: translateY(-3px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.btn:active {
+  transform: translateY(-1px);
 }
 
 .btn-primary {
@@ -234,22 +239,118 @@ const loadExistingCharacter = () => {
   font-size: 1rem;
 }
 
+/* Mobile styles */
 @media (max-width: 768px) {
+  .home-container {
+    padding: 15px;
+    min-height: calc(100vh - 65px);
+  }
+  
   .welcome-card {
-    padding: 30px 20px;
-    margin: 20px;
+    padding: 25px 20px;
+    margin: 10px;
+    border-radius: 15px;
   }
   
   .welcome-title {
-    font-size: 2.5rem;
+    font-size: 2.2rem;
+    margin-bottom: 12px;
+  }
+  
+  .welcome-subtitle {
+    font-size: 1.1rem;
+    margin-bottom: 25px;
   }
   
   .feature-list {
     grid-template-columns: 1fr;
+    gap: 15px;
+    margin-bottom: 30px;
+  }
+  
+  .feature-item {
+    padding: 18px 15px;
+    gap: 12px;
+  }
+  
+  .feature-icon {
+    font-size: 1.3rem;
+    min-width: 24px;
+  }
+  
+  .feature-text {
+    font-size: 0.95rem;
+  }
+  
+  .action-buttons {
+    gap: 15px;
   }
   
   .btn {
-    min-width: 200px;
+    min-width: 100%;
+    padding: 18px 20px;
+    min-height: 60px;
+    font-size: 1.1rem;
+  }
+  
+  .btn-icon {
+    font-size: 1.4rem;
+  }
+  
+  .btn-text {
+    font-size: 1.05rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-container {
+    padding: 10px;
+  }
+  
+  .welcome-card {
+    padding: 20px 15px;
+    margin: 5px;
+  }
+  
+  .welcome-title {
+    font-size: 1.9rem;
+  }
+  
+  .welcome-subtitle {
+    font-size: 1rem;
+  }
+  
+  .feature-item {
+    padding: 16px 12px;
+  }
+  
+  .btn {
+    padding: 20px 16px;
+    min-height: 65px;
+    font-size: 1.15rem;
+  }
+  
+  .btn-icon {
+    font-size: 1.5rem;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .btn:hover {
+    transform: none;
+  }
+  
+  .feature-item:hover {
+    transform: none;
+  }
+  
+  .btn:active {
+    transform: scale(0.98);
+  }
+  
+  .feature-item:active {
+    background: rgba(255, 255, 255, 0.15);
   }
 }
 </style>

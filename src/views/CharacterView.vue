@@ -642,22 +642,276 @@ const goToLogs = () => {
 }
 
 @media (max-width: 768px) {
+  .character-view-container {
+    padding: 15px;
+    min-height: calc(100vh - 65px);
+  }
+  
+  .character-header {
+    margin-bottom: 20px;
+    padding: 20px 15px;
+  }
+  
   .character-name {
     font-size: 2rem;
+    margin-bottom: 15px;
+  }
+  
+  .turn-info {
+    padding: 12px 20px;
+    border-radius: 12px;
+  }
+  
+  .turn-label {
+    font-size: 0.9rem;
+  }
+  
+  .turn-number {
+    font-size: 1.3rem;
+  }
+  
+  .health-section,
+  .temp-health-section {
+    margin-bottom: 20px;
+    padding: 20px 15px;
+    border-radius: 15px;
+  }
+  
+  .health-header h2 {
+    font-size: 1.3rem;
+    margin-bottom: 15px;
+  }
+  
+  .health-stats {
+    gap: 8px;
+  }
+  
+  .current-hp,
+  .max-hp {
+    font-size: 1.8rem;
+  }
+  
+  .separator {
+    font-size: 1.5rem;
+  }
+  
+  .health-bar-container {
+    margin-top: 15px;
+  }
+  
+  .health-bar {
+    height: 20px;
+    border-radius: 10px;
+  }
+  
+  .health-percentage {
+    font-size: 0.9rem;
+    margin-top: 8px;
+  }
+  
+  .temp-health-header h3 {
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+  }
+  
+  .temp-hp-value {
+    font-size: 1.5rem;
+  }
+  
+  .temp-health-bar {
+    height: 16px;
+    border-radius: 8px;
+  }
+  
+  .regeneration-info {
+    margin: 20px 15px;
+    padding: 15px;
+    border-radius: 12px;
+    gap: 10px;
+  }
+  
+  .regeneration-icon {
+    font-size: 1.2rem;
+  }
+  
+  .regeneration-text {
+    font-size: 0.95rem;
   }
   
   .action-buttons {
     grid-template-columns: 1fr;
+    gap: 15px;
+    margin: 25px 15px;
+  }
+  
+  .action-btn {
+    padding: 20px 16px;
+    min-height: 65px;
+    font-size: 1.1rem;
+    border-radius: 15px;
+  }
+  
+  .btn-icon {
+    font-size: 1.8rem;
+  }
+  
+  .btn-text {
+    font-size: 1.05rem;
   }
   
   .secondary-actions {
     flex-direction: column;
     align-items: center;
+    gap: 12px;
+    margin: 20px 15px 25px;
+  }
+  
+  .secondary-btn {
+    width: 100%;
+    padding: 16px 20px;
+    min-height: 55px;
+    font-size: 1rem;
+    border-radius: 12px;
+  }
+  
+  .turn-status {
+    margin: 20px 15px;
+    padding: 20px 15px;
+    border-radius: 15px;
   }
   
   .turn-status-content {
     flex-direction: column;
+    gap: 12px;
+  }
+  
+  .turn-status-icon {
+    font-size: 1.8rem;
+  }
+  
+  .turn-status-text {
+    font-size: 1.1rem;
+  }
+  
+  .btn-end-turn {
+    padding: 12px 24px;
+    font-size: 1rem;
+    border-radius: 10px;
+    min-height: 45px;
+  }
+}
+
+@media (max-width: 480px) {
+  .character-view-container {
+    padding: 10px;
+  }
+  
+  .character-header {
+    padding: 15px 12px;
+    margin-bottom: 15px;
+  }
+  
+  .character-name {
+    font-size: 1.8rem;
+  }
+  
+  .turn-info {
+    padding: 10px 16px;
+  }
+  
+  .turn-number {
+    font-size: 1.2rem;
+  }
+  
+  .health-section,
+  .temp-health-section {
+    padding: 15px 12px;
+    margin-bottom: 15px;
+  }
+  
+  .health-header h2 {
+    font-size: 1.2rem;
+  }
+  
+  .current-hp,
+  .max-hp {
+    font-size: 1.6rem;
+  }
+  
+  .health-bar {
+    height: 18px;
+  }
+  
+  .temp-health-header h3 {
+    font-size: 1rem;
+  }
+  
+  .temp-hp-value {
+    font-size: 1.3rem;
+  }
+  
+  .temp-health-bar {
+    height: 14px;
+  }
+  
+  .regeneration-info {
+    margin: 15px 10px;
+    padding: 12px;
+  }
+  
+  .action-buttons {
+    margin: 20px 10px;
+    gap: 12px;
+  }
+  
+  .action-btn {
+    padding: 18px 14px;
+    min-height: 60px;
+  }
+  
+  .btn-icon {
+    font-size: 1.6rem;
+  }
+  
+  .secondary-actions {
+    margin: 15px 10px 20px;
     gap: 10px;
+  }
+  
+  .secondary-btn {
+    padding: 14px 16px;
+    min-height: 50px;
+  }
+  
+  .turn-status {
+    margin: 15px 10px;
+    padding: 15px 12px;
+  }
+  
+  .btn-end-turn {
+    padding: 10px 20px;
+    min-height: 40px;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .action-btn:hover,
+  .secondary-btn:hover {
+    transform: none;
+  }
+  
+  .action-btn:active,
+  .secondary-btn:active {
+    transform: scale(0.98);
+  }
+  
+  .btn-end-turn:hover {
+    transform: none;
+  }
+  
+  .btn-end-turn:active {
+    transform: scale(0.95);
   }
 }
 </style>

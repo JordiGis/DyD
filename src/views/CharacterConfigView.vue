@@ -303,17 +303,146 @@ const clearExistingData = () => {
 }
 
 @media (max-width: 768px) {
+  .config-container {
+    padding: 15px;
+    min-height: calc(100vh - 65px);
+  }
+  
   .config-card {
-    padding: 30px 20px;
-    margin: 20px;
+    padding: 25px 20px;
+    margin: 10px;
+    border-radius: 15px;
   }
   
   .config-title {
     font-size: 2rem;
+    margin-bottom: 20px;
+  }
+  
+  .form-group {
+    margin-bottom: 20px;
+  }
+  
+  .form-label {
+    font-size: 1rem;
+    margin-bottom: 8px;
+  }
+  
+  .form-control {
+    padding: 14px 16px;
+    font-size: 1rem;
+    border-radius: 10px;
+    min-height: 50px;
+  }
+  
+  .form-text {
+    font-size: 0.85rem;
+    margin-top: 6px;
+  }
+  
+  .btn-save {
+    width: 100%;
+    padding: 18px 20px;
+    font-size: 1.1rem;
+    min-height: 60px;
+    border-radius: 12px;
+    margin-top: 15px;
+  }
+  
+  .existing-data {
+    margin-top: 25px;
+    padding-top: 25px;
+  }
+  
+  .existing-data h3 {
+    font-size: 1.3rem;
+    margin-bottom: 12px;
+  }
+  
+  .existing-data p {
+    font-size: 0.95rem;
+    margin-bottom: 18px;
   }
   
   .btn-group {
     flex-direction: column;
+    gap: 12px;
+  }
+  
+  .btn {
+    width: 100%;
+    padding: 16px 20px;
+    min-height: 55px;
+    font-size: 1rem;
+    border-radius: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .config-container {
+    padding: 10px;
+  }
+  
+  .config-card {
+    padding: 20px 15px;
+    margin: 5px;
+  }
+  
+  .config-title {
+    font-size: 1.8rem;
+    margin-bottom: 18px;
+  }
+  
+  .form-group {
+    margin-bottom: 18px;
+  }
+  
+  .form-label {
+    font-size: 0.95rem;
+  }
+  
+  .form-control {
+    padding: 16px 14px;
+    font-size: 1rem;
+    min-height: 55px;
+  }
+  
+  .btn-save {
+    padding: 20px 16px;
+    min-height: 65px;
+    font-size: 1.15rem;
+  }
+  
+  .existing-data {
+    margin-top: 20px;
+    padding-top: 20px;
+  }
+  
+  .existing-data h3 {
+    font-size: 1.2rem;
+  }
+  
+  .btn {
+    padding: 18px 16px;
+    min-height: 60px;
+    font-size: 1.05rem;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .btn-save:hover,
+  .btn:hover {
+    transform: none;
+  }
+  
+  .btn-save:active,
+  .btn:active {
+    transform: scale(0.98);
+  }
+  
+  .form-control:focus {
+    box-shadow: 0 0 0 3px rgba(243, 156, 18, 0.3);
   }
 }
 </style>

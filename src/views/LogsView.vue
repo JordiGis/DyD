@@ -570,34 +570,232 @@ const goToCharacter = () => {
 }
 
 @media (max-width: 768px) {
+  .logs-container {
+    padding: 15px;
+    min-height: calc(100vh - 65px);
+  }
+  
+  .logs-header {
+    margin-bottom: 20px;
+    padding: 20px 15px;
+  }
+  
+  .logs-title {
+    font-size: 2rem;
+    margin-bottom: 15px;
+  }
+  
+  .logs-subtitle {
+    font-size: 1rem;
+  }
+  
   .logs-filters {
     flex-direction: column;
     align-items: stretch;
     gap: 15px;
+    margin-bottom: 20px;
+    padding: 20px 15px;
+  }
+  
+  .filter-group {
+    margin-bottom: 0;
+  }
+  
+  .filter-label {
+    font-size: 0.95rem;
+    margin-bottom: 6px;
   }
   
   .filter-select {
     min-width: auto;
+    padding: 12px 16px;
+    font-size: 1rem;
+    min-height: 48px;
   }
   
   .logs-stats {
     flex-direction: column;
     gap: 15px;
+    margin-bottom: 20px;
+    padding: 0 15px;
+  }
+  
+  .stat-item {
+    padding: 15px;
+    border-radius: 12px;
+  }
+  
+  .stat-value {
+    font-size: 1.8rem;
+  }
+  
+  .stat-label {
+    font-size: 0.9rem;
+  }
+  
+  .logs-list {
+    gap: 15px;
+    padding: 0 15px;
   }
   
   .turn-header {
     flex-direction: column;
     gap: 10px;
     text-align: center;
+    padding: 15px;
+  }
+  
+  .turn-number {
+    font-size: 1.4rem;
+  }
+  
+  .turn-date {
+    font-size: 0.9rem;
+  }
+  
+  .log-item {
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 12px;
+  }
+  
+  .log-action {
+    font-size: 1rem;
+    margin-bottom: 10px;
+  }
+  
+  .log-details {
+    gap: 8px;
+  }
+  
+  .log-detail {
+    font-size: 0.9rem;
+    padding: 6px 10px;
+  }
+  
+  .hp-change {
+    margin-top: 10px;
   }
   
   .logs-actions {
     flex-direction: column;
     align-items: center;
+    gap: 15px;
+    margin-top: 25px;
+    padding: 0 15px;
   }
   
   .action-btn {
-    min-width: 200px;
+    width: 100%;
+    min-width: auto;
+    padding: 18px 20px;
+    min-height: 60px;
+    font-size: 1.1rem;
+  }
+  
+  .btn-icon {
+    font-size: 1.3rem;
+  }
+  
+  .btn-text {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .logs-container {
+    padding: 10px;
+  }
+  
+  .logs-header {
+    padding: 15px 12px;
+    margin-bottom: 15px;
+  }
+  
+  .logs-title {
+    font-size: 1.8rem;
+    margin-bottom: 12px;
+  }
+  
+  .logs-subtitle {
+    font-size: 0.95rem;
+  }
+  
+  .logs-filters {
+    padding: 15px 12px;
+    margin-bottom: 15px;
+  }
+  
+  .filter-select {
+    padding: 14px 14px;
+    min-height: 52px;
+  }
+  
+  .logs-stats {
+    padding: 0 10px;
+    margin-bottom: 15px;
+  }
+  
+  .stat-item {
+    padding: 12px;
+  }
+  
+  .stat-value {
+    font-size: 1.6rem;
+  }
+  
+  .logs-list {
+    padding: 0 10px;
+    gap: 12px;
+  }
+  
+  .turn-header {
+    padding: 12px;
+  }
+  
+  .turn-number {
+    font-size: 1.3rem;
+  }
+  
+  .log-item {
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+  
+  .log-action {
+    font-size: 0.95rem;
+  }
+  
+  .log-detail {
+    font-size: 0.85rem;
+    padding: 5px 8px;
+  }
+  
+  .logs-actions {
+    margin-top: 20px;
+    padding: 0 10px;
+    gap: 12px;
+  }
+  
+  .action-btn {
+    padding: 20px 16px;
+    min-height: 65px;
+    font-size: 1.15rem;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .action-btn:hover {
+    transform: none;
+  }
+  
+  .action-btn:active {
+    transform: scale(0.98);
+  }
+  
+  .filter-select:focus {
+    box-shadow: 0 0 0 3px rgba(243, 156, 18, 0.3);
   }
 }
 </style>

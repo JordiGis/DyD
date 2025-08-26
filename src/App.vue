@@ -22,6 +22,9 @@ body {
   margin: 0;
   padding: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden; /* Prevent horizontal scroll on mobile */
 }
 
 .app-container {
@@ -31,7 +34,7 @@ body {
 
 .main-content {
   padding: 0;
-  min-height: calc(100vh - 56px); /* Altura del navbar */
+  min-height: calc(100vh - 60px); /* Updated to match new header height */
 }
 
 /* Scrollbar personalizado */
@@ -80,5 +83,46 @@ body {
 .card:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}
+
+/* Mobile-specific improvements */
+@media (max-width: 768px) {
+  .main-content {
+    min-height: calc(100vh - 65px);
+  }
+  
+  /* Prevent text selection on mobile for better UX */
+  .btn, .nav-link, .action-btn {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  
+  /* Improve touch targets */
+  button, .btn, .nav-link {
+    min-height: 44px; /* Apple's recommended minimum touch target size */
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    min-height: calc(100vh - 60px);
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .card:hover {
+    transform: none;
+  }
+  
+  /* Add active states for touch devices */
+  .btn:active,
+  .action-btn:active {
+    transform: scale(0.98);
+  }
 }
 </style>
