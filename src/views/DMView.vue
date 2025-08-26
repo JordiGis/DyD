@@ -8,19 +8,11 @@
       <div class="dm-controls">
         <div class="turn-controls">
           <span class="turn-label">Turno: {{ dmStore.currentTurn }}</span>
-          <button 
-            @click="dmStore.startTurn()" 
-            class="btn btn-success"
-            :disabled="dmStore.isTurnActive"
-          >
+          <button @click="dmStore.startTurn()" class="btn btn-success" :disabled="dmStore.isTurnActive">
             <i class="bi bi-play-fill"></i>
             Iniciar Turno
           </button>
-          <button 
-            @click="dmStore.endTurn()" 
-            class="btn btn-warning"
-            :disabled="!dmStore.isTurnActive"
-          >
+          <button @click="dmStore.endTurn()" class="btn btn-warning" :disabled="!dmStore.isTurnActive">
             <i class="bi bi-stop-fill"></i>
             Finalizar Turno
           </button>
@@ -34,7 +26,7 @@
             <i class="bi bi-heart-fill"></i>
             Reset Todos
           </button>
-          <button @click="showImportModal = true" class="btn btn-outline-primary">
+          <button @click="triggerFileImport" class="btn btn-outline-primary">
             <i class="bi bi-upload"></i>
             Importar
           </button>
@@ -106,15 +98,10 @@
       </div>
 
       <div v-else class="characters-grid">
-        <div 
-          v-for="character in sortedCharacters" 
-          :key="character.id"
-          class="character-card"
-          :class="{ 
-            'dead': character.currentHp <= 0,
-            'low-hp': character.currentHp > 0 && character.currentHp <= character.maxHp * 0.25
-          }"
-        >
+        <div v-for="character in sortedCharacters" :key="character.id" class="character-card" :class="{
+          'dead': character.currentHp <= 0,
+          'low-hp': character.currentHp > 0 && character.currentHp <= character.maxHp * 0.25
+        }">
           <div class="character-header">
             <h3 class="character-name">{{ character.name }}</h3>
             <div class="character-actions">
@@ -131,17 +118,14 @@
             <div class="hp-section">
               <div class="hp-bar-container">
                 <div class="hp-bar">
-                  <div 
-                    class="hp-fill" 
-                    :style="{ width: `${(character.currentHp / character.maxHp) * 100}%` }"
-                    :class="getHpBarColor(character)"
-                  ></div>
+                  <div class="hp-fill" :style="{ width: `${(character.currentHp / character.maxHp) * 100}%` }"
+                    :class="getHpBarColor(character)"></div>
                 </div>
                 <div class="hp-text">
                   {{ character.currentHp }} / {{ character.maxHp }} HP
                 </div>
               </div>
-              
+
               <div v-if="character.tempHp > 0" class="temp-hp">
                 <span class="temp-hp-label">Temporal:</span>
                 <span class="temp-hp-value">+{{ character.tempHp }}</span>
@@ -166,18 +150,10 @@
             <div class="action-group">
               <label class="action-label">Daño:</label>
               <div class="action-inputs">
-                <input 
-                  v-model="character.damageInput" 
-                  type="number" 
-                  class="form-control form-control-sm"
-                  placeholder="0"
-                  min="0"
-                >
-                <button 
-                  @click="applyDamage(character)"
-                  class="btn btn-sm btn-danger"
-                  :disabled="!character.damageInput || character.damageInput <= 0"
-                >
+                <input v-model="character.damageInput" type="number" class="form-control form-control-sm"
+                  placeholder="0" min="0">
+                <button @click="applyDamage(character)" class="btn btn-sm btn-danger"
+                  :disabled="!character.damageInput || character.damageInput <= 0">
                   <i class="bi bi-lightning"></i>
                 </button>
               </div>
@@ -186,18 +162,10 @@
             <div class="action-group">
               <label class="action-label">Curación:</label>
               <div class="action-inputs">
-                <input 
-                  v-model="character.healInput" 
-                  type="number" 
-                  class="form-control form-control-sm"
-                  placeholder="0"
-                  min="0"
-                >
-                <button 
-                  @click="applyHeal(character)"
-                  class="btn btn-sm btn-success"
-                  :disabled="!character.healInput || character.healInput <= 0"
-                >
+                <input v-model="character.healInput" type="number" class="form-control form-control-sm" placeholder="0"
+                  min="0">
+                <button @click="applyHeal(character)" class="btn btn-sm btn-success"
+                  :disabled="!character.healInput || character.healInput <= 0">
                   <i class="bi bi-heart"></i>
                 </button>
               </div>
@@ -206,27 +174,16 @@
             <div class="action-group">
               <label class="action-label">Vida Temp:</label>
               <div class="action-inputs">
-                <input 
-                  v-model="character.tempHpInput" 
-                  type="number" 
-                  class="form-control form-control-sm"
-                  placeholder="0"
-                  min="0"
-                >
-                <button 
-                  @click="applyTempHp(character)"
-                  class="btn btn-sm btn-info"
-                  :disabled="!character.tempHpInput || character.tempHpInput <= 0"
-                >
+                <input v-model="character.tempHpInput" type="number" class="form-control form-control-sm"
+                  placeholder="0" min="0">
+                <button @click="applyTempHp(character)" class="btn btn-sm btn-info"
+                  :disabled="!character.tempHpInput || character.tempHpInput <= 0">
                   <i class="bi bi-shield"></i>
                 </button>
               </div>
             </div>
 
-            <button 
-              @click="dmStore.resetCharacterToMaxHp(character.id)"
-              class="btn btn-sm btn-outline-warning w-100"
-            >
+            <button @click="dmStore.resetCharacterToMaxHp(character.id)" class="btn btn-sm btn-outline-warning w-100">
               <i class="bi bi-arrow-clockwise"></i>
               Reset HP
             </button>
@@ -248,37 +205,18 @@
           <form @submit.prevent="createCharacter">
             <div class="form-group">
               <label for="characterName">Nombre del Personaje</label>
-              <input 
-                id="characterName"
-                v-model="newCharacter.name" 
-                type="text" 
-                class="form-control"
-                placeholder="Ej: Gandalf"
-                required
-              >
+              <input id="characterName" v-model="newCharacter.name" type="text" class="form-control"
+                placeholder="Ej: Gandalf" required>
             </div>
             <div class="form-group">
               <label for="characterMaxHp">HP Máximo</label>
-              <input 
-                id="characterMaxHp"
-                v-model="newCharacter.maxHp" 
-                type="number" 
-                class="form-control"
-                placeholder="100"
-                min="1"
-                required
-              >
+              <input id="characterMaxHp" v-model="newCharacter.maxHp" type="number" class="form-control"
+                placeholder="100" min="1" required>
             </div>
             <div class="form-group">
               <label for="characterRegeneration">Regeneración por Turno (opcional)</label>
-              <input 
-                id="characterRegeneration"
-                v-model="newCharacter.regeneration" 
-                type="number" 
-                class="form-control"
-                placeholder="0"
-                min="0"
-              >
+              <input id="characterRegeneration" v-model="newCharacter.regeneration" type="number" class="form-control"
+                placeholder="0" min="0">
             </div>
             <div class="modal-actions">
               <button type="button" @click="showCreateModal = false" class="btn btn-secondary">
@@ -306,46 +244,22 @@
           <form @submit.prevent="saveCharacterEdit">
             <div class="form-group">
               <label for="editCharacterName">Nombre del Personaje</label>
-              <input 
-                id="editCharacterName"
-                v-model="editingCharacter.name" 
-                type="text" 
-                class="form-control"
-                required
-              >
+              <input id="editCharacterName" v-model="editingCharacter.name" type="text" class="form-control" required>
             </div>
             <div class="form-group">
               <label for="editCharacterMaxHp">HP Máximo</label>
-              <input 
-                id="editCharacterMaxHp"
-                v-model="editingCharacter.maxHp" 
-                type="number" 
-                class="form-control"
-                min="1"
-                required
-              >
+              <input id="editCharacterMaxHp" v-model="editingCharacter.maxHp" type="number" class="form-control" min="1"
+                required>
             </div>
             <div class="form-group">
               <label for="editCharacterCurrentHp">HP Actual</label>
-              <input 
-                id="editCharacterCurrentHp"
-                v-model="editingCharacter.currentHp" 
-                type="number" 
-                class="form-control"
-                min="0"
-                :max="editingCharacter.maxHp"
-                required
-              >
+              <input id="editCharacterCurrentHp" v-model="editingCharacter.currentHp" type="number" class="form-control"
+                min="0" :max="editingCharacter.maxHp" required>
             </div>
             <div class="form-group">
               <label for="editCharacterRegeneration">Regeneración por Turno</label>
-              <input 
-                id="editCharacterRegeneration"
-                v-model="editingCharacter.regeneration" 
-                type="number" 
-                class="form-control"
-                min="0"
-              >
+              <input id="editCharacterRegeneration" v-model="editingCharacter.regeneration" type="number"
+                class="form-control" min="0">
             </div>
             <div class="modal-actions">
               <button type="button" @click="showEditModal = false" class="btn btn-secondary">
@@ -360,6 +274,9 @@
       </div>
     </div>
 
+    <!-- Input de archivo oculto para importación -->
+    <input ref="fileInput" type="file" accept=".json" @change="handleFileImport" style="display: none">
+
     <!-- Modal para importar -->
     <div v-if="showImportModal" class="modal-overlay" @click="showImportModal = false">
       <div class="modal-content" @click.stop>
@@ -370,22 +287,34 @@
           </button>
         </div>
         <div class="modal-body">
-          <div class="form-group">
-            <label for="importData">Datos JSON</label>
-            <textarea 
-              id="importData"
-              v-model="importData" 
-              class="form-control"
-              rows="8"
-              placeholder="Pega aquí el JSON exportado..."
-            ></textarea>
+          <div class="import-options">
+            <div class="import-option">
+              <h4>Opción 1: Seleccionar Archivo</h4>
+              <p>Selecciona un archivo JSON exportado previamente</p>
+              <button @click="triggerFileImport" class="btn btn-primary">
+                <i class="bi bi-folder2-open"></i>
+                Seleccionar Archivo
+              </button>
+            </div>
+
+            <div class="import-divider">
+              <span>o</span>
+            </div>
+
+            <div class="import-option">
+              <h4>Opción 2: Pegar JSON</h4>
+              <p>Pega aquí el contenido JSON exportado</p>
+              <textarea v-model="importData" class="form-control" rows="6"
+                placeholder="Pega aquí el JSON exportado..."></textarea>
+            </div>
           </div>
+
           <div class="modal-actions">
             <button type="button" @click="showImportModal = false" class="btn btn-secondary">
               Cancelar
             </button>
-            <button @click="importCharacters" class="btn btn-primary">
-              Importar
+            <button @click="importCharacters" class="btn btn-primary" :disabled="!importData.trim()">
+              Importar desde Texto
             </button>
           </div>
         </div>
@@ -407,6 +336,9 @@ const showImportModal = ref(false)
 const editingCharacter = ref(null)
 const sortBy = ref('name')
 const importData = ref('')
+
+// Referencias
+const fileInput = ref(null)
 
 // Nuevo personaje
 const newCharacter = ref({
@@ -435,7 +367,7 @@ const createCharacter = () => {
       newCharacter.value.maxHp,
       newCharacter.value.regeneration
     )
-    
+
     // Reset form
     newCharacter.value = { name: '', maxHp: '', regeneration: '' }
     showCreateModal.value = false
@@ -520,6 +452,37 @@ const exportData = () => {
   URL.revokeObjectURL(url)
 }
 
+const triggerFileImport = () => {
+  fileInput.value.click()
+}
+
+const handleFileImport = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const content = e.target.result
+        if (dmStore.importCharacters(content)) {
+          alert('Personajes importados correctamente desde el archivo')
+          showImportModal.value = false
+          // Limpiar el input de archivo
+          event.target.value = ''
+        } else {
+          alert('Error al importar los personajes. Verifica que el archivo contenga datos válidos.')
+        }
+      } catch (error) {
+        alert('Error al leer el archivo. Verifica que sea un archivo JSON válido.')
+        console.error('Error importing file:', error)
+      }
+    }
+    reader.onerror = () => {
+      alert('Error al leer el archivo. Inténtalo de nuevo.')
+    }
+    reader.readAsText(file)
+  }
+}
+
 const importCharacters = () => {
   if (importData.value.trim()) {
     if (dmStore.importCharacters(importData.value)) {
@@ -580,7 +543,8 @@ onMounted(() => {
   gap: 20px;
 }
 
-.turn-controls, .global-controls {
+.turn-controls,
+.global-controls {
   display: flex;
   gap: 10px;
   align-items: center;
@@ -959,50 +923,106 @@ onMounted(() => {
   margin-top: 30px;
 }
 
+.import-options {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.import-option {
+  text-align: center;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.import-option h4 {
+  color: #f39c12;
+  margin: 0 0 10px 0;
+  font-size: 1.1rem;
+}
+
+.import-option p {
+  color: #bdc3c7;
+  margin: 0 0 15px 0;
+  font-size: 0.9rem;
+}
+
+.import-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 10px 0;
+}
+
+.import-divider::before,
+.import-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.import-divider span {
+  padding: 0 15px;
+  color: #7f8c8d;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .dm-view {
     padding: 15px;
   }
-  
+
   .dm-header {
     padding: 20px;
   }
-  
+
   .dm-title {
     font-size: 2rem;
   }
-  
+
   .dm-controls {
     flex-direction: column;
     align-items: stretch;
   }
-  
-  .turn-controls, .global-controls {
+
+  .turn-controls,
+  .global-controls {
     justify-content: center;
     flex-wrap: wrap;
   }
-  
+
   .stats-overview {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .characters-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .section-header {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .sort-controls {
     min-width: auto;
   }
-  
+
   .modal-content {
     margin: 20px;
     max-height: calc(100vh - 40px);
+  }
+
+  .import-options {
+    gap: 20px;
+  }
+
+  .import-option {
+    padding: 15px;
   }
 }
 
@@ -1010,17 +1030,29 @@ onMounted(() => {
   .stats-overview {
     grid-template-columns: 1fr;
   }
-  
+
   .character-card {
     padding: 15px;
   }
-  
+
   .character-actions-panel {
     gap: 12px;
   }
-  
+
   .action-inputs {
     flex-direction: column;
+  }
+
+  .import-option {
+    padding: 12px;
+  }
+
+  .import-option h4 {
+    font-size: 1rem;
+  }
+
+  .import-option p {
+    font-size: 0.85rem;
   }
 }
 </style>
