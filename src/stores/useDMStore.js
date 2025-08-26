@@ -50,7 +50,8 @@ export const useDMStore = defineStore('dm', {
                 regeneration: parseInt(regeneration) || 0,
                 isConfigured: true,
                 createdAt: new Date().toISOString(),
-                logs: []
+                logs: [],
+                defeatedBy: null // Nombre del héroe que lo derrotó
             }
             
             this.characters.push(character)
@@ -208,17 +209,48 @@ export const useDMStore = defineStore('dm', {
             return null
         },
         
+        // Registrar el héroe que derrotó a un personaje
+        setDefeatedBy(characterId, heroName) {
+            const character = this.getCharacterById(characterId)
+            if (character) {
+                character.defeatedBy = heroName
+                this.saveToLocalStorage()
+                return true
+            }
+            return false
+        },
+        
         // Resetear personaje a vida máxima
         resetCharacterToMaxHp(characterId) {
             const character = this.getCharacterById(characterId)
             if (character) {
                 const oldHp = character.currentHp
                 const oldTempHp = character.tempHp
+                const oldDefeatedBy = character.defeatedBy
                 
                 character.currentHp = character.maxHp
                 character.tempHp = 0
+                character.defeatedBy = null // Eliminar el nombre del héroe al resetear
                 
-                this.addLogToCharacter(characterId, 'Reset HP', `HP restaurado al máximo (${oldHp} → ${character.maxHp}) | Vida temporal eliminada (${oldTempHp} → 0)`)
+                this.addLogToCharacter(characterId, 'Reset HP', `HP restaurado al máximo (${oldHp} → ${character.maxHp}) | Vida temporal eliminada (${oldTempHp} → 0)${oldDefeatedBy ? ` | Héroe eliminado: ${oldDefeatedBy}` : ''}`)
+                this.saveToLocalStorage()
+                
+                return true
+            }
+            return false
+        },
+        
+        // Revivir a un personaje muerto (pone en 1 HP)
+        reviveCharacter(characterId) {
+            const character = this.getCharacterById(characterId)
+            if (character && character.currentHp <= 0) {
+                const oldHp = character.currentHp
+                const oldDefeatedBy = character.defeatedBy
+                character.currentHp = 1
+                character.tempHp = 0
+                character.defeatedBy = null // Eliminar el nombre del héroe al revivir
+                
+                this.addLogToCharacter(characterId, 'Revivir', `Personaje revivido de la muerte (${oldHp} → 1 HP)${oldDefeatedBy ? ` | Héroe anterior: ${oldDefeatedBy}` : ''}`)
                 this.saveToLocalStorage()
                 
                 return true

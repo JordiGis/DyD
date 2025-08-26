@@ -26,6 +26,14 @@
             <i class="bi bi-heart-fill"></i>
             Reset Todos
           </button>
+          <button @click="clearAllLogs" class="btn btn-warning">
+            <i class="bi bi-trash"></i>
+            Limpiar Logs
+          </button>
+          <button @click="viewAllLogs" class="btn btn-outline-info">
+            <i class="bi bi-journal-text"></i>
+            Ver Logs
+          </button>
           <button @click="triggerFileImport" class="btn btn-outline-primary">
             <i class="bi bi-upload"></i>
             Importar
@@ -130,6 +138,12 @@
                 <span class="temp-hp-label">Temporal:</span>
                 <span class="temp-hp-value">+{{ character.tempHp }}</span>
               </div>
+              
+              <!-- Mostrar el héroe que derrotó al personaje -->
+              <div v-if="character.defeatedBy" class="defeated-by">
+                <span class="defeated-by-label">Derrotado por:</span>
+                <span class="defeated-by-hero">{{ character.defeatedBy }}</span>
+              </div>
             </div>
 
             <div class="character-details">
@@ -186,6 +200,15 @@
             <button @click="dmStore.resetCharacterToMaxHp(character.id)" class="btn btn-sm btn-outline-warning w-100">
               <i class="bi bi-arrow-clockwise"></i>
               Reset HP
+            </button>
+            
+            <button 
+              v-if="character.currentHp <= 0" 
+              @click="dmStore.reviveCharacter(character.id)" 
+              class="btn btn-sm btn-success w-100"
+            >
+              <i class="bi bi-heart-pulse"></i>
+              Revivir
             </button>
           </div>
         </div>
@@ -320,12 +343,53 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal de muerte -->
+    <div v-if="showDeathModal" class="modal-overlay" @click="closeDeathModalIfEmpty">
+      <div class="modal-content death-modal" @click.stop>
+        <div class="modal-header">
+          <h3>¡Personaje Derrotado!</h3>
+          <button @click="showDeathModal = false" class="btn-close">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="death-notification">
+            <div class="death-icon">💀</div>
+            <p>¡El personaje <strong>{{ defeatedCharacter.name }}</strong> ha sido derrotado!</p>
+            <p class="hp-status">HP: <span class="hp-dead">{{ defeatedCharacter.currentHp }}</span> / {{ defeatedCharacter.maxHp }}</p>
+            <p>¿Quién fue el héroe que lo derrotó?</p>
+          </div>
+          <div class="form-group">
+            <label for="heroName">Nombre del Héroe:</label>
+            <input 
+              id="heroName"
+              v-model="heroName" 
+              type="text" 
+              class="form-control" 
+              placeholder="Escribe el nombre del héroe..."
+              @keyup.enter="saveHeroName"
+            />
+          </div>
+          <div class="modal-actions">
+            <button @click="saveHeroName" class="btn btn-primary" :disabled="!heroName.trim()">
+              <i class="bi bi-save"></i>
+              Guardar
+            </button>
+            <button @click="closeDeathModal" class="btn btn-secondary">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useDMStore } from '../stores/useDMStore'
+import Swal from 'sweetalert2'
 
 const dmStore = useDMStore()
 
@@ -333,9 +397,12 @@ const dmStore = useDMStore()
 const showCreateModal = ref(false)
 const showEditModal = ref(false)
 const showImportModal = ref(false)
+const showDeathModal = ref(false)
 const editingCharacter = ref(null)
 const sortBy = ref('name')
 const importData = ref('')
+const defeatedCharacter = ref(null)
+const heroName = ref('')
 
 // Referencias
 const fileInput = ref(null)
@@ -400,10 +467,90 @@ const deleteCharacter = (id) => {
 
 const applyDamage = (character) => {
   if (character.damageInput && character.damageInput > 0) {
-    dmStore.damageCharacter(character.id, character.damageInput)
+    const oldHp = character.currentHp
+    const result = dmStore.damageCharacter(character.id, character.damageInput)
     character.damageInput = ''
+    
+    // Check if character died from this damage
+    if (oldHp > 0 && result && result.remainingHp <= 0) {
+      defeatedCharacter.value = character
+      showDeathModal.value = true
+    }
   }
 }
+
+const saveHeroName = () => {
+  if (heroName.value.trim() && defeatedCharacter.value) {
+    const heroNameTrimmed = heroName.value.trim()
+    
+    // Check if hero name is the same as defeated character
+    if (heroNameTrimmed.toLowerCase() === defeatedCharacter.value.name.toLowerCase()) {
+      alert('El nombre del héroe no puede ser el mismo que el personaje derrotado.')
+      return
+    }
+    
+    // Registrar el héroe que derrotó al personaje
+    dmStore.setDefeatedBy(defeatedCharacter.value.id, heroNameTrimmed)
+    
+    // Add log entry about who defeated the character
+    dmStore.addLogToCharacter(
+      defeatedCharacter.value.id, 
+      'Derrotado por', 
+      `Derrotado por ${heroNameTrimmed}`
+    )
+    
+    // Close modal and reset
+    closeDeathModal()
+  } else {
+    alert('Por favor, escribe el nombre del héroe que derrotó al personaje.')
+  }
+}
+
+const closeDeathModal = () => {
+  showDeathModal.value = false
+  defeatedCharacter.value = null
+  heroName.value = ''
+}
+
+const closeDeathModalIfEmpty = () => {
+  if (heroName.value.trim()) {
+    // If there's text in the input, ask for confirmation
+    if (confirm('¿Estás seguro de que quieres cerrar? Se perderá el nombre del héroe ingresado.')) {
+      closeDeathModal()
+    }
+  } else {
+    // If input is empty, close directly
+    closeDeathModal()
+  }
+}
+
+// Watch for death modal to open and focus the input
+watch(showDeathModal, (newValue) => {
+  if (newValue) {
+    // Focus the hero name input after the modal is rendered
+    nextTick(() => {
+      const heroNameInput = document.getElementById('heroName')
+      if (heroNameInput) {
+        heroNameInput.focus()
+      }
+    })
+  }
+})
+
+// Add escape key listener for death modal
+onMounted(() => {
+  const handleEscape = (event) => {
+    if (event.key === 'Escape' && showDeathModal.value) {
+      closeDeathModalIfEmpty()
+    }
+  }
+  document.addEventListener('keydown', handleEscape)
+  
+  // Clean up on unmount
+  onUnmounted(() => {
+    document.removeEventListener('keydown', handleEscape)
+  })
+})
 
 const applyHeal = (character) => {
   if (character.healInput && character.healInput > 0) {
@@ -493,6 +640,76 @@ const importCharacters = () => {
       alert('Error al importar los personajes. Verifica el formato JSON.')
     }
   }
+}
+
+const clearAllLogs = () => {
+  Swal.fire({
+    title: '¿Limpiar todos los logs?',
+    text: 'Esta acción eliminará todo el historial de logs de todos los personajes. Esta acción no se puede deshacer.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Sí, limpiar logs',
+    cancelButtonText: 'Cancelar'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      dmStore.clearAllLogs()
+      
+      Swal.fire({
+        icon: 'success',
+        title: 'Logs Limpiados',
+        text: 'Todos los logs han sido eliminados correctamente',
+        timer: 2000,
+        showConfirmButton: false
+      })
+    }
+  })
+}
+
+const viewAllLogs = () => {
+  // Crear un modal para mostrar todos los logs de todos los personajes
+  const allLogs = []
+  
+  dmStore.characters.forEach(character => {
+    character.logs.forEach(log => {
+      allLogs.push({
+        ...log,
+        characterName: character.name
+      })
+    })
+  })
+  
+  // Ordenar logs por timestamp (más recientes primero)
+  allLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+  
+  // Crear contenido HTML para el modal
+  let logsHTML = '<div style="max-height: 400px; overflow-y: auto;">'
+  
+  if (allLogs.length === 0) {
+    logsHTML += '<p style="text-align: center; color: #666;">No hay logs para mostrar</p>'
+  } else {
+    allLogs.forEach(log => {
+      logsHTML += `
+        <div style="border-bottom: 1px solid #eee; padding: 10px 0; margin-bottom: 10px;">
+          <div style="font-weight: bold; color: #f39c12;">${log.characterName}</div>
+          <div style="color: #333;">${log.action}: ${log.details}</div>
+          <div style="font-size: 0.8em; color: #666;">Turno ${log.turn} - ${log.timestamp}</div>
+        </div>
+      `
+    })
+  }
+  
+  logsHTML += '</div>'
+  
+  // Mostrar modal con SweetAlert2
+  Swal.fire({
+    title: 'Historial de Logs - Todos los Personajes',
+    html: logsHTML,
+    width: '800px',
+    confirmButtonText: 'Cerrar',
+    confirmButtonColor: '#3085d6'
+  })
 }
 
 // Inicializar inputs para cada personaje
@@ -763,6 +980,29 @@ onMounted(() => {
   font-size: 1rem;
 }
 
+.defeated-by {
+  text-align: center;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(231, 76, 60, 0.2);
+  border-radius: 8px;
+  border: 1px solid rgba(231, 76, 60, 0.3);
+}
+
+.defeated-by-label {
+  color: #e74c3c;
+  font-size: 0.8rem;
+  margin-right: 8px;
+  font-weight: 500;
+}
+
+.defeated-by-hero {
+  color: #f39c12;
+  font-weight: bold;
+  font-size: 0.9rem;
+  text-transform: capitalize;
+}
+
 .character-details {
   margin-bottom: 20px;
 }
@@ -968,6 +1208,74 @@ onMounted(() => {
   color: #7f8c8d;
   font-size: 0.9rem;
   font-weight: 500;
+}
+
+/* Death Modal specific styles */
+.death-modal .modal-header {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  color: white;
+}
+
+.death-modal .modal-header h3 {
+  color: white;
+}
+
+.death-modal .modal-body p {
+  color: #ecf0f1;
+  margin-bottom: 15px;
+  line-height: 1.5;
+}
+
+.death-modal .modal-body p strong {
+  color: #f39c12;
+  font-weight: 600;
+}
+
+.death-modal .form-group label {
+  color: #ecf0f1;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.death-modal .form-control {
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(243, 156, 18, 0.3);
+  transition: all 0.3s ease;
+}
+
+.death-modal .form-control:focus {
+  border-color: #f39c12;
+  box-shadow: 0 0 0 3px rgba(243, 156, 18, 0.2);
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.death-notification {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.death-icon {
+  font-size: 3rem;
+  margin-bottom: 15px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.hp-status {
+  font-size: 0.9rem;
+  color: #bdc3c7;
+  margin: 10px 0;
+}
+
+.hp-dead {
+  color: #e74c3c;
+  font-weight: bold;
+  text-decoration: line-through;
 }
 
 /* Responsive */

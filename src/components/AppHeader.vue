@@ -154,6 +154,9 @@ const closeMobileMenu = () => {
   margin: 0 auto;
   position: relative;
   z-index: 2;
+  justify-items: center;
+  flex-wrap: wrap;
+  flex-direction: row;
 }
 
 .navbar-brand {
@@ -226,6 +229,8 @@ const closeMobileMenu = () => {
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
+  flex-direction: row;
 }
 
 .nav-link {

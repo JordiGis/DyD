@@ -56,6 +56,18 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+/* Botón de revivir */
+.btn-revive {
+  background: linear-gradient(135deg, #e91e63, #c2185b) !important;
+  color: white !important;
+  border: 1px solid rgba(233, 30, 99, 0.3) !important;
+}
+
+.btn-revive:hover {
+  background: linear-gradient(135deg, #c2185b, #ad1457) !important;
+  transform: translateY(-2px);
+}
+
 .card {
   padding: 2em;
 }

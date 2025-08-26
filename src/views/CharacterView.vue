@@ -100,6 +100,15 @@
         <span class="btn-text">Resetear HP</span>
       </button>
       
+      <button 
+        v-if="!characterStore.isAlive" 
+        @click="reviveCharacter" 
+        class="secondary-btn btn-revive"
+      >
+        <span class="btn-icon">💖</span>
+        <span class="btn-text">Revivir</span>
+      </button>
+      
       <button @click="resetTurn" class="secondary-btn btn-reset-turn">
         <span class="btn-icon">⏮️</span>
         <span class="btn-text">Resetear Turno</span>
@@ -148,26 +157,10 @@ onMounted(() => {
 
 const startTurn = () => {
   characterStore.startTurn()
-  
-  Swal.fire({
-    icon: 'success',
-    title: '¡Turno Iniciado!',
-    text: `Turno ${characterStore.turn.current} comenzado`,
-    timer: 1500,
-    showConfirmButton: false
-  })
 }
 
 const endTurn = () => {
   characterStore.endTurn()
-  
-  Swal.fire({
-    icon: 'info',
-    title: 'Turno Finalizado',
-    text: `Turno ${characterStore.turn.current} completado`,
-    timer: 1500,
-    showConfirmButton: false
-  })
 }
 
 const showHealDialog = () => {
@@ -196,11 +189,7 @@ const showHealDialog = () => {
       const amount = parseInt(result.value)
       const healed = characterStore.heal(amount)
       
-      Swal.fire({
-        icon: 'success',
-        title: '¡Curado!',
-        text: `${characterStore.character.name} recuperó ${healed} HP`
-      })
+
     }
   })
 }
@@ -228,11 +217,7 @@ const showTempHpDialog = () => {
       const amount = parseInt(result.value)
       characterStore.addTempHp(amount)
       
-      Swal.fire({
-        icon: 'success',
-        title: 'Vida Temporal Agregada',
-        text: `Se agregaron ${amount} HP temporales`
-      })
+
     }
   })
 }
@@ -260,11 +245,7 @@ const showDamageDialog = () => {
       const amount = parseInt(result.value)
       characterStore.takeDamage(amount)
       
-      Swal.fire({
-        icon: 'warning',
-        title: '¡Daño Recibido!',
-        text: `${characterStore.character.name} recibió ${amount} de daño`
-      })
+
     }
   })
 }
@@ -281,11 +262,22 @@ const resetToMaxHp = () => {
     if (result.isConfirmed) {
       characterStore.resetToMaxHp()
       
-      Swal.fire({
-        icon: 'success',
-        title: 'HP Reseteado',
-        text: 'Vida restaurada al máximo'
-      })
+
+    }
+  })
+}
+
+const reviveCharacter = () => {
+  Swal.fire({
+    title: '¿Revivir Personaje?',
+    text: '¿Quieres revivir al personaje con 1 punto de vida?',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, revivir',
+    cancelButtonText: 'Cancelar'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      characterStore.revive()
     }
   })
 }
@@ -301,12 +293,6 @@ const resetTurn = () => {
   }).then((result) => {
     if (result.isConfirmed) {
       characterStore.resetTurn()
-      
-      Swal.fire({
-        icon: 'success',
-        title: 'Turno Reseteado',
-        text: 'Contador de turnos reiniciado'
-      })
     }
   })
 }
@@ -597,6 +583,17 @@ const goToLogs = () => {
 
 .secondary-btn:hover {
   background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.btn-revive {
+  background: linear-gradient(135deg, #e91e63, #c2185b);
+  color: white;
+  border: 1px solid rgba(233, 30, 99, 0.3);
+}
+
+.btn-revive:hover {
+  background: linear-gradient(135deg, #c2185b, #ad1457);
   transform: translateY(-2px);
 }
 

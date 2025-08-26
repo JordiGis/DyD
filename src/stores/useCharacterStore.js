@@ -229,6 +229,22 @@ export const useCharacterStore = defineStore('character', {
             this.saveToLocalStorage()
         },
         
+        // Revivir al personaje muerto (pone en 1 HP)
+        revive() {
+            if (this.character.currentHp <= 0) {
+                const oldHp = this.character.currentHp
+                this.character.currentHp = 1
+                this.character.tempHp = 0
+                
+                // Agregar log de revivir
+                this.addLog('Revivir', `Personaje revivido de la muerte (${oldHp} → 1 HP)`)
+                
+                this.saveToLocalStorage()
+                return true
+            }
+            return false
+        },
+        
         // Resetear turno
         resetTurn() {
             const oldTurn = this.turn.current
@@ -245,6 +261,12 @@ export const useCharacterStore = defineStore('character', {
         // Limpiar logs (solo al resetear todo)
         clearLogs() {
             this.logs = []
+        },
+        
+        // Limpiar todos los logs y guardar en localStorage
+        clearAllLogs() {
+            this.logs = []
+            this.saveToLocalStorage()
         },
         
         // Guardar en localStorage

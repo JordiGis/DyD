@@ -110,6 +110,11 @@
 
     <!-- Botones de acción -->
     <div class="logs-actions">
+      <button @click="clearAllLogs" class="action-btn btn-clear">
+        <span class="btn-icon">🗑️</span>
+        <span class="btn-text">Limpiar Logs</span>
+      </button>
+      
       <button @click="exportLogs" class="action-btn btn-export">
         <span class="btn-icon">📤</span>
         <span class="btn-text">Exportar Logs</span>
@@ -255,6 +260,32 @@ const exportLogs = () => {
 // Ir al personaje
 const goToCharacter = () => {
   router.push('/character')
+}
+
+// Limpiar todos los logs
+const clearAllLogs = () => {
+  Swal.fire({
+    title: '¿Limpiar todos los logs?',
+    text: 'Esta acción eliminará todo el historial de logs. Esta acción no se puede deshacer.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Sí, limpiar logs',
+    cancelButtonText: 'Cancelar'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      characterStore.clearAllLogs()
+      
+      Swal.fire({
+        icon: 'success',
+        title: 'Logs Limpiados',
+        text: 'Todos los logs han sido eliminados correctamente',
+        timer: 2000,
+        showConfirmButton: false
+      })
+    }
+  })
 }
 </script>
 
@@ -549,6 +580,11 @@ const goToCharacter = () => {
 .action-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.btn-clear {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  color: white;
 }
 
 .btn-export {
