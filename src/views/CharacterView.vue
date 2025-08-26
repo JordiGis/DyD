@@ -53,16 +53,24 @@
       <span class="regeneration-icon">🔄</span>
       <span class="regeneration-text">Regeneración: +{{ characterStore.character.regeneration }} HP/turno</span>
     </div>
-
-    <!-- Botones principales -->
+    <!-- Estado del turno -->
+    <!-- Botón de turno: solo uno visible según el estado -->
     <div class="action-buttons">
       <button 
-        @click="startTurn" 
-        class="action-btn btn-start-turn"
-        :disabled="characterStore.turn.isActive"
+      v-if="!characterStore.turn.isActive"
+      @click="startTurn" 
+      class="action-btn btn-start-turn"
       >
-        <span class="btn-icon">🎲</span>
-        <span class="btn-text">Iniciar Turno</span>
+      <span class="btn-icon">🎲</span>
+      <span class="btn-text">Iniciar Turno</span>
+      </button>
+      <button 
+      v-else
+      @click="endTurn" 
+      class="action-btn btn-end-turn"
+      >
+      <span class="btn-icon">⏳</span>
+      <span class="btn-text">Finalizar Turno</span>
       </button>
 
       <button 
@@ -125,14 +133,7 @@
       </button>
     </div>
 
-    <!-- Estado del turno -->
-    <div v-if="characterStore.turn.isActive" class="turn-status">
-      <div class="turn-status-content">
-        <span class="turn-status-icon">⏳</span>
-        <span class="turn-status-text">Turno {{ characterStore.turn.current }} en progreso</span>
-        <button @click="endTurn" class="btn-end-turn">Finalizar Turno</button>
-      </div>
-    </div>
+    
   </div>
 </template>
 
@@ -181,7 +182,7 @@ const showHealDialog = () => {
         return 'Debes ingresar un número válido'
       }
       if (value > characterStore.character.maxHp - characterStore.character.currentHp) {
-        return 'No puedes curar más allá del máximo'
+        return `No puedes curar más allá del máximo (${characterStore.character.maxHp - characterStore.character.currentHp} HP)`
       }
     }
   }).then((result) => {
@@ -604,6 +605,7 @@ const goToLogs = () => {
   border-radius: 15px;
   padding: 20px;
   text-align: center;
+  margin-bottom: 20px;
 }
 
 .turn-status-content {
