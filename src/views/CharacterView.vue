@@ -23,7 +23,7 @@
         <div class="health-bar">
           <div 
             class="health-fill" 
-            :class="characterStore.hpBarColor"
+            :class="characterStore.hasTempHp ? 'temp-hp' : characterStore.hpBarColor"
             :style="{ width: `${characterStore.hpPercentage}%` }"
           ></div>
         </div>
@@ -416,6 +416,7 @@ const goToLogs = () => {
 .health-fill.warning { background: linear-gradient(90deg, #f39c12, #e67e22); }
 .health-fill.danger { background: linear-gradient(90deg, #e74c3c, #c0392b); }
 .health-fill.dark { background: linear-gradient(90deg, #34495e, #2c3e50); }
+.health-fill.temp-hp { background: linear-gradient(90deg, #9b59b6, #8e44ad); }
 
 .health-percentage {
   position: absolute;

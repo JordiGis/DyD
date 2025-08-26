@@ -20,32 +20,12 @@
             <span class="feature-text">Vida temporal que se consume primero</span>
           </div>
           <div class="feature-item">
-            <span class="feature-icon">💚</span>
-            <span class="feature-text">Sistema de curación inteligente</span>
-          </div>
-          <div class="feature-item">
-            <span class="feature-icon">⚔️</span>
-            <span class="feature-text">Gestión de daño con prioridad de vida temporal</span>
-          </div>
-          <div class="feature-item">
             <span class="feature-icon">🔄</span>
             <span class="feature-text">Regeneración pasiva por turno</span>
           </div>
           <div class="feature-item">
-            <span class="feature-icon">🎲</span>
-            <span class="feature-text">Control de turnos con contador</span>
-          </div>
-          <div class="feature-item">
-            <span class="feature-icon">💾</span>
-            <span class="feature-text">Persistencia en localStorage</span>
-          </div>
-          <div class="feature-item">
             <span class="feature-icon">👥</span>
             <span class="feature-text">Panel del DM para gestionar múltiples personajes</span>
-          </div>
-          <div class="feature-item">
-            <span class="feature-icon">📊</span>
-            <span class="feature-text">Vista general del estado de todos los personajes</span>
           </div>
         </div>
         

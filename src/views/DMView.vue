@@ -127,7 +127,7 @@
               <div class="hp-bar-container">
                 <div class="hp-bar">
                   <div class="hp-fill" :style="{ width: `${(character.currentHp / character.maxHp) * 100}%` }"
-                    :class="getHpBarColor(character)"></div>
+                    :class="character.tempHp > 0 ? 'temp-hp' : getHpBarColor(character)"></div>
                 </div>
                 <div class="hp-text">
                   {{ character.currentHp }} / {{ character.maxHp }} HP
@@ -165,7 +165,7 @@
               <label class="action-label">Daño:</label>
               <div class="action-inputs">
                 <input v-model="character.damageInput" type="number" class="form-control form-control-sm"
-                  placeholder="0" min="0">
+                  placeholder="0" min="0" @keyup.enter="applyDamage(character)">
                 <button @click="applyDamage(character)" class="btn btn-sm btn-danger"
                   :disabled="!character.damageInput || character.damageInput <= 0">
                   <i class="bi bi-lightning"></i>
@@ -177,7 +177,7 @@
               <label class="action-label">Curación:</label>
               <div class="action-inputs">
                 <input v-model="character.healInput" type="number" class="form-control form-control-sm" placeholder="0"
-                  min="0">
+                  min="0" @keyup.enter="applyHeal(character)">
                 <button @click="applyHeal(character)" class="btn btn-sm btn-success"
                   :disabled="!character.healInput || character.healInput <= 0">
                   <i class="bi bi-heart"></i>
@@ -189,7 +189,7 @@
               <label class="action-label">Vida Temp:</label>
               <div class="action-inputs">
                 <input v-model="character.tempHpInput" type="number" class="form-control form-control-sm"
-                  placeholder="0" min="0">
+                  placeholder="0" min="0" @keyup.enter="applyTempHp(character)">
                 <button @click="applyTempHp(character)" class="btn btn-sm btn-info"
                   :disabled="!character.tempHpInput || character.tempHpInput <= 0">
                   <i class="bi bi-shield"></i>
@@ -956,6 +956,10 @@ onMounted(() => {
   background: linear-gradient(90deg, #e74c3c, #c0392b);
 }
 
+.hp-fill.temp-hp {
+  background: linear-gradient(90deg, #9b59b6, #8e44ad);
+}
+
 .hp-text {
   text-align: center;
   color: #ecf0f1;
@@ -965,7 +969,6 @@ onMounted(() => {
 
 .temp-hp {
   text-align: center;
-  margin-top: 8px;
 }
 
 .temp-hp-label {
