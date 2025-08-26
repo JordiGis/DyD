@@ -105,6 +105,11 @@
         <span class="btn-text">Resetear Turno</span>
       </button>
       
+      <button @click="goToLogs" class="secondary-btn btn-logs">
+        <span class="btn-icon">📋</span>
+        <span class="btn-text">Ver Historial</span>
+      </button>
+      
       <button @click="goToConfig" class="secondary-btn btn-config">
         <span class="btn-icon">⚙️</span>
         <span class="btn-text">Configuración</span>
@@ -308,6 +313,10 @@ const resetTurn = () => {
 
 const goToConfig = () => {
   router.push('/config')
+}
+
+const goToLogs = () => {
+  router.push('/logs')
 }
 </script>
 

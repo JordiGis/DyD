@@ -17,7 +17,10 @@ export const useCharacterStore = defineStore('character', {
         turn: {
             current: 0,
             isActive: false
-        }
+        },
+        
+        // Sistema de logs
+        logs: []
     }),
     
     getters: {
@@ -49,10 +52,49 @@ export const useCharacterStore = defineStore('character', {
         hasTempHp: (state) => state.character.tempHp > 0,
         
         // Vida total (actual + temporal)
-        totalHp: (state) => state.character.currentHp + state.character.tempHp
+        totalHp: (state) => state.character.currentHp + state.character.tempHp,
+        
+        // Logs agrupados por turno
+        logsByTurn: (state) => {
+            const grouped = {}
+            state.logs.forEach(log => {
+                if (!grouped[log.turn]) {
+                    grouped[log.turn] = []
+                }
+                grouped[log.turn].push(log)
+            })
+            return grouped
+        },
+        
+        // Logs del turno actual
+        currentTurnLogs: (state) => {
+            return state.logs.filter(log => log.turn === state.turn.current)
+        }
     },
     
     actions: {
+        // Agregar log
+        addLog(action, details, turn = null) {
+            const logEntry = {
+                id: Date.now() + Math.random(),
+                timestamp: new Date().toLocaleTimeString(),
+                turn: turn !== null ? turn : this.turn.current,
+                action,
+                details,
+                hpBefore: this.character.currentHp,
+                hpAfter: this.character.currentHp,
+                tempHpBefore: this.character.tempHp,
+                tempHpAfter: this.character.tempHp
+            }
+            
+            this.logs.unshift(logEntry)
+            
+            // Mantener solo los últimos 100 logs para evitar sobrecarga
+            if (this.logs.length > 100) {
+                this.logs = this.logs.slice(0, 100)
+            }
+        },
+        
         // Configurar el personaje
         configureCharacter(name, maxHp, regeneration = 0) {
             this.character.name = name
@@ -61,6 +103,9 @@ export const useCharacterStore = defineStore('character', {
             this.character.tempHp = 0
             this.character.regeneration = regeneration
             this.character.isConfigured = true
+            
+            // Agregar log de configuración
+            this.addLog('Configuración', `${name} configurado con ${maxHp} HP máximo${regeneration > 0 ? ` y regeneración de ${regeneration} HP/turno` : ''}`, 0)
             
             // Guardar en localStorage
             this.saveToLocalStorage()
@@ -71,9 +116,20 @@ export const useCharacterStore = defineStore('character', {
             this.turn.current++
             this.turn.isActive = true
             
+            // Agregar log de inicio de turno
+            this.addLog('Inicio de Turno', `Turno ${this.turn.current} iniciado`, this.turn.current)
+            
             // Aplicar regeneración pasiva si existe
             if (this.character.regeneration > 0) {
-                this.heal(this.character.regeneration)
+                const oldHp = this.character.currentHp
+                this.heal(this.character.regeneration, true) // true = es regeneración automática
+                
+                // Actualizar el log del turno con la regeneración
+                const turnLog = this.logs.find(log => log.turn === this.turn.current && log.action === 'Inicio de Turno')
+                if (turnLog) {
+                    turnLog.details += ` | Regeneración automática: +${this.character.regeneration} HP`
+                    turnLog.hpAfter = this.character.currentHp
+                }
             }
             
             // Guardar en localStorage
@@ -83,34 +139,53 @@ export const useCharacterStore = defineStore('character', {
         // Finalizar turno
         endTurn() {
             this.turn.isActive = false
+            
+            // Agregar log de fin de turno
+            this.addLog('Fin de Turno', `Turno ${this.turn.current} finalizado`, this.turn.current)
+            
             this.saveToLocalStorage()
         },
         
         // Curar al personaje
-        heal(amount) {
+        heal(amount, isAutoRegeneration = false) {
             const oldHp = this.character.currentHp
             this.character.currentHp = Math.min(
                 this.character.maxHp, 
                 this.character.currentHp + amount
             )
             
+            const actualHealed = this.character.currentHp - oldHp
+            
+            // Agregar log de curación
+            if (actualHealed > 0) {
+                const actionType = isAutoRegeneration ? 'Regeneración Automática' : 'Curación'
+                this.addLog(actionType, `+${actualHealed} HP (${oldHp} → ${this.character.currentHp})`)
+            }
+            
             // Solo guardar si hubo cambio
             if (oldHp !== this.character.currentHp) {
                 this.saveToLocalStorage()
             }
             
-            return this.character.currentHp - oldHp // Retornar cantidad curada real
+            return actualHealed
         },
         
         // Agregar vida temporal
         addTempHp(amount) {
+            const oldTempHp = this.character.tempHp
             this.character.tempHp += amount
+            
+            // Agregar log de vida temporal
+            this.addLog('Vida Temporal', `+${amount} HP temporal (${oldTempHp} → ${this.character.tempHp})`)
+            
             this.saveToLocalStorage()
         },
         
         // Recibir daño
         takeDamage(amount) {
             let remainingDamage = amount
+            const oldHp = this.character.currentHp
+            const oldTempHp = this.character.tempHp
             
             // Primero se reduce la vida temporal
             if (this.character.tempHp > 0) {
@@ -128,28 +203,56 @@ export const useCharacterStore = defineStore('character', {
                 this.character.currentHp = Math.max(0, this.character.currentHp - remainingDamage)
             }
             
+            // Agregar log de daño
+            let damageDetails = `-${amount} HP`
+            if (oldTempHp > 0) {
+                damageDetails += ` | Vida temporal: ${oldTempHp} → ${this.character.tempHp}`
+            }
+            damageDetails += ` | HP actual: ${oldHp} → ${this.character.currentHp}`
+            
+            this.addLog('Daño Recibido', damageDetails)
+            
             this.saveToLocalStorage()
         },
         
         // Resetear personaje a vida máxima
         resetToMaxHp() {
+            const oldHp = this.character.currentHp
+            const oldTempHp = this.character.tempHp
+            
             this.character.currentHp = this.character.maxHp
             this.character.tempHp = 0
+            
+            // Agregar log de reset
+            this.addLog('Reset HP', `HP restaurado al máximo (${oldHp} → ${this.character.maxHp}) | Vida temporal eliminada (${oldTempHp} → 0)`)
+            
             this.saveToLocalStorage()
         },
         
         // Resetear turno
         resetTurn() {
+            const oldTurn = this.turn.current
+            
             this.turn.current = 0
             this.turn.isActive = false
+            
+            // Agregar log de reset de turno
+            this.addLog('Reset Turno', `Contador de turnos reiniciado (${oldTurn} → 0)`)
+            
             this.saveToLocalStorage()
+        },
+        
+        // Limpiar logs (solo al resetear todo)
+        clearLogs() {
+            this.logs = []
         },
         
         // Guardar en localStorage
         saveToLocalStorage() {
             const data = {
                 character: this.character,
-                turn: this.turn
+                turn: this.turn,
+                logs: this.logs
             }
             localStorage.setItem('dnd-character-data', JSON.stringify(data))
         },
@@ -162,6 +265,7 @@ export const useCharacterStore = defineStore('character', {
                     const parsed = JSON.parse(data)
                     this.character = { ...this.character, ...parsed.character }
                     this.turn = { ...this.turn, ...parsed.turn }
+                    this.logs = parsed.logs || []
                 } catch (error) {
                     console.error('Error loading from localStorage:', error)
                 }
@@ -182,6 +286,7 @@ export const useCharacterStore = defineStore('character', {
                 current: 0,
                 isActive: false
             }
+            this.clearLogs()
             localStorage.removeItem('dnd-character-data')
         }
     }

@@ -18,6 +18,9 @@
         <router-link v-if="hasCharacter" to="/character" class="nav-link" active-class="active">
           Personaje
         </router-link>
+        <router-link v-if="hasCharacter" to="/logs" class="nav-link" active-class="active">
+          Historial
+        </router-link>
       </div>
     </nav>
   </header>
