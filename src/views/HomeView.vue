@@ -39,6 +39,14 @@
             <span class="feature-icon">💾</span>
             <span class="feature-text">Persistencia en localStorage</span>
           </div>
+          <div class="feature-item">
+            <span class="feature-icon">👥</span>
+            <span class="feature-text">Panel del DM para gestionar múltiples personajes</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">📊</span>
+            <span class="feature-text">Vista general del estado de todos los personajes</span>
+          </div>
         </div>
         
         <div class="action-buttons">
@@ -50,6 +58,11 @@
           <button v-if="hasExistingCharacter" @click="loadExistingCharacter" class="btn btn-secondary">
             <span class="btn-icon">📖</span>
             <span class="btn-text">Cargar Personaje Existente</span>
+          </button>
+          
+          <button @click="goToDM" class="btn btn-success">
+            <span class="btn-icon">🛡️</span>
+            <span class="btn-text">Panel del DM</span>
           </button>
         </div>
       </div>
@@ -87,6 +100,10 @@ const startNewCharacter = () => {
 
 const loadExistingCharacter = () => {
   router.push('/character')
+}
+
+const goToDM = () => {
+  router.push('/dm')
 }
 </script>
 

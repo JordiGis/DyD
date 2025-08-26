@@ -37,6 +37,10 @@
           <i class="bi bi-journal-text"></i>
           <span>Historial</span>
         </router-link>
+        <router-link to="/dm" class="nav-link" active-class="active" @click="closeMobileMenu">
+          <i class="bi bi-shield-fill"></i>
+          <span>DM</span>
+        </router-link>
       </div>
     </nav>
   </header>
