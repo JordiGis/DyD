@@ -1,155 +1,128 @@
 <template>
-    <nav class="navbar navbar-expand-lg navbar-dark escanor-navbar">
-        <div class="container">
-            <router-link class="navbar-brand d-flex align-items-center" :to="{ path: '/' }">
-                <img :src="getImageUrl('icon.png')" alt="Escanor" width="32" height="32" class="me-2 rounded-circle">
-                <span class="golden-text fw-bold">ESCANOR</span>
-            </router-link>
-            
-            <button 
-                class="navbar-toggler" 
-                type="button" 
-                data-bs-toggle="collapse" 
-                data-bs-target="#navbarNav"
-            >
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <router-link class="nav-link" 
-                                     :class="{ active: isHomeActive }"
-                                     :to="{ path: '/' }">
-                            <i class="bi bi-house-door"></i> Inicio
-                        </router-link>
-                    </li>
-                    <li class="nav-item">
-                        <router-link class="nav-link" 
-                                     :class="{ active: isCombatActive }"
-                                     :to="{ path: '/', query: { combat: '' } }">
-                            <i class="bi bi-sword"></i> Combate
-                        </router-link>
-                    </li>
-                </ul>
-                
-                <div class="d-flex align-items-center">
-                    <!-- Estado actual del personaje en el navbar -->
-                    <div class="me-3 d-none d-md-block">
-                        <span class="badge text-dark me-2" :style="{ backgroundColor: currentStateData.color }">
-                            {{ currentStateData.name }}
-                        </span>
-                        <span class="text-light small">
-                            <i class="bi bi-heart-fill text-danger"></i> {{ character.currentHp }}/{{ character.maxHp }}
-                        </span>
-                        <span v-if="character.isFuryActive" class="ms-2">
-                            <i class="bi bi-fire text-danger"></i>
-                        </span>
-                    </div>
-                    
-                    <button 
-                        @click="gameStore.resetCharacter" 
-                        class="btn btn-outline-warning btn-sm"
-                        type="button"
-                        title="Reset completo del personaje"
-                    >
-                        <i class="bi bi-arrow-clockwise"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
+  <header class="app-header">
+    <nav class="navbar">
+      <div class="navbar-brand">
+        <router-link to="/" class="brand-link">
+          <span class="brand-icon">🎲</span>
+          <span class="brand-text">D&D Life Tracker</span>
+        </router-link>
+      </div>
+      
+      <div class="navbar-nav">
+        <router-link to="/" class="nav-link" active-class="active">
+          Inicio
+        </router-link>
+        <router-link to="/config" class="nav-link" active-class="active">
+          Configuración
+        </router-link>
+        <router-link v-if="hasCharacter" to="/character" class="nav-link" active-class="active">
+          Personaje
+        </router-link>
+      </div>
     </nav>
+  </header>
 </template>
 
 <script setup>
 import { computed } from 'vue'
-import { useGameStore } from '../stores/useGameStore.js'
-import { useRoute } from 'vue-router'
-import { getImageUrl } from '../utils/imageHelper'
+import { useCharacterStore } from '../stores/useCharacterStore'
 
-const gameStore = useGameStore()
-const route = useRoute()
+const characterStore = useCharacterStore()
 
-// Computed properties
-const character = computed(() => gameStore.character)
-const currentStateData = computed(() => gameStore.currentStateData)
-
-// Determinar la vista activa basada en query parameters
-const isHomeActive = computed(() => {
-    return !route.query.hasOwnProperty('combat')
-})
-
-const isCombatActive = computed(() => {
-    return route.query.hasOwnProperty('combat')
-})
+const hasCharacter = computed(() => characterStore.character.isConfigured)
 </script>
 
 <style scoped>
-.escanor-navbar {
-    background: linear-gradient(90deg, #1a1a2e 0%, #16213e 50%, #e94560 100%) !important;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-    border-bottom: 2px solid #f39c12;
+.app-header {
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
-.golden-text {
-    background: linear-gradient(45deg, #f39c12, #f1c40f);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-    font-size: 1.2rem;
-    letter-spacing: 1px;
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  height: 56px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .navbar-brand {
-    transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
 }
 
-.navbar-brand:hover {
-    transform: scale(1.05);
+.brand-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: #f39c12;
+  font-weight: bold;
+  font-size: 1.3rem;
+  transition: all 0.3s ease;
+}
+
+.brand-link:hover {
+  color: #e67e22;
+  transform: translateY(-1px);
+}
+
+.brand-icon {
+  font-size: 1.5rem;
+}
+
+.brand-text {
+  font-size: 1.2rem;
+}
+
+.navbar-nav {
+  display: flex;
+  gap: 20px;
+  align-items: center;
 }
 
 .nav-link {
-    font-weight: 500;
-    transition: all 0.3s ease;
-    border-radius: 8px;
-    margin: 0 2px;
+  color: #ecf0f1;
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  font-weight: 500;
 }
 
 .nav-link:hover {
-    background-color: rgba(243, 156, 18, 0.2);
-    color: #f39c12 !important;
+  background: rgba(255, 255, 255, 0.1);
+  color: #f39c12;
 }
 
-.nav-link.router-link-active,
 .nav-link.active {
-    background-color: rgba(243, 156, 18, 0.3);
-    color: #f39c12 !important;
-    font-weight: bold;
-}
-
-.btn-outline-warning {
-    border-color: #f39c12;
-    color: #f39c12;
-    transition: all 0.3s ease;
-}
-
-.btn-outline-warning:hover {
-    background-color: #f39c12;
-    border-color: #f39c12;
-    color: #1a1a2e;
-    transform: scale(1.05);
-}
-
-.badge {
-    font-size: 0.75rem;
-    padding: 0.25em 0.5em;
-    border-radius: 0.375rem;
+  background: rgba(243, 156, 18, 0.2);
+  color: #f39c12;
+  border: 1px solid rgba(243, 156, 18, 0.3);
 }
 
 @media (max-width: 768px) {
-    .golden-text {
-        font-size: 1rem;
-    }
+  .navbar {
+    padding: 0 15px;
+  }
+  
+  .brand-text {
+    display: none;
+  }
+  
+  .navbar-nav {
+    gap: 10px;
+  }
+  
+  .nav-link {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+  }
 }
 </style>
