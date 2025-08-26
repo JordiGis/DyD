@@ -94,7 +94,6 @@ const closeMobileMenu = () => {
   top: 0;
   z-index: 1000;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  overflow: hidden;
 }
 
 .header-background {
@@ -149,7 +148,6 @@ const closeMobileMenu = () => {
   justify-content: space-between;
   align-items: center;
   padding: 0 24px;
-  height: 70px;
   max-width: 1400px;
   margin: 0 auto;
   position: relative;
@@ -368,6 +366,7 @@ const closeMobileMenu = () => {
   
   .mobile-menu-toggle {
     display: flex;
+    align-items: center;
   }
   
   .navbar-nav {
