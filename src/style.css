@@ -28,6 +28,7 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  overflow-x: hidden; /* Prevent horizontal scroll on mobile */
 }
 
 h1 {
@@ -45,6 +46,7 @@ button {
   background-color: #1a1a1a;
   cursor: pointer;
   transition: border-color 0.25s;
+  min-height: 44px; /* Better touch target for mobile */
 }
 button:hover {
   border-color: #646cff;
@@ -52,6 +54,18 @@ button:hover {
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
+}
+
+/* Botón de revivir */
+.btn-revive {
+  background: linear-gradient(135deg, #e91e63, #c2185b) !important;
+  color: white !important;
+  border: 1px solid rgba(233, 30, 99, 0.3) !important;
+}
+
+.btn-revive:hover {
+  background: linear-gradient(135deg, #c2185b, #ad1457) !important;
+  transform: translateY(-2px);
 }
 
 .card {
@@ -75,5 +89,98 @@ button:focus-visible {
   }
   button {
     background-color: #f9f9f9;
+  }
+}
+
+/* Mobile-specific improvements */
+@media (max-width: 768px) {
+  body {
+    place-items: flex-start;
+  }
+  
+  h1 {
+    font-size: 2.5em;
+  }
+  
+  #app {
+    padding: 1rem;
+    max-width: 100%;
+  }
+  
+  .card {
+    padding: 1.5em;
+  }
+  
+  /* Improve touch targets on mobile */
+  button, .btn {
+    min-height: 48px;
+    padding: 0.8em 1.5em;
+  }
+  
+  /* Prevent text selection on interactive elements */
+  button, .btn, a {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+}
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: 2em;
+  }
+  
+  #app {
+    padding: 0.8rem;
+  }
+  
+  .card {
+    padding: 1.2em;
+  }
+  
+  button, .btn {
+    min-height: 52px;
+    padding: 1em 1.8em;
+    font-size: 1.1em;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  button:hover,
+  .btn:hover {
+    border-color: inherit;
+  }
+  
+  button:active,
+  .btn:active {
+    transform: scale(0.98);
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  button {
+    border-width: 2px;
+  }
+  
+  .card {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  button,
+  .btn,
+  .card {
+    transition: none;
+  }
+  
+  .fade-in {
+    animation: none;
   }
 }

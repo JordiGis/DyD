@@ -1,285 +1,373 @@
 <template>
-    <div class="home-view">
-        <div class="container-fluid h-100">
-            <div class="row h-100">
-                <!-- Panel Principal -->
-                <div class="col-lg-8 d-flex align-items-center justify-content-center">
-                    <div class="text-center text-white">
-                        <div class="hero-content">
-                            <img :src="getImageUrl('Escanor.png')" alt="Escanor" class="character-portrait mb-4">
-                            <h1 class="display-2 fw-bold mb-3 golden-text">ESCANOR</h1>
-                            <h3 class="mb-4 text-warning">El León del Orgullo</h3>
-                            <p class="lead mb-5">
-                                "¿Quién decidió eso? Solo hay una persona en este mundo que puede decidir lo que hago... y esa persona soy yo."
-                            </p>
-                            
-                            <div class="d-grid gap-3 col-md-6 mx-auto">
-                                <router-link :to="{ path: '/', query: { combat: '' } }" class="btn btn-warning btn-lg shadow-lg">
-                                    <i class="bi bi-sword"></i> Entrar en Combate
-                                </router-link>
-                                <button class="btn btn-outline-light btn-lg" @click="showCharacterInfo = !showCharacterInfo">
-                                    <i class="bi bi-info-circle"></i> Información del Personaje
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Panel de Información -->
-                <div class="col-lg-4 info-panel">
-                    <div class="card h-100 bg-dark text-white border-warning">
-                        <div class="card-header bg-warning text-dark">
-                            <h4 class="mb-0"><i class="bi bi-person-badge"></i> Estado del Personaje</h4>
-                        </div>
-                        <div class="card-body">
-                            <!-- Estado Actual -->
-                            <div class="mb-4">
-                                <h5 class="text-warning">Estado Actual</h5>
-                                <div class="d-flex align-items-center mb-2">
-                                    <img :src="getImageUrl(currentStateData.image)" 
-                                         alt="Estado actual" 
-                                         class="state-icon me-3"
-                                         width="40" height="40">
-                                    <div>
-                                        <strong :style="{ color: currentStateData.color }">
-                                            {{ currentStateData.name }}
-                                        </strong>
-                                        <br>
-                                        <small class="text-muted">{{ currentStateData.description }}</small>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Vida -->
-                            <div class="mb-4">
-                                <h5 class="text-warning">Puntos de Vida</h5>
-                                <div class="progress mb-2" style="height: 20px;">
-                                    <div class="progress-bar bg-success" 
-                                         :style="{ width: hpPercentage + '%' }" 
-                                         role="progressbar">
-                                        {{ character.currentHp }}/{{ character.maxHp }}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Furia -->
-                            <div class="mb-4">
-                                <h5 class="text-warning">Furia</h5>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span>Cargas: {{ furyCountDisplay }}</span>
-                                    <span v-if="character.isFuryActive" class="badge bg-danger">
-                                        <i class="bi bi-fire"></i> ACTIVA
-                                    </span>
-                                    <span v-else class="badge bg-secondary">Inactiva</span>
-                                </div>
-                            </div>
-
-                            <!-- Información Adicional -->
-                            <div v-if="showCharacterInfo" class="character-info">
-                                <hr class="border-warning">
-                                <h5 class="text-warning">Los Cuatro Estados</h5>
-                                <div class="accordion accordion-flush" id="statesAccordion">
-                                    <div v-for="(state, key) in characterStates" :key="key" class="accordion-item bg-dark">
-                                        <h2 class="accordion-header">
-                                            <button class="accordion-button collapsed bg-dark text-light border-0" 
-                                                    type="button" 
-                                                    :data-bs-toggle="`collapse`" 
-                                                    :data-bs-target="`#collapse${key}`">
-                                                <img :src="getImageUrl(state.image)" 
-                                                     width="20" height="20" 
-                                                     class="me-2 rounded-circle">
-                                                {{ state.name }}
-                                            </button>
-                                        </h2>
-                                        <div :id="`collapse${key}`" class="accordion-collapse collapse">
-                                            <div class="accordion-body text-light">
-                                                {{ state.description }}
-                                                <br>
-                                                <small class="text-muted">
-                                                    Los modificadores de estadísticas varían según el estado.
-                                                </small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-footer bg-transparent border-warning">
-                            <small class="text-muted">
-                                <i class="bi bi-clock"></i> Última actualización: {{ new Date().toLocaleTimeString() }}
-                            </small>
-                        </div>
-                    </div>
-                </div>
-            </div>
+  <div class="home-container fade-in">
+    <div class="welcome-card">
+      <h1 class="welcome-title">🎲 D&D Life Tracker</h1>
+      <p class="welcome-subtitle">Control de vida para personajes de Dungeons & Dragons</p>
+      
+      <div class="loading-spinner" v-if="isLoading">
+        <div class="spinner"></div>
+        <p>Cargando...</p>
+      </div>
+      
+      <div class="welcome-content" v-else>
+        <div class="feature-list">
+          <div class="feature-item">
+            <span class="feature-icon">❤️</span>
+            <span class="feature-text">Control de vida máxima y actual</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">🛡️</span>
+            <span class="feature-text">Vida temporal que se consume primero</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">💚</span>
+            <span class="feature-text">Sistema de curación inteligente</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">⚔️</span>
+            <span class="feature-text">Gestión de daño con prioridad de vida temporal</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">🔄</span>
+            <span class="feature-text">Regeneración pasiva por turno</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">🎲</span>
+            <span class="feature-text">Control de turnos con contador</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">💾</span>
+            <span class="feature-text">Persistencia en localStorage</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">👥</span>
+            <span class="feature-text">Panel del DM para gestionar múltiples personajes</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-icon">📊</span>
+            <span class="feature-text">Vista general del estado de todos los personajes</span>
+          </div>
         </div>
+        
+        <div class="action-buttons">
+          <button @click="startNewCharacter" class="btn btn-primary">
+            <span class="btn-icon">✨</span>
+            <span class="btn-text">Crear Nuevo Personaje</span>
+          </button>
+          
+          <button v-if="hasExistingCharacter" @click="loadExistingCharacter" class="btn btn-secondary">
+            <span class="btn-icon">📖</span>
+            <span class="btn-text">Cargar Personaje Existente</span>
+          </button>
+          
+          <button @click="goToDM" class="btn btn-success">
+            <span class="btn-icon">🛡️</span>
+            <span class="btn-text">Panel del DM</span>
+          </button>
+        </div>
+      </div>
     </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useGameStore } from '../stores/useGameStore'
-import { getImageUrl } from '../utils/imageHelper'
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useCharacterStore } from '../stores/useCharacterStore'
 
-const gameStore = useGameStore()
-const showCharacterInfo = ref(false)
+const router = useRouter()
+const characterStore = useCharacterStore()
 
-// Computed properties desde el store
-const character = computed(() => gameStore.character)
-const currentStateData = computed(() => gameStore.currentStateData)
-const hpPercentage = computed(() => gameStore.hpPercentage)
-const furyCountDisplay = computed(() => gameStore.furyCountDisplay)
-const characterStates = computed(() => gameStore.characterStates)
+const isLoading = ref(true)
+const hasExistingCharacter = ref(false)
 
-onMounted(() => {
-    // Efecto de fade-in al cargar la página
-    document.querySelector('.hero-content').style.opacity = '0'
-    setTimeout(() => {
-        document.querySelector('.hero-content').style.transition = 'opacity 1s ease-in-out'
-        document.querySelector('.hero-content').style.opacity = '1'
-    }, 100)
+onMounted(async () => {
+  // Cargar datos del localStorage
+  characterStore.loadFromLocalStorage()
+  
+  // Verificar si hay un personaje configurado
+  hasExistingCharacter.value = characterStore.character.isConfigured
+  
+  // Simular un pequeño delay para mostrar el spinner
+  setTimeout(() => {
+    isLoading.value = false
+  }, 1000)
 })
+
+const startNewCharacter = () => {
+  router.push('/config')
+}
+
+const loadExistingCharacter = () => {
+  router.push('/character')
+}
+
+const goToDM = () => {
+  router.push('/dm')
+}
 </script>
 
 <style scoped>
-.home-view {
-    min-height: 100vh;
-    background: linear-gradient(
-        135deg,
-        #0f0f23 0%,
-        #1a1a2e 25%,
-        #16213e 50%,
-        #e94560 75%,
-        #f39c12 100%
-    );
-    position: relative;
-    overflow: hidden;
+.home-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 60px);
+  padding: 20px;
 }
 
-.home-view::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="50" font-size="50" opacity="0.1">⚔️</text></svg>');
-    background-repeat: no-repeat;
-    background-position: center center;
-    background-size: cover;
-    opacity: 0.1;
-    z-index: 1;
+.welcome-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  max-width: 700px;
+  width: 100%;
+  text-align: center;
 }
 
-.container-fluid {
-    position: relative;
-    z-index: 2;
+.welcome-title {
+  color: #f39c12;
+  font-size: 3rem;
+  font-weight: bold;
+  margin-bottom: 15px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-.character-portrait {
-    width: 200px;
-    height: 200px;
-    border-radius: 50%;
-    border: 5px solid #f39c12;
-    box-shadow: 0 0 30px rgba(243, 156, 18, 0.5);
-    transition: all 0.3s ease;
+.welcome-subtitle {
+  color: #ecf0f1;
+  font-size: 1.2rem;
+  margin-bottom: 30px;
+  opacity: 0.9;
 }
 
-.character-portrait:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 40px rgba(243, 156, 18, 0.8);
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
 }
 
-.golden-text {
-    background: linear-gradient(45deg, #f39c12, #f1c40f, #e67e22);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top: 4px solid #f39c12;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
-.info-panel {
-    background: rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(10px);
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
-.state-icon {
-    border-radius: 50%;
-    border: 2px solid #f39c12;
+.loading-spinner p {
+  color: #ecf0f1;
+  font-size: 1.1rem;
+}
+
+.welcome-content {
+  animation: fadeIn 0.5s ease-in;
+}
+
+.feature-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.feature-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.feature-icon {
+  font-size: 1.5rem;
+}
+
+.feature-text {
+  color: #ecf0f1;
+  font-size: 1rem;
+  text-align: left;
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
 }
 
 .btn {
-    border-radius: 12px;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 30px;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 250px;
+  justify-content: center;
+  min-height: 56px; /* Better touch target */
 }
 
 .btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
-.btn-warning {
-    background: linear-gradient(45deg, #f39c12, #e67e22);
-    border: none;
-    color: white;
+.btn:active {
+  transform: translateY(-1px);
 }
 
-.btn-warning:hover {
-    background: linear-gradient(45deg, #e67e22, #d35400);
-    color: white;
+.btn-primary {
+  background: linear-gradient(135deg, #f39c12, #e67e22);
+  color: white;
 }
 
-.card {
-    border-radius: 15px;
-    backdrop-filter: blur(15px);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+.btn-secondary {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white;
 }
 
-.progress {
-    background-color: rgba(255,255,255,0.1);
-    border-radius: 10px;
-    overflow: hidden;
+.btn-icon {
+  font-size: 1.3rem;
 }
 
-.accordion-button {
-    font-weight: bold;
+.btn-text {
+  font-size: 1rem;
 }
 
-.accordion-button:not(.collapsed) {
-    background-color: rgba(243, 156, 18, 0.2) !important;
-    color: #f39c12 !important;
-}
-
-.hero-content {
-    animation: fadeInUp 1s ease-out;
-}
-
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
+/* Mobile styles */
 @media (max-width: 768px) {
-    .character-portrait {
-        width: 150px;
-        height: 150px;
-    }
-    
-    .display-2 {
-        font-size: 2.5rem;
-    }
+  .home-container {
+    padding: 15px;
+    min-height: calc(100vh - 65px);
+  }
+  
+  .welcome-card {
+    padding: 25px 20px;
+    margin: 10px;
+    border-radius: 15px;
+  }
+  
+  .welcome-title {
+    font-size: 2.2rem;
+    margin-bottom: 12px;
+  }
+  
+  .welcome-subtitle {
+    font-size: 1.1rem;
+    margin-bottom: 25px;
+  }
+  
+  .feature-list {
+    grid-template-columns: 1fr;
+    gap: 15px;
+    margin-bottom: 30px;
+  }
+  
+  .feature-item {
+    padding: 18px 15px;
+    gap: 12px;
+  }
+  
+  .feature-icon {
+    font-size: 1.3rem;
+    min-width: 24px;
+  }
+  
+  .feature-text {
+    font-size: 0.95rem;
+  }
+  
+  .action-buttons {
+    gap: 15px;
+  }
+  
+  .btn {
+    min-width: 100%;
+    padding: 18px 20px;
+    min-height: 60px;
+    font-size: 1.1rem;
+  }
+  
+  .btn-icon {
+    font-size: 1.4rem;
+  }
+  
+  .btn-text {
+    font-size: 1.05rem;
+  }
 }
-</style>
 
-<style scoped>
-/* Estilos específicos del componente */
+@media (max-width: 480px) {
+  .home-container {
+    padding: 10px;
+  }
+  
+  .welcome-card {
+    padding: 20px 15px;
+    margin: 5px;
+  }
+  
+  .welcome-title {
+    font-size: 1.9rem;
+  }
+  
+  .welcome-subtitle {
+    font-size: 1rem;
+  }
+  
+  .feature-item {
+    padding: 16px 12px;
+  }
+  
+  .btn {
+    padding: 20px 16px;
+    min-height: 65px;
+    font-size: 1.15rem;
+  }
+  
+  .btn-icon {
+    font-size: 1.5rem;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .btn:hover {
+    transform: none;
+  }
+  
+  .feature-item:hover {
+    transform: none;
+  }
+  
+  .btn:active {
+    transform: scale(0.98);
+  }
+  
+  .feature-item:active {
+    background: rgba(255, 255, 255, 0.15);
+  }
+}
 </style>
