@@ -8,11 +8,19 @@
       <div class="dm-controls">
         <div class="turn-controls">
           <span class="turn-label">Turno: {{ dmStore.currentTurn }}</span>
-          <button @click="dmStore.startTurn()" class="btn btn-success" :disabled="dmStore.isTurnActive">
+          <button
+            @click="dmStore.startTurn()"
+            class="btn btn-success"
+            :disabled="dmStore.isTurnActive"
+          >
             <i class="bi bi-play-fill"></i>
             Iniciar Turno
           </button>
-          <button @click="dmStore.endTurn()" class="btn btn-warning" :disabled="!dmStore.isTurnActive">
+          <button
+            @click="dmStore.endTurn()"
+            class="btn btn-warning"
+            :disabled="!dmStore.isTurnActive"
+          >
             <i class="bi bi-stop-fill"></i>
             Finalizar Turno
           </button>
@@ -106,17 +114,30 @@
       </div>
 
       <div v-else class="characters-grid">
-        <div v-for="character in sortedCharacters" :key="character.id" class="character-card" :class="{
-          'dead': character.currentHp <= 0,
-          'low-hp': character.currentHp > 0 && character.currentHp <= character.maxHp * 0.25
-        }">
+        <div
+          v-for="character in sortedCharacters"
+          :key="character.id"
+          class="character-card"
+          :class="{
+            dead: character.currentHp <= 0,
+            'low-hp':
+              character.currentHp > 0 &&
+              character.currentHp <= character.maxHp * 0.25
+          }"
+        >
           <div class="character-header">
             <h3 class="character-name">{{ character.name }}</h3>
             <div class="character-actions">
-              <button @click="editCharacter(character)" class="btn btn-sm btn-outline-primary">
+              <button
+                @click="editCharacter(character)"
+                class="btn btn-sm btn-outline-primary"
+              >
                 <i class="bi bi-pencil"></i>
               </button>
-              <button @click="deleteCharacter(character.id)" class="btn btn-sm btn-outline-danger">
+              <button
+                @click="deleteCharacter(character.id)"
+                class="btn btn-sm btn-outline-danger"
+              >
                 <i class="bi bi-trash"></i>
               </button>
             </div>
@@ -126,8 +147,17 @@
             <div class="hp-section">
               <div class="hp-bar-container">
                 <div class="hp-bar">
-                  <div class="hp-fill" :style="{ width: `${(character.currentHp / character.maxHp) * 100}%` }"
-                    :class="character.tempHp > 0 ? 'temp-hp' : getHpBarColor(character)"></div>
+                  <div
+                    class="hp-fill"
+                    :style="{
+                      width: `${(character.currentHp / character.maxHp) * 100}%`
+                    }"
+                    :class="
+                      character.tempHp > 0
+                        ? 'temp-hp'
+                        : getHpBarColor(character)
+                    "
+                  ></div>
                 </div>
                 <div class="hp-text">
                   {{ character.currentHp }} / {{ character.maxHp }} HP
@@ -138,7 +168,7 @@
                 <span class="temp-hp-label">Temporal:</span>
                 <span class="temp-hp-value">+{{ character.tempHp }}</span>
               </div>
-              
+
               <!-- Mostrar el héroe que derrotó al personaje -->
               <div v-if="character.defeatedBy" class="defeated-by">
                 <span class="defeated-by-label">Derrotado por:</span>
@@ -149,7 +179,9 @@
             <div class="character-details">
               <div class="detail-item">
                 <span class="detail-label">Regeneración:</span>
-                <span class="detail-value">{{ character.regeneration || 0 }} HP/turno</span>
+                <span class="detail-value"
+                  >{{ character.regeneration || 0 }} HP/turno</span
+                >
               </div>
               <div class="detail-item">
                 <span class="detail-label">Estado:</span>
@@ -164,221 +196,379 @@
             <div class="action-group">
               <label class="action-label">Daño:</label>
               <div class="action-inputs">
-                <input v-model="character.damageInput" type="number" class="form-control form-control-sm"
-                  placeholder="0" min="0" @keyup.enter="applyDamage(character)">
-                <button @click="applyDamage(character)" class="btn btn-sm btn-danger"
-                  :disabled="!character.damageInput || character.damageInput <= 0">
+                <input
+                  v-model="character.damageInput"
+                  type="number"
+                  class="form-control form-control-sm"
+                  placeholder="0"
+                  min="0"
+                  @keyup.enter="applyDamage(character)"
+                />
+                <button
+                  @click="applyDamage(character)"
+                  class="btn btn-sm btn-danger"
+                  :disabled="
+                    !character.damageInput || character.damageInput <= 0
+                  "
+                >
                   <i class="bi bi-lightning"></i>
                 </button>
               </div>
             </div>
 
             <div class="action-group">
-              <label class="action-label">Curación:</label>
+              <label class="action-label">Daño Resistente:</label>
               <div class="action-inputs">
-                <input v-model="character.healInput" type="number" class="form-control form-control-sm" placeholder="0"
-                  min="0" @keyup.enter="applyHeal(character)">
-                <button @click="applyHeal(character)" class="btn btn-sm btn-success"
-                  :disabled="!character.healInput || character.healInput <= 0">
-                  <i class="bi bi-heart"></i>
+                <input
+                  v-model="character.resistantDamageInput"
+                  type="number"
+                  class="form-control form-control-sm"
+                  placeholder="0"
+                  min="0"
+                  @keyup.enter="applyResistantDamage(character)"
+                />
+                <button
+                  @click="applyResistantDamage(character)"
+                  class="btn btn-sm btn-danger"
+                  :disabled="
+                    !character.resistantDamageInput ||
+                    character.resistantDamageInput <= 0
+                  "
+                >
+                  <i class="bi bi-shield-slash"></i>
                 </button>
+              </div>
+
+              <div class="action-group">
+                <label class="action-label">Curación:</label>
+                <div class="action-inputs">
+                  <input
+                    v-model="character.healInput"
+                    type="number"
+                    class="form-control form-control-sm"
+                    placeholder="0"
+                    min="0"
+                    @keyup.enter="applyHeal(character)"
+                  />
+                  <button
+                    @click="applyHeal(character)"
+                    class="btn btn-sm btn-success"
+                    :disabled="!character.healInput || character.healInput <= 0"
+                  >
+                    <i class="bi bi-heart"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="action-group">
+                <label class="action-label">Vida Temp:</label>
+                <div class="action-inputs">
+                  <input
+                    v-model="character.tempHpInput"
+                    type="number"
+                    class="form-control form-control-sm"
+                    placeholder="0"
+                    min="0"
+                    @keyup.enter="applyTempHp(character)"
+                  />
+                  <button
+                    @click="applyTempHp(character)"
+                    class="btn btn-sm btn-info"
+                    :disabled="
+                      !character.tempHpInput || character.tempHpInput <= 0
+                    "
+                  >
+                    <i class="bi bi-shield"></i>
+                  </button>
+                </div>
+              </div>
+
+              <button
+                @click="dmStore.resetCharacterToMaxHp(character.id)"
+                class="btn btn-sm btn-outline-warning w-100"
+              >
+                <i class="bi bi-arrow-clockwise"></i>
+                Reset HP
+              </button>
+
+              <button
+                v-if="character.currentHp <= 0"
+                @click="dmStore.reviveCharacter(character.id)"
+                class="btn btn-sm btn-success w-100"
+              >
+                <i class="bi bi-heart-pulse"></i>
+                Revivir
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal para crear personaje -->
+      <div
+        v-if="showCreateModal"
+        class="modal-overlay"
+        @click="showCreateModal = false"
+      >
+        <div class="modal-content" @click.stop>
+          <div class="modal-header">
+            <h3>Crear Nuevo Personaje</h3>
+            <button @click="showCreateModal = false" class="btn-close">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="createCharacter">
+              <div class="form-group">
+                <label for="characterName">Nombre del Personaje</label>
+                <input
+                  id="characterName"
+                  v-model="newCharacter.name"
+                  type="text"
+                  class="form-control"
+                  placeholder="Ej: Gandalf"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="characterMaxHp">HP Máximo</label>
+                <input
+                  id="characterMaxHp"
+                  v-model="newCharacter.maxHp"
+                  type="number"
+                  class="form-control"
+                  placeholder="100"
+                  min="1"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="characterRegeneration"
+                  >Regeneración por Turno (opcional)</label
+                >
+                <input
+                  id="characterRegeneration"
+                  v-model="newCharacter.regeneration"
+                  type="number"
+                  class="form-control"
+                  placeholder="0"
+                  min="0"
+                />
+              </div>
+              <div class="modal-actions">
+                <button
+                  type="button"
+                  @click="showCreateModal = false"
+                  class="btn btn-secondary"
+                >
+                  Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                  Crear Personaje
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal para editar personaje -->
+      <div
+        v-if="showEditModal && editingCharacter"
+        class="modal-overlay"
+        @click="showEditModal = false"
+      >
+        <div class="modal-content" @click.stop>
+          <div class="modal-header">
+            <h3>Editar Personaje</h3>
+            <button @click="showEditModal = false" class="btn-close">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="saveCharacterEdit">
+              <div class="form-group">
+                <label for="editCharacterName">Nombre del Personaje</label>
+                <input
+                  id="editCharacterName"
+                  v-model="editingCharacter.name"
+                  type="text"
+                  class="form-control"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="editCharacterMaxHp">HP Máximo</label>
+                <input
+                  id="editCharacterMaxHp"
+                  v-model="editingCharacter.maxHp"
+                  type="number"
+                  class="form-control"
+                  min="1"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="editCharacterCurrentHp">HP Actual</label>
+                <input
+                  id="editCharacterCurrentHp"
+                  v-model="editingCharacter.currentHp"
+                  type="number"
+                  class="form-control"
+                  min="0"
+                  :max="editingCharacter.maxHp"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="editCharacterRegeneration"
+                  >Regeneración por Turno</label
+                >
+                <input
+                  id="editCharacterRegeneration"
+                  v-model="editingCharacter.regeneration"
+                  type="number"
+                  class="form-control"
+                  min="0"
+                />
+              </div>
+              <div class="modal-actions">
+                <button
+                  type="button"
+                  @click="showEditModal = false"
+                  class="btn btn-secondary"
+                >
+                  Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                  Guardar Cambios
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input de archivo oculto para importación -->
+      <input
+        ref="fileInput"
+        type="file"
+        accept=".json"
+        @change="handleFileImport"
+        style="display: none"
+      />
+
+      <!-- Modal para importar -->
+      <div
+        v-if="showImportModal"
+        class="modal-overlay"
+        @click="showImportModal = false"
+      >
+        <div class="modal-content" @click.stop>
+          <div class="modal-header">
+            <h3>Importar Personajes</h3>
+            <button @click="showImportModal = false" class="btn-close">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="import-options">
+              <div class="import-option">
+                <h4>Opción 1: Seleccionar Archivo</h4>
+                <p>Selecciona un archivo JSON exportado previamente</p>
+                <button @click="triggerFileImport" class="btn btn-primary">
+                  <i class="bi bi-folder2-open"></i>
+                  Seleccionar Archivo
+                </button>
+              </div>
+
+              <div class="import-divider">
+                <span>o</span>
+              </div>
+
+              <div class="import-option">
+                <h4>Opción 2: Pegar JSON</h4>
+                <p>Pega aquí el contenido JSON exportado</p>
+                <textarea
+                  v-model="importData"
+                  class="form-control"
+                  rows="6"
+                  placeholder="Pega aquí el JSON exportado..."
+                ></textarea>
               </div>
             </div>
 
-            <div class="action-group">
-              <label class="action-label">Vida Temp:</label>
-              <div class="action-inputs">
-                <input v-model="character.tempHpInput" type="number" class="form-control form-control-sm"
-                  placeholder="0" min="0" @keyup.enter="applyTempHp(character)">
-                <button @click="applyTempHp(character)" class="btn btn-sm btn-info"
-                  :disabled="!character.tempHpInput || character.tempHpInput <= 0">
-                  <i class="bi bi-shield"></i>
-                </button>
-              </div>
-            </div>
-
-            <button @click="dmStore.resetCharacterToMaxHp(character.id)" class="btn btn-sm btn-outline-warning w-100">
-              <i class="bi bi-arrow-clockwise"></i>
-              Reset HP
-            </button>
-            
-            <button 
-              v-if="character.currentHp <= 0" 
-              @click="dmStore.reviveCharacter(character.id)" 
-              class="btn btn-sm btn-success w-100"
-            >
-              <i class="bi bi-heart-pulse"></i>
-              Revivir
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal para crear personaje -->
-    <div v-if="showCreateModal" class="modal-overlay" @click="showCreateModal = false">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>Crear Nuevo Personaje</h3>
-          <button @click="showCreateModal = false" class="btn-close">
-            <i class="bi bi-x-lg"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <form @submit.prevent="createCharacter">
-            <div class="form-group">
-              <label for="characterName">Nombre del Personaje</label>
-              <input id="characterName" v-model="newCharacter.name" type="text" class="form-control"
-                placeholder="Ej: Gandalf" required>
-            </div>
-            <div class="form-group">
-              <label for="characterMaxHp">HP Máximo</label>
-              <input id="characterMaxHp" v-model="newCharacter.maxHp" type="number" class="form-control"
-                placeholder="100" min="1" required>
-            </div>
-            <div class="form-group">
-              <label for="characterRegeneration">Regeneración por Turno (opcional)</label>
-              <input id="characterRegeneration" v-model="newCharacter.regeneration" type="number" class="form-control"
-                placeholder="0" min="0">
-            </div>
             <div class="modal-actions">
-              <button type="button" @click="showCreateModal = false" class="btn btn-secondary">
+              <button
+                type="button"
+                @click="showImportModal = false"
+                class="btn btn-secondary"
+              >
                 Cancelar
               </button>
-              <button type="submit" class="btn btn-primary">
-                Crear Personaje
+              <button
+                @click="importCharacters"
+                class="btn btn-primary"
+                :disabled="!importData.trim()"
+              >
+                Importar desde Texto
               </button>
             </div>
-          </form>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Modal para editar personaje -->
-    <div v-if="showEditModal && editingCharacter" class="modal-overlay" @click="showEditModal = false">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>Editar Personaje</h3>
-          <button @click="showEditModal = false" class="btn-close">
-            <i class="bi bi-x-lg"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <form @submit.prevent="saveCharacterEdit">
-            <div class="form-group">
-              <label for="editCharacterName">Nombre del Personaje</label>
-              <input id="editCharacterName" v-model="editingCharacter.name" type="text" class="form-control" required>
+      <!-- Modal de muerte -->
+      <div
+        v-if="showDeathModal"
+        class="modal-overlay"
+        @click="closeDeathModalIfEmpty"
+      >
+        <div class="modal-content death-modal" @click.stop>
+          <div class="modal-header">
+            <h3>¡Personaje Derrotado!</h3>
+            <button @click="showDeathModal = false" class="btn-close">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="death-notification">
+              <div class="death-icon">💀</div>
+              <p>
+                ¡El personaje <strong>{{ defeatedCharacter.name }}</strong> ha
+                sido derrotado!
+              </p>
+              <p class="hp-status">
+                HP:
+                <span class="hp-dead">{{ defeatedCharacter.currentHp }}</span> /
+                {{ defeatedCharacter.maxHp }}
+              </p>
+              <p>¿Quién fue el héroe que lo derrotó?</p>
             </div>
             <div class="form-group">
-              <label for="editCharacterMaxHp">HP Máximo</label>
-              <input id="editCharacterMaxHp" v-model="editingCharacter.maxHp" type="number" class="form-control" min="1"
-                required>
-            </div>
-            <div class="form-group">
-              <label for="editCharacterCurrentHp">HP Actual</label>
-              <input id="editCharacterCurrentHp" v-model="editingCharacter.currentHp" type="number" class="form-control"
-                min="0" :max="editingCharacter.maxHp" required>
-            </div>
-            <div class="form-group">
-              <label for="editCharacterRegeneration">Regeneración por Turno</label>
-              <input id="editCharacterRegeneration" v-model="editingCharacter.regeneration" type="number"
-                class="form-control" min="0">
+              <label for="heroName">Nombre del Héroe:</label>
+              <input
+                id="heroName"
+                v-model="heroName"
+                type="text"
+                class="form-control"
+                placeholder="Escribe el nombre del héroe..."
+                @keyup.enter="saveHeroName"
+              />
             </div>
             <div class="modal-actions">
-              <button type="button" @click="showEditModal = false" class="btn btn-secondary">
+              <button
+                @click="saveHeroName"
+                class="btn btn-primary"
+                :disabled="!heroName.trim()"
+              >
+                <i class="bi bi-save"></i>
+                Guardar
+              </button>
+              <button @click="closeDeathModal" class="btn btn-secondary">
                 Cancelar
               </button>
-              <button type="submit" class="btn btn-primary">
-                Guardar Cambios
-              </button>
             </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Input de archivo oculto para importación -->
-    <input ref="fileInput" type="file" accept=".json" @change="handleFileImport" style="display: none">
-
-    <!-- Modal para importar -->
-    <div v-if="showImportModal" class="modal-overlay" @click="showImportModal = false">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>Importar Personajes</h3>
-          <button @click="showImportModal = false" class="btn-close">
-            <i class="bi bi-x-lg"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="import-options">
-            <div class="import-option">
-              <h4>Opción 1: Seleccionar Archivo</h4>
-              <p>Selecciona un archivo JSON exportado previamente</p>
-              <button @click="triggerFileImport" class="btn btn-primary">
-                <i class="bi bi-folder2-open"></i>
-                Seleccionar Archivo
-              </button>
-            </div>
-
-            <div class="import-divider">
-              <span>o</span>
-            </div>
-
-            <div class="import-option">
-              <h4>Opción 2: Pegar JSON</h4>
-              <p>Pega aquí el contenido JSON exportado</p>
-              <textarea v-model="importData" class="form-control" rows="6"
-                placeholder="Pega aquí el JSON exportado..."></textarea>
-            </div>
-          </div>
-
-          <div class="modal-actions">
-            <button type="button" @click="showImportModal = false" class="btn btn-secondary">
-              Cancelar
-            </button>
-            <button @click="importCharacters" class="btn btn-primary" :disabled="!importData.trim()">
-              Importar desde Texto
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal de muerte -->
-    <div v-if="showDeathModal" class="modal-overlay" @click="closeDeathModalIfEmpty">
-      <div class="modal-content death-modal" @click.stop>
-        <div class="modal-header">
-          <h3>¡Personaje Derrotado!</h3>
-          <button @click="showDeathModal = false" class="btn-close">
-            <i class="bi bi-x-lg"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="death-notification">
-            <div class="death-icon">💀</div>
-            <p>¡El personaje <strong>{{ defeatedCharacter.name }}</strong> ha sido derrotado!</p>
-            <p class="hp-status">HP: <span class="hp-dead">{{ defeatedCharacter.currentHp }}</span> / {{ defeatedCharacter.maxHp }}</p>
-            <p>¿Quién fue el héroe que lo derrotó?</p>
-          </div>
-          <div class="form-group">
-            <label for="heroName">Nombre del Héroe:</label>
-            <input 
-              id="heroName"
-              v-model="heroName" 
-              type="text" 
-              class="form-control" 
-              placeholder="Escribe el nombre del héroe..."
-              @keyup.enter="saveHeroName"
-            />
-          </div>
-          <div class="modal-actions">
-            <button @click="saveHeroName" class="btn btn-primary" :disabled="!heroName.trim()">
-              <i class="bi bi-save"></i>
-              Guardar
-            </button>
-            <button @click="closeDeathModal" class="btn btn-secondary">
-              Cancelar
-            </button>
           </div>
         </div>
       </div>
@@ -387,44 +577,46 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import { useDMStore } from '../stores/useDMStore'
-import Swal from 'sweetalert2'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
+import { useDMStore } from "../stores/useDMStore";
+import Swal from "sweetalert2";
 
-const dmStore = useDMStore()
+const dmStore = useDMStore();
 
 // Estado local
-const showCreateModal = ref(false)
-const showEditModal = ref(false)
-const showImportModal = ref(false)
-const showDeathModal = ref(false)
-const editingCharacter = ref(null)
-const sortBy = ref('name')
-const importData = ref('')
-const defeatedCharacter = ref(null)
-const heroName = ref('')
+const showCreateModal = ref(false);
+const showEditModal = ref(false);
+const showImportModal = ref(false);
+const showDeathModal = ref(false);
+const editingCharacter = ref(null);
+const sortBy = ref("name");
+const importData = ref("");
+const defeatedCharacter = ref(null);
+const heroName = ref("");
 
 // Referencias
-const fileInput = ref(null)
+const fileInput = ref(null);
 
 // Nuevo personaje
 const newCharacter = ref({
-  name: '',
-  maxHp: '',
-  regeneration: ''
-})
+  name: "",
+  maxHp: "",
+  regeneration: ""
+});
 
 // Computed
 const sortedCharacters = computed(() => {
   switch (sortBy.value) {
-    case 'hp':
-      return dmStore.charactersByHp
-    case 'created':
-      return [...dmStore.characters].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    case "hp":
+      return dmStore.charactersByHp;
+    case "created":
+      return [...dmStore.characters].sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
     default:
-      return dmStore.charactersByName
+      return dmStore.charactersByName;
   }
-})
+});
 
 // Métodos
 const createCharacter = () => {
@@ -433,18 +625,18 @@ const createCharacter = () => {
       newCharacter.value.name,
       newCharacter.value.maxHp,
       newCharacter.value.regeneration
-    )
+    );
 
     // Reset form
-    newCharacter.value = { name: '', maxHp: '', regeneration: '' }
-    showCreateModal.value = false
+    newCharacter.value = { name: "", maxHp: "", regeneration: "" };
+    showCreateModal.value = false;
   }
-}
+};
 
 const editCharacter = (character) => {
-  editingCharacter.value = { ...character }
-  showEditModal.value = true
-}
+  editingCharacter.value = { ...character };
+  showEditModal.value = true;
+};
 
 const saveCharacterEdit = () => {
   if (editingCharacter.value) {
@@ -453,279 +645,309 @@ const saveCharacterEdit = () => {
       maxHp: editingCharacter.value.maxHp,
       currentHp: editingCharacter.value.currentHp,
       regeneration: editingCharacter.value.regeneration
-    })
-    showEditModal.value = false
-    editingCharacter.value = null
+    });
+    showEditModal.value = false;
+    editingCharacter.value = null;
   }
-}
+};
 
 const deleteCharacter = (id) => {
-  if (confirm('¿Estás seguro de que quieres eliminar este personaje?')) {
-    dmStore.deleteCharacter(id)
+  if (confirm("¿Estás seguro de que quieres eliminar este personaje?")) {
+    dmStore.deleteCharacter(id);
   }
-}
+};
 
 const applyDamage = (character) => {
   if (character.damageInput && character.damageInput > 0) {
-    const oldHp = character.currentHp
-    const result = dmStore.damageCharacter(character.id, character.damageInput)
-    character.damageInput = ''
-    
+    const oldHp = character.currentHp;
+    const result = dmStore.damageCharacter(character.id, character.damageInput);
+    character.damageInput = "";
+
     // Check if character died from this damage
     if (oldHp > 0 && result && result.remainingHp <= 0) {
-      defeatedCharacter.value = character
-      showDeathModal.value = true
+      defeatedCharacter.value = character;
+      showDeathModal.value = true;
     }
   }
-}
+};
+
+const applyResistantDamage = (character) => {
+  if (character.resistantDamageInput && character.resistantDamageInput > 0) {
+    const damage = Math.floor(character.resistantDamageInput / 2);
+    const oldHp = character.currentHp;
+    const result = dmStore.damageCharacter(character.id, damage);
+    character.resistantDamageInput = "";
+
+    // Check if character died from this damage
+    if (oldHp > 0 && result && result.remainingHp <= 0) {
+      defeatedCharacter.value = character;
+      showDeathModal.value = true;
+    }
+  }
+};
 
 const saveHeroName = () => {
   if (heroName.value.trim() && defeatedCharacter.value) {
-    const heroNameTrimmed = heroName.value.trim()
-    
+    const heroNameTrimmed = heroName.value.trim();
+
     // Check if hero name is the same as defeated character
-    if (heroNameTrimmed.toLowerCase() === defeatedCharacter.value.name.toLowerCase()) {
-      alert('El nombre del héroe no puede ser el mismo que el personaje derrotado.')
-      return
+    if (
+      heroNameTrimmed.toLowerCase() ===
+      defeatedCharacter.value.name.toLowerCase()
+    ) {
+      alert(
+        "El nombre del héroe no puede ser el mismo que el personaje derrotado."
+      );
+      return;
     }
-    
+
     // Registrar el héroe que derrotó al personaje
-    dmStore.setDefeatedBy(defeatedCharacter.value.id, heroNameTrimmed)
-    
+    dmStore.setDefeatedBy(defeatedCharacter.value.id, heroNameTrimmed);
+
     // Add log entry about who defeated the character
     dmStore.addLogToCharacter(
-      defeatedCharacter.value.id, 
-      'Derrotado por', 
+      defeatedCharacter.value.id,
+      "Derrotado por",
       `Derrotado por ${heroNameTrimmed}`
-    )
-    
+    );
+
     // Close modal and reset
-    closeDeathModal()
+    closeDeathModal();
   } else {
-    alert('Por favor, escribe el nombre del héroe que derrotó al personaje.')
+    alert("Por favor, escribe el nombre del héroe que derrotó al personaje.");
   }
-}
+};
 
 const closeDeathModal = () => {
-  showDeathModal.value = false
-  defeatedCharacter.value = null
-  heroName.value = ''
-}
+  showDeathModal.value = false;
+  defeatedCharacter.value = null;
+  heroName.value = "";
+};
 
 const closeDeathModalIfEmpty = () => {
   if (heroName.value.trim()) {
     // If there's text in the input, ask for confirmation
-    if (confirm('¿Estás seguro de que quieres cerrar? Se perderá el nombre del héroe ingresado.')) {
-      closeDeathModal()
+    if (
+      confirm(
+        "¿Estás seguro de que quieres cerrar? Se perderá el nombre del héroe ingresado."
+      )
+    ) {
+      closeDeathModal();
     }
   } else {
     // If input is empty, close directly
-    closeDeathModal()
+    closeDeathModal();
   }
-}
+};
 
 // Watch for death modal to open and focus the input
 watch(showDeathModal, (newValue) => {
   if (newValue) {
     // Focus the hero name input after the modal is rendered
     nextTick(() => {
-      const heroNameInput = document.getElementById('heroName')
+      const heroNameInput = document.getElementById("heroName");
       if (heroNameInput) {
-        heroNameInput.focus()
+        heroNameInput.focus();
       }
-    })
+    });
   }
-})
+});
 
 // Add escape key listener for death modal
 onMounted(() => {
   const handleEscape = (event) => {
-    if (event.key === 'Escape' && showDeathModal.value) {
-      closeDeathModalIfEmpty()
+    if (event.key === "Escape" && showDeathModal.value) {
+      closeDeathModalIfEmpty();
     }
-  }
-  document.addEventListener('keydown', handleEscape)
-  
+  };
+  document.addEventListener("keydown", handleEscape);
+
   // Clean up on unmount
   onUnmounted(() => {
-    document.removeEventListener('keydown', handleEscape)
-  })
-})
+    document.removeEventListener("keydown", handleEscape);
+  });
+});
 
 const applyHeal = (character) => {
   if (character.healInput && character.healInput > 0) {
-    dmStore.healCharacter(character.id, character.healInput)
-    character.healInput = ''
+    dmStore.healCharacter(character.id, character.healInput);
+    character.healInput = "";
   }
-}
+};
 
 const applyTempHp = (character) => {
   if (character.tempHpInput && character.tempHpInput > 0) {
-    dmStore.addTempHpToCharacter(character.id, character.tempHpInput)
-    character.tempHpInput = ''
+    dmStore.addTempHpToCharacter(character.id, character.tempHpInput);
+    character.tempHpInput = "";
   }
-}
+};
 
 const getHpBarColor = (character) => {
-  const percentage = (character.currentHp / character.maxHp) * 100
-  if (percentage > 75) return 'hp-high'
-  if (percentage > 50) return 'hp-medium'
-  if (percentage > 25) return 'hp-low'
-  return 'hp-critical'
-}
+  const percentage = (character.currentHp / character.maxHp) * 100;
+  if (percentage > 75) return "hp-high";
+  if (percentage > 50) return "hp-medium";
+  if (percentage > 25) return "hp-low";
+  return "hp-critical";
+};
 
 const getStatusClass = (character) => {
-  if (character.currentHp <= 0) return 'status-dead'
-  if (character.currentHp <= character.maxHp * 0.25) return 'status-critical'
-  if (character.currentHp <= character.maxHp * 0.5) return 'status-wounded'
-  return 'status-healthy'
-}
+  if (character.currentHp <= 0) return "status-dead";
+  if (character.currentHp <= character.maxHp * 0.25) return "status-critical";
+  if (character.currentHp <= character.maxHp * 0.5) return "status-wounded";
+  return "status-healthy";
+};
 
 const getStatusText = (character) => {
-  if (character.currentHp <= 0) return 'Muerto'
-  if (character.currentHp <= character.maxHp * 0.25) return 'Crítico'
-  if (character.currentHp <= character.maxHp * 0.5) return 'Herido'
-  return 'Saludable'
-}
+  if (character.currentHp <= 0) return "Muerto";
+  if (character.currentHp <= character.maxHp * 0.25) return "Crítico";
+  if (character.currentHp <= character.maxHp * 0.5) return "Herido";
+  return "Saludable";
+};
 
 const exportData = () => {
-  const data = dmStore.exportCharacters()
-  const blob = new Blob([data], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `dnd-characters-${new Date().toISOString().split('T')[0]}.json`
-  a.click()
-  URL.revokeObjectURL(url)
-}
+  const data = dmStore.exportCharacters();
+  const blob = new Blob([data], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `dnd-characters-${new Date().toISOString().split("T")[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
 
 const triggerFileImport = () => {
-  fileInput.value.click()
-}
+  fileInput.value.click();
+};
 
 const handleFileImport = (event) => {
-  const file = event.target.files[0]
+  const file = event.target.files[0];
   if (file) {
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const content = e.target.result
+        const content = e.target.result;
         if (dmStore.importCharacters(content)) {
-          alert('Personajes importados correctamente desde el archivo')
-          showImportModal.value = false
+          alert("Personajes importados correctamente desde el archivo");
+          showImportModal.value = false;
           // Limpiar el input de archivo
-          event.target.value = ''
+          event.target.value = "";
         } else {
-          alert('Error al importar los personajes. Verifica que el archivo contenga datos válidos.')
+          alert(
+            "Error al importar los personajes. Verifica que el archivo contenga datos válidos."
+          );
         }
       } catch (error) {
-        alert('Error al leer el archivo. Verifica que sea un archivo JSON válido.')
-        console.error('Error importing file:', error)
+        alert(
+          "Error al leer el archivo. Verifica que sea un archivo JSON válido."
+        );
+        console.error("Error importing file:", error);
       }
-    }
+    };
     reader.onerror = () => {
-      alert('Error al leer el archivo. Inténtalo de nuevo.')
-    }
-    reader.readAsText(file)
+      alert("Error al leer el archivo. Inténtalo de nuevo.");
+    };
+    reader.readAsText(file);
   }
-}
+};
 
 const importCharacters = () => {
   if (importData.value.trim()) {
     if (dmStore.importCharacters(importData.value)) {
-      alert('Personajes importados correctamente')
-      importData.value = ''
-      showImportModal.value = false
+      alert("Personajes importados correctamente");
+      importData.value = "";
+      showImportModal.value = false;
     } else {
-      alert('Error al importar los personajes. Verifica el formato JSON.')
+      alert("Error al importar los personajes. Verifica el formato JSON.");
     }
   }
-}
+};
 
 const clearAllLogs = () => {
   Swal.fire({
-    title: '¿Limpiar todos los logs?',
-    text: 'Esta acción eliminará todo el historial de logs de todos los personajes. Esta acción no se puede deshacer.',
-    icon: 'warning',
+    title: "¿Limpiar todos los logs?",
+    text: "Esta acción eliminará todo el historial de logs de todos los personajes. Esta acción no se puede deshacer.",
+    icon: "warning",
     showCancelButton: true,
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#3085d6',
-    confirmButtonText: 'Sí, limpiar logs',
-    cancelButtonText: 'Cancelar'
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    confirmButtonText: "Sí, limpiar logs",
+    cancelButtonText: "Cancelar"
   }).then((result) => {
     if (result.isConfirmed) {
-      dmStore.clearAllLogs()
-      
+      dmStore.clearAllLogs();
+
       Swal.fire({
-        icon: 'success',
-        title: 'Logs Limpiados',
-        text: 'Todos los logs han sido eliminados correctamente',
+        icon: "success",
+        title: "Logs Limpiados",
+        text: "Todos los logs han sido eliminados correctamente",
         timer: 2000,
         showConfirmButton: false
-      })
+      });
     }
-  })
-}
+  });
+};
 
 const viewAllLogs = () => {
   // Crear un modal para mostrar todos los logs de todos los personajes
-  const allLogs = []
-  
-  dmStore.characters.forEach(character => {
-    character.logs.forEach(log => {
+  const allLogs = [];
+
+  dmStore.characters.forEach((character) => {
+    character.logs.forEach((log) => {
       allLogs.push({
         ...log,
         characterName: character.name
-      })
-    })
-  })
-  
+      });
+    });
+  });
+
   // Ordenar logs por timestamp (más recientes primero)
-  allLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-  
+  allLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
   // Crear contenido HTML para el modal
-  let logsHTML = '<div style="max-height: 400px; overflow-y: auto;">'
-  
+  let logsHTML = '<div style="max-height: 400px; overflow-y: auto;">';
+
   if (allLogs.length === 0) {
-    logsHTML += '<p style="text-align: center; color: #666;">No hay logs para mostrar</p>'
+    logsHTML +=
+      '<p style="text-align: center; color: #666;">No hay logs para mostrar</p>';
   } else {
-    allLogs.forEach(log => {
+    allLogs.forEach((log) => {
       logsHTML += `
         <div style="border-bottom: 1px solid #eee; padding: 10px 0; margin-bottom: 10px;">
           <div style="font-weight: bold; color: #f39c12;">${log.characterName}</div>
           <div style="color: #333;">${log.action}: ${log.details}</div>
           <div style="font-size: 0.8em; color: #666;">Turno ${log.turn} - ${log.timestamp}</div>
         </div>
-      `
-    })
+      `;
+    });
   }
-  
-  logsHTML += '</div>'
-  
+
+  logsHTML += "</div>";
+
   // Mostrar modal con SweetAlert2
   Swal.fire({
-    title: 'Historial de Logs - Todos los Personajes',
+    title: "Historial de Logs - Todos los Personajes",
     html: logsHTML,
-    width: '800px',
-    confirmButtonText: 'Cerrar',
-    confirmButtonColor: '#3085d6'
-  })
-}
+    width: "800px",
+    confirmButtonText: "Cerrar",
+    confirmButtonColor: "#3085d6"
+  });
+};
 
 // Inicializar inputs para cada personaje
 const initializeCharacterInputs = () => {
-  dmStore.characters.forEach(character => {
-    character.damageInput = ''
-    character.healInput = ''
-    character.tempHpInput = ''
-  })
-}
+  dmStore.characters.forEach((character) => {
+    character.damageInput = "";
+    character.healInput = "";
+    character.tempHpInput = "";
+    character.resistantDamageInput = "";
+  });
+};
 
 // Lifecycle
 onMounted(() => {
-  dmStore.loadFromLocalStorage()
-  initializeCharacterInputs()
-})
+  dmStore.loadFromLocalStorage();
+  initializeCharacterInputs();
+});
 </script>
 
 <style scoped>
@@ -1201,7 +1423,7 @@ onMounted(() => {
 
 .import-divider::before,
 .import-divider::after {
-  content: '';
+  content: "";
   flex: 1;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
@@ -1264,9 +1486,15 @@ onMounted(() => {
 }
 
 @keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .hp-status {
