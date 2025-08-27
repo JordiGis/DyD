@@ -189,6 +189,57 @@
                   {{ getStatusText(character) }}
                 </span>
               </div>
+              <div v-if="character.xp" class="detail-item">
+                <span class="detail-label">XP:</span>
+                <span class="detail-value">{{ character.xp }}</span>
+              </div>
+              <div v-if="character.resistencias" class="detail-item">
+                <span class="detail-label">Resistencias:</span>
+                <span class="detail-value">{{ character.resistencias }}</span>
+              </div>
+              <div v-if="character.inmunidades" class="detail-item">
+                <span class="detail-label">Inmunidades:</span>
+                <span class="detail-value">{{ character.inmunidades }}</span>
+              </div>
+              <div v-if="character.bonoTiradasSalvacion" class="detail-item">
+                <span class="detail-label">Bono Tiradas de Salvacion:</span>
+                <span class="detail-value">{{ character.bonoTiradasSalvacion }}</span>
+              </div>
+              
+              <!-- Atributos con colores -->
+              <div v-if="hasAnyAttribute(character)" class="attributes-display">
+                <div class="attributes-header">Tiradas de Salvación</div>
+                <div class="attributes-list">
+                  <div v-if="character.fuerza" class="attribute-item fuerza">
+                    <span class="attribute-label">FUE:</span>
+                    <span class="attribute-value">{{ formatModifier(character.fuerza) }}</span>
+                  </div>
+                  <div v-if="character.inteligencia" class="attribute-item inteligencia">
+                    <span class="attribute-label">INT:</span>
+                    <span class="attribute-value">{{ formatModifier(character.inteligencia) }}</span>
+                  </div>
+                  <div v-if="character.destreza" class="attribute-item destreza">
+                    <span class="attribute-label">DES:</span>
+                    <span class="attribute-value">{{ formatModifier(character.destreza) }}</span>
+                  </div>
+                  <div v-if="character.sabiduria" class="attribute-item sabiduria">
+                    <span class="attribute-label">SAB:</span>
+                    <span class="attribute-value">{{ formatModifier(character.sabiduria) }}</span>
+                  </div>
+                  <div v-if="character.constitucion" class="attribute-item constitucion">
+                    <span class="attribute-label">CON:</span>
+                    <span class="attribute-value">{{ formatModifier(character.constitucion) }}</span>
+                  </div>
+                  <div v-if="character.carisma" class="attribute-item carisma">
+                    <span class="attribute-label">CAR:</span>
+                    <span class="attribute-value">{{ formatModifier(character.carisma) }}</span>
+                  </div>
+                </div>
+              </div>
+              <div v-if="character.notas" class="detail-item notas">
+                <span class="detail-label">Notas:</span>
+                <span class="detail-value">{{ character.notas }}</span>
+              </div>
             </div>
           </div>
 
@@ -355,6 +406,130 @@
                   min="0"
                 />
               </div>
+              <div class="form-group">
+                <label for="xp">XP:</label>
+                <input
+                  id="xp"
+                  v-model="newCharacter.xp"
+                  type="text"
+                  class="form-control"
+                  placeholder=""
+                />
+              </div>
+              <div class="form-group">
+                <label for="resistencias">Resistencias:</label>
+                <input
+                  id="resistencias"
+                  v-model="newCharacter.resistencias"
+                  type="text"
+                  class="form-control"
+                  placeholder=""
+                />
+              </div>
+              <div class="form-group">
+                <label for="inmunidades">Inmunidades:</label>
+                <input
+                  id="inmunidades"
+                  v-model="newCharacter.inmunidades"
+                  type="text"
+                  class="form-control"
+                  placeholder=""
+                />
+              </div>
+              
+              <!-- Atributos en dos columnas -->
+              <div class="attributes-section">
+                <h4 style="color: #ecf0f1; margin-bottom: 15px;">Tiradas de Salvación</h4>
+                <div class="attributes-grid" id="tiradas-salvacion">
+                  <div class="attribute-column">
+                    <div class="form-group attribute-input">
+                      <label for="fuerza">Fuerza:</label>
+                      <input
+                        id="fuerza"
+                        v-model="newCharacter.fuerza"
+                        type="number"
+                        class="form-control small-input"
+                        placeholder="+0"
+                        min="-10"
+                        max="10"
+                      />
+                    </div>
+                    <div class="form-group attribute-input">
+                      <label for="destreza">Destreza:</label>
+                      <input
+                        id="destreza"
+                        v-model="newCharacter.destreza"
+                        type="number"
+                        class="form-control small-input"
+                        placeholder="+0"
+                        min="-10"
+                        max="10"
+                      />
+                    </div>
+                    <div class="form-group attribute-input">
+                      <label for="constitucion">Constitución:</label>
+                      <input
+                        id="constitucion"
+                        v-model="newCharacter.constitucion"
+                        type="number"
+                        class="form-control small-input"
+                        placeholder="+0"
+                        min="-10"
+                        max="10"
+                      />
+                    </div>
+                  </div>
+                  <div class="attribute-column">
+                    <div class="form-group attribute-input">
+                      <label for="inteligencia">Inteligencia:</label>
+                      <input
+                        id="inteligencia"
+                        v-model="newCharacter.inteligencia"
+                        type="number"
+                        class="form-control small-input"
+                        placeholder="+0"
+                        min="-10"
+                        max="10"
+                      />
+                    </div>
+                    <div class="form-group attribute-input">
+                      <label for="sabiduria">Sabiduría:</label>
+                      <input
+                        id="sabiduria"
+                        v-model="newCharacter.sabiduria"
+                        type="number"
+                        class="form-control small-input"
+                        placeholder="+0"
+                        min="-10"
+                        max="10"
+                      />
+                    </div>
+                    <div class="form-group attribute-input">
+                      <label for="carisma">Carisma:</label>
+                      <input
+                        id="carisma"
+                        v-model="newCharacter.carisma"
+                        type="number"
+                        class="form-control small-input"
+                        placeholder="+0"
+                        min="-10"
+                        max="10"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="notas">Notas:</label>
+                <textarea
+                  id="notas"
+                  v-model="newCharacter.notas"
+                  class="form-control"
+                  rows="3"
+                  placeholder=""
+                ></textarea>
+              </div>
               <div class="modal-actions">
                 <button
                   type="button"
@@ -431,6 +606,126 @@
                   class="form-control"
                   min="0"
                 />
+              </div>
+              <div class="form-group">
+                <label for="editXp">XP:</label>
+                <input
+                  id="editXp"
+                  v-model="editingCharacter.xp"
+                  type="text"
+                  class="form-control"
+                />
+              </div>
+              <div class="form-group">
+                <label for="editResistencias">Resistencias:</label>
+                <input
+                  id="editResistencias"
+                  v-model="editingCharacter.resistencias"
+                  type="text"
+                  class="form-control"
+                />
+              </div>
+              <div class="form-group">
+                <label for="editInmunidades">Inmunidades:</label>
+                <input
+                  id="editInmunidades"
+                  v-model="editingCharacter.inmunidades"
+                  type="text"
+                  class="form-control"
+                />
+              </div>
+              
+              <!-- Atributos en dos columnas -->
+              <div class="attributes-section">
+                <h4 style="color: #ecf0f1; margin-bottom: 15px;">Tiradas de Salvación</h4>
+                <div class="attributes-grid">
+                  <div class="attribute-column">
+                    <div class="form-group attribute-input">
+                      <label for="editFuerza">Fuerza:</label>
+                      <input
+                        id="editFuerza"
+                        v-model="editingCharacter.fuerza"
+                        type="number"
+                        class="form-control small-input"
+                        placeholder="+0"
+                        min="-10"
+                        max="10"
+                      />
+                    </div>
+                    <div class="form-group attribute-input">
+                      <label for="editDestreza">Destreza:</label>
+                      <input
+                        id="editDestreza"
+                        v-model="editingCharacter.destreza"
+                        type="number"
+                        class="form-control small-input"
+                        placeholder="+0"
+                        min="-10"
+                        max="10"
+                      />
+                    </div>
+                    <div class="form-group attribute-input">
+                      <label for="editConstitucion">Constitución:</label>
+                      <input
+                        id="editConstitucion"
+                        v-model="editingCharacter.constitucion"
+                        type="number"
+                        class="form-control small-input"
+                        placeholder="+0"
+                        min="-10"
+                        max="10"
+                      />
+                    </div>
+                  </div>
+                  <div class="attribute-column">
+                    <div class="form-group attribute-input">
+                      <label for="editInteligencia">Inteligencia:</label>
+                      <input
+                        id="editInteligencia"
+                        v-model="editingCharacter.inteligencia"
+                        type="number"
+                        class="form-control small-input"
+                        placeholder="+0"
+                        min="-10"
+                        max="10"
+                      />
+                    </div>
+                    <div class="form-group attribute-input">
+                      <label for="editSabiduria">Sabiduría:</label>
+                      <input
+                        id="editSabiduria"
+                        v-model="editingCharacter.sabiduria"
+                        type="number"
+                        class="form-control small-input"
+                        placeholder="+0"
+                        min="-10"
+                        max="10"
+                      />
+                    </div>
+                    <div class="form-group attribute-input">
+                      <label for="editCarisma">Carisma:</label>
+                      <input
+                        id="editCarisma"
+                        v-model="editingCharacter.carisma"
+                        type="number"
+                        class="form-control small-input"
+                        placeholder="+0"
+                        min="-10"
+                        max="10"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="editNotas">Notas:</label>
+                <textarea
+                  id="editNotas"
+                  v-model="editingCharacter.notas"
+                  class="form-control"
+                  rows="3"
+                ></textarea>
               </div>
               <div class="modal-actions">
                 <button
@@ -601,7 +896,17 @@ const fileInput = ref(null);
 const newCharacter = ref({
   name: "",
   maxHp: "",
-  regeneration: ""
+  regeneration: "",
+  xp: "",
+  resistencias: "",
+  inmunidades: "",
+  fuerza: "",
+  destreza: "",
+  constitucion: "",
+  inteligencia: "",
+  sabiduria: "",
+  carisma: "",
+  notas: ""
 });
 
 // Computed
@@ -624,11 +929,21 @@ const createCharacter = () => {
     dmStore.createCharacter(
       newCharacter.value.name,
       newCharacter.value.maxHp,
-      newCharacter.value.regeneration
+      newCharacter.value.regeneration,
+      newCharacter.value.xp,
+      newCharacter.value.resistencias,
+      newCharacter.value.inmunidades,
+      newCharacter.value.fuerza,
+      newCharacter.value.destreza,
+      newCharacter.value.constitucion,
+      newCharacter.value.inteligencia,
+      newCharacter.value.sabiduria,
+      newCharacter.value.carisma,
+      newCharacter.value.notas
     );
 
     // Reset form
-    newCharacter.value = { name: "", maxHp: "", regeneration: "" };
+    newCharacter.value = { name: "", maxHp: "", regeneration: "", xp: "", resistencias: "", inmunidades: "", fuerza: "", destreza: "", constitucion: "", inteligencia: "", sabiduria: "", carisma: "", notas: "" };
     showCreateModal.value = false;
   }
 };
@@ -644,7 +959,17 @@ const saveCharacterEdit = () => {
       name: editingCharacter.value.name,
       maxHp: editingCharacter.value.maxHp,
       currentHp: editingCharacter.value.currentHp,
-      regeneration: editingCharacter.value.regeneration
+      regeneration: editingCharacter.value.regeneration,
+      xp: editingCharacter.value.xp,
+      resistencias: editingCharacter.value.resistencias,
+      inmunidades: editingCharacter.value.inmunidades,
+      fuerza: editingCharacter.value.fuerza,
+      destreza: editingCharacter.value.destreza,
+      constitucion: editingCharacter.value.constitucion,
+      inteligencia: editingCharacter.value.inteligencia,
+      sabiduria: editingCharacter.value.sabiduria,
+      carisma: editingCharacter.value.carisma,
+      notas: editingCharacter.value.notas
     });
     showEditModal.value = false;
     editingCharacter.value = null;
@@ -802,6 +1127,17 @@ const getStatusText = (character) => {
   if (character.currentHp <= character.maxHp * 0.25) return "Crítico";
   if (character.currentHp <= character.maxHp * 0.5) return "Herido";
   return "Saludable";
+};
+
+const formatModifier = (value) => {
+  const num = parseInt(value);
+  if (isNaN(num)) return value;
+  return num >= 0 ? `+${num}` : `${num}`;
+};
+
+const hasAnyAttribute = (character) => {
+  return character.fuerza || character.destreza || character.constitucion || 
+         character.inteligencia || character.sabiduria || character.carisma;
 };
 
 const exportData = () => {
@@ -1120,6 +1456,105 @@ onMounted(() => {
 
 .character-card.low-hp {
   border-color: rgba(230, 126, 34, 0.5);
+}
+
+
+.attributes-display{
+  color: #bdc3c7;
+}
+
+.attributes-list{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  justify-items: center;
+}
+
+.fuerza{
+  color: red
+}
+
+.destreza{
+  color: #3498db;
+}
+
+.constitucion{
+  color: #27ae60;
+}
+
+.inteligencia{
+  color: #9b59b6;
+}
+
+.sabiduria{
+  color: #f39c12;
+}
+
+.carisma{
+  color: palevioletred;
+}
+
+.detail-item.notas {
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  border: 1px solid black;
+  margin-top: 10px;
+}
+
+.detail-label {
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.notas .detail-value {
+  /* color: #555; */
+  font-weight: normal;
+}
+
+.detail-item.notas .detail-value {
+  white-space: pre-wrap; /* Preserva saltos de línea y espacios */
+  word-wrap: break-word; /* Rompe palabras largas si es necesario */
+  font-family: inherit; /* Mantiene la fuente del resto del componente */
+  font-weight: normal;
+  line-height: 1.4; /* Mejora la legibilidad */
+  margin-top: 5px; /* Pequeño espacio entre label y contenido */
+}
+
+/* Opcional: Si quieres que las notas tengan un fondo diferente para distinguirlas mejor */
+.detail-item.notas {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  margin-top: 10px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.detail-item.notas .detail-label {
+  font-weight: 600;
+  margin-bottom: 5px;
+  color: #f39c12;
+}
+
+/* Estilo para el textarea en los modales */
+.form-control[rows] {
+  resize: vertical; /* Permite redimensionar verticalmente */
+  min-height: 80px; /* Altura mínima */
+}
+
+/* Asegurar que el textarea preserve los saltos de línea durante la edición */
+textarea.form-control {
+  white-space: pre-wrap;
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+
+#tiradas-salvacion{
+  display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px
 }
 
 .character-header {
@@ -1508,10 +1943,8 @@ onMounted(() => {
   font-weight: bold;
   text-decoration: line-through;
 }
-
 /* Responsive */
-@media (max-width: 768px) {
-  .dm-view {
+@media (max-width: 768px) {  .dm-view {
     padding: 15px;
   }
 

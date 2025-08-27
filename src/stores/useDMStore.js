@@ -40,7 +40,7 @@ export const useDMStore = defineStore('dm', {
     
     actions: {
         // Crear un nuevo personaje
-        createCharacter(name, maxHp, regeneration = 0) {
+        createCharacter(name, maxHp, regeneration = 0, xp = '', resistencias = '', inmunidades = '', fuerza = '', destreza = '', constitucion = '', inteligencia = '', sabiduria = '', carisma = '', notas = '') {
             const character = {
                 id: Date.now() + Math.random(),
                 name: name.trim(),
@@ -48,6 +48,16 @@ export const useDMStore = defineStore('dm', {
                 currentHp: parseInt(maxHp),
                 tempHp: 0,
                 regeneration: parseInt(regeneration) || 0,
+                xp: xp,
+                resistencias: resistencias,
+                inmunidades: inmunidades,
+                fuerza: fuerza,
+                destreza: destreza,
+                constitucion: constitucion,
+                inteligencia: inteligencia,
+                sabiduria: sabiduria,
+                carisma: carisma,
+                notas: notas,
                 isConfigured: true,
                 createdAt: new Date().toISOString(),
                 logs: [],
@@ -93,6 +103,39 @@ export const useDMStore = defineStore('dm', {
                 }
                 if (updates.regeneration !== undefined) {
                     character.regeneration = parseInt(updates.regeneration) || 0
+                }
+                if (updates.xp !== undefined) {
+                    character.xp = updates.xp
+                }
+                if (updates.resistencias !== undefined) {
+                    character.resistencias = updates.resistencias
+                }
+                if (updates.inmunidades !== undefined) {
+                    character.inmunidades = updates.inmunidades
+                }
+                if (updates.bonoTiradasSalvacion !== undefined) {
+                    character.bonoTiradasSalvacion = updates.bonoTiradasSalvacion
+                }
+                if (updates.notas !== undefined) {
+                    character.notas = updates.notas
+                }
+                if (updates.fuerza !== undefined) {
+                    character.fuerza = updates.fuerza
+                }
+                if (updates.destreza !== undefined) {
+                    character.destreza = updates.destreza
+                }
+                if (updates.constitucion !== undefined) {
+                    character.constitucion = updates.constitucion
+                }
+                if (updates.inteligencia !== undefined) {
+                    character.inteligencia = updates.inteligencia
+                }
+                if (updates.sabiduria !== undefined) {
+                    character.sabiduria = updates.sabiduria
+                }
+                if (updates.carisma !== undefined) {
+                    character.carisma = updates.carisma
                 }
                 
                 this.saveToLocalStorage()
