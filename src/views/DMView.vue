@@ -50,6 +50,10 @@
             <i class="bi bi-download"></i>
             Exportar
           </button>
+          <button @click="toggleDraggableList" class="btn btn-outline-secondary">
+            <i class="bi bi-list"></i>
+            Lista Flotante
+          </button>
         </div>
       </div>
     </div>
@@ -890,6 +894,13 @@
         </div>
       </div>
     </div>
+
+    <!-- Lista flotante draggable -->
+    <DraggableList 
+      v-if="showDraggableList"
+      :characters="dmStore.characters"
+      @close="showDraggableList = false"
+    />
   </div>
 </template>
 
@@ -897,8 +908,11 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
 import { useDMStore } from "../stores/useDMStore";
 import Swal from "sweetalert2";
+import DraggableList from "../components/DraggableList.vue";
 
 const dmStore = useDMStore();
+
+const showDraggableList = ref(false); // Declare the showDraggableList state
 
 // Estado local
 const showCreateModal = ref(false);
@@ -1342,6 +1356,11 @@ const toggleCharacterActions = (characterId) => {
     newCollapsed.add(characterId);
   }
   collapsedCharacters.value = newCollapsed;
+};
+
+// Función para alternar la visibilidad de la lista flotante
+const toggleDraggableList = () => {
+  showDraggableList.value = !showDraggableList.value;
 };
 
 // Función para verificar si las acciones de un personaje están plegadas
