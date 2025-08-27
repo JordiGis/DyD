@@ -135,6 +135,13 @@
                 <i class="bi bi-pencil"></i>
               </button>
               <button
+                @click="duplicateCharacter(character)"
+                class="btn btn-sm btn-outline-info"
+                title="Duplicar personaje"
+              >
+                <i class="bi bi-copy"></i>
+              </button>
+              <button
                 @click="deleteCharacter(character.id)"
                 class="btn btn-sm btn-outline-danger"
               >
@@ -995,6 +1002,35 @@ const deleteCharacter = (id) => {
   if (confirm("¿Estás seguro de que quieres eliminar este personaje?")) {
     dmStore.deleteCharacter(id);
   }
+};
+
+const duplicateCharacter = (character) => {
+  // Crear una copia del personaje con un nuevo nombre y ID
+  const duplicatedName = `${character.name} (Copia)`;
+  
+  // Verificar si ya existe un personaje con ese nombre y agregar número si es necesario
+  let finalName = duplicatedName;
+  let counter = 1;
+  while (dmStore.getCharacterByName(finalName)) {
+    finalName = `${character.name} (Copia ${counter})`;
+    counter++;
+  }
+  
+  dmStore.createCharacter(
+    finalName,
+    character.maxHp,
+    character.regeneration,
+    character.xp,
+    character.resistencias,
+    character.inmunidades,
+    character.fuerza,
+    character.destreza,
+    character.constitucion,
+    character.inteligencia,
+    character.sabiduria,
+    character.carisma,
+    character.notas
+  );
 };
 
 const applyDamage = (character) => {
