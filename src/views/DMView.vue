@@ -1349,8 +1349,27 @@ const isCharacterCollapsed = (characterId) => {
   return collapsedCharacters.value.has(characterId);
 };
 
+// Guardar el estado de los personajes plegados en localStorage
+watch(collapsedCharacters, (newCollapsed) => {
+  const collapsedArray = Array.from(newCollapsed);
+  localStorage.setItem('collapsedCharacters', JSON.stringify(collapsedArray));
+}, { deep: true });
+
 // Lifecycle
 onMounted(() => {
+  // Cargar el estado de los personajes plegados desde localStorage
+  const savedCollapsed = localStorage.getItem('collapsedCharacters');
+  if (savedCollapsed) {
+    try {
+      const collapsedArray = JSON.parse(savedCollapsed);
+      collapsedCharacters.value = new Set(collapsedArray);
+    } catch (e) {
+      console.error("Error loading collapsed characters state:", e);
+      // Si hay un error, empezar con un set vacío
+      collapsedCharacters.value = new Set();
+    }
+  }
+
   dmStore.loadFromLocalStorage();
   initializeCharacterInputs();
 });
