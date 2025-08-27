@@ -99,7 +99,16 @@
         <span class="btn-icon">⚔️</span>
         <span class="btn-text">Recibir Daño</span>
       </button>
-    </div>
+      <button 
+        @click="showResistantDamageDialog" 
+        class="action-btn btn-resistant-damage"
+        :disabled="!characterStore.isAlive"
+      >
+        <span class="btn-icon"><i data-v-6dd7d5c6="" class="bi bi-shield-slash"></i></span>
+        <span class="btn-text">Daño Resistente</span>
+      </button>
+      </div>
+
 
     <!-- Botones adicionales -->
     <div class="secondary-actions">
@@ -251,6 +260,34 @@ const showDamageDialog = () => {
   })
 }
 
+const showResistantDamageDialog = () => {
+  Swal.fire({
+    title: 'Daño Resistente',
+    input: 'number',
+    inputLabel: 'Cantidad de daño resistente',
+    inputPlaceholder: 'Ej: 20',
+    inputAttributes: {
+      min: '1',
+      max: '999'
+    },
+    showCancelButton: true,
+    confirmButtonText: 'Aplicar Daño',
+    cancelButtonText: 'Cancelar',
+    inputValidator: (value) => {
+      if (!value || value <= 0) {
+        return 'Debes ingresar un número válido'
+      }
+    }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const amount = parseInt(result.value)
+      const resistantDamage = Math.floor(amount / 2)
+      characterStore.takeDamage(resistantDamage)
+      
+
+    }
+  })
+}
 const resetToMaxHp = () => {
   Swal.fire({
     title: '¿Resetear HP?',
@@ -550,6 +587,11 @@ const goToLogs = () => {
 
 .btn-damage {
   background: linear-gradient(135deg, #e74c3c, #c0392b);
+  color: white;
+}
+
+.btn-resistant-damage {
+  background: linear-gradient(135deg, #f39c12, #e67e22);
   color: white;
 }
 
