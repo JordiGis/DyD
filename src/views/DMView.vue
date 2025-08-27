@@ -243,115 +243,130 @@
             </div>
           </div>
 
-          <div class="character-actions-panel">
-            <div class="action-group">
-              <label class="action-label">Daño:</label>
-              <div class="action-inputs">
-                <input
-                  v-model="character.damageInput"
-                  type="number"
-                  class="form-control form-control-sm"
-                  placeholder="0"
-                  min="0"
-                  @keyup.enter="applyDamage(character)"
-                />
-                <button
-                  @click="applyDamage(character)"
-                  class="btn btn-sm btn-danger"
-                  :disabled="
-                    !character.damageInput || character.damageInput <= 0
-                  "
-                >
-                  <i class="bi bi-lightning"></i>
-                </button>
-              </div>
-            </div>
+          <div class="actions-toggle">
+  <button
+    @click="toggleCharacterActions(character.id)"
+    class="toggle-actions-btn"
+    :class="{ collapsed: isCharacterCollapsed(character.id) }"
+  >
+    <i class="bi bi-chevron-up"></i>
+    {{ isCharacterCollapsed(character.id) ? 'Mostrar Acciones' : 'Ocultar Acciones' }}
+  </button>
+</div>
 
-            <div class="action-group">
-              <label class="action-label">Daño Resistente:</label>
-              <div class="action-inputs">
-                <input
-                  v-model="character.resistantDamageInput"
-                  type="number"
-                  class="form-control form-control-sm"
-                  placeholder="0"
-                  min="0"
-                  @keyup.enter="applyResistantDamage(character)"
-                />
-                <button
-                  @click="applyResistantDamage(character)"
-                  class="btn btn-sm btn-danger"
-                  :disabled="
-                    !character.resistantDamageInput ||
-                    character.resistantDamageInput <= 0
-                  "
-                >
-                  <i class="bi bi-shield-slash"></i>
-                </button>
-              </div>
+<!-- Panel de acciones (ahora con capacidad de plegado) -->
+<div 
+  class="character-actions-panel"
+  :class="{ collapsed: isCharacterCollapsed(character.id) }"
+>
+  <div class="action-group">
+    <label class="action-label">Daño:</label>
+    <div class="action-inputs">
+      <input
+        v-model="character.damageInput"
+        type="number"
+        class="form-control form-control-sm"
+        placeholder="0"
+        min="0"
+        @keyup.enter="applyDamage(character)"
+      />
+      <button
+        @click="applyDamage(character)"
+        class="btn btn-sm btn-danger"
+        :disabled="
+          !character.damageInput || character.damageInput <= 0
+        "
+      >
+        <i class="bi bi-lightning"></i>
+      </button>
+    </div>
+  </div>
 
-              <div class="action-group">
-                <label class="action-label">Curación:</label>
-                <div class="action-inputs">
-                  <input
-                    v-model="character.healInput"
-                    type="number"
-                    class="form-control form-control-sm"
-                    placeholder="0"
-                    min="0"
-                    @keyup.enter="applyHeal(character)"
-                  />
-                  <button
-                    @click="applyHeal(character)"
-                    class="btn btn-sm btn-success"
-                    :disabled="!character.healInput || character.healInput <= 0"
-                  >
-                    <i class="bi bi-heart"></i>
-                  </button>
-                </div>
-              </div>
+  <div class="action-group">
+    <label class="action-label">Daño Resistente:</label>
+    <div class="action-inputs">
+      <input
+        v-model="character.resistantDamageInput"
+        type="number"
+        class="form-control form-control-sm"
+        placeholder="0"
+        min="0"
+        @keyup.enter="applyResistantDamage(character)"
+      />
+      <button
+        @click="applyResistantDamage(character)"
+        class="btn btn-sm btn-danger"
+        :disabled="
+          !character.resistantDamageInput ||
+          character.resistantDamageInput <= 0
+        "
+      >
+        <i class="bi bi-shield-slash"></i>
+      </button>
+    </div>
 
-              <div class="action-group">
-                <label class="action-label">Vida Temp:</label>
-                <div class="action-inputs">
-                  <input
-                    v-model="character.tempHpInput"
-                    type="number"
-                    class="form-control form-control-sm"
-                    placeholder="0"
-                    min="0"
-                    @keyup.enter="applyTempHp(character)"
-                  />
-                  <button
-                    @click="applyTempHp(character)"
-                    class="btn btn-sm btn-info"
-                    :disabled="
-                      !character.tempHpInput || character.tempHpInput <= 0
-                    "
-                  >
-                    <i class="bi bi-shield"></i>
-                  </button>
-                </div>
-              </div>
+    <div class="action-group">
+      <label class="action-label">Curación:</label>
+      <div class="action-inputs">
+        <input
+          v-model="character.healInput"
+          type="number"
+          class="form-control form-control-sm"
+          placeholder="0"
+          min="0"
+          @keyup.enter="applyHeal(character)"
+        />
+        <button
+          @click="applyHeal(character)"
+          class="btn btn-sm btn-success"
+          :disabled="!character.healInput || character.healInput <= 0"
+        >
+          <i class="bi bi-heart"></i>
+        </button>
+      </div>
+    </div>
 
-              <button
-                @click="dmStore.resetCharacterToMaxHp(character.id)"
-                class="btn btn-sm btn-outline-warning w-100"
-              >
-                <i class="bi bi-arrow-clockwise"></i>
-                Reset HP
-              </button>
+    <div class="action-group">
+      <label class="action-label">Vida Temp:</label>
+      <div class="action-inputs">
+        <input
+          v-model="character.tempHpInput"
+          type="number"
+          class="form-control form-control-sm"
+          placeholder="0"
+          min="0"
+          @keyup.enter="applyTempHp(character)"
+        />
+        <button
+          @click="applyTempHp(character)"
+          class="btn btn-sm btn-info"
+          :disabled="
+            !character.tempHpInput || character.tempHpInput <= 0
+          "
+        >
+          <i class="bi bi-shield"></i>
+        </button>
+      </div>
+    </div>
 
-              <button
-                v-if="character.currentHp <= 0"
-                @click="dmStore.reviveCharacter(character.id)"
-                class="btn btn-sm btn-success w-100"
-              >
-                <i class="bi bi-heart-pulse"></i>
-                Revivir
-              </button>
-            </div>
-          </div>
+    <button
+      @click="dmStore.resetCharacterToMaxHp(character.id)"
+      class="btn btn-sm btn-outline-warning w-100"
+    >
+      <i class="bi bi-arrow-clockwise"></i>
+      Reset HP
+    </button>
+
+    <button
+      v-if="character.currentHp <= 0"
+      @click="dmStore.reviveCharacter(character.id)"
+      class="btn btn-sm btn-success w-100"
+    >
+      <i class="bi bi-heart-pulse"></i>
+      Revivir
+    </button>
+  </div>
+</div>
         </div>
       </div>
 
@@ -1279,6 +1294,25 @@ const initializeCharacterInputs = () => {
   });
 };
 
+// Estado para controlar qué personajes tienen las acciones plegadas
+const collapsedCharacters = ref(new Set());
+
+// Función para alternar el estado de plegado de un personaje
+const toggleCharacterActions = (characterId) => {
+  const newCollapsed = new Set(collapsedCharacters.value);
+  if (newCollapsed.has(characterId)) {
+    newCollapsed.delete(characterId);
+  } else {
+    newCollapsed.add(characterId);
+  }
+  collapsedCharacters.value = newCollapsed;
+};
+
+// Función para verificar si las acciones de un personaje están plegadas
+const isCharacterCollapsed = (characterId) => {
+  return collapsedCharacters.value.has(characterId);
+};
+
 // Lifecycle
 onMounted(() => {
   dmStore.loadFromLocalStorage();
@@ -2026,5 +2060,97 @@ textarea.form-control {
   .import-option p {
     font-size: 0.85rem;
   }
+}
+
+.detail-item.notas .detail-value {
+  white-space: pre-wrap; /* Preserva saltos de línea y espacios */
+  word-wrap: break-word; /* Rompe palabras largas si es necesario */
+  font-family: inherit; /* Mantiene la fuente del resto del componente */
+  font-weight: normal;
+  line-height: 1.4; /* Mejora la legibilidad */
+  margin-top: 5px; /* Pequeño espacio entre label y contenido */
+}
+
+/* Opcional: Si quieres que las notas tengan un fondo diferente para distinguirlas mejor */
+.detail-item.notas {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  margin-top: 10px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.detail-item.notas .detail-label {
+  font-weight: 600;
+  margin-bottom: 5px;
+  color: #f39c12;
+}
+
+/* Estilo para el textarea en los modales */
+.form-control[rows] {
+  resize: vertical; /* Permite redimensionar verticalmente */
+  min-height: 80px; /* Altura mínima */
+}
+
+/* Asegurar que el textarea preserve los saltos de línea durante la edición */
+textarea.form-control {
+  white-space: pre-wrap;
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+/* Estilos para el botón de plegar acciones */
+.actions-toggle {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.toggle-actions-btn {
+  background: rgba(243, 156, 18, 0.2);
+  border: 1px solid rgba(243, 156, 18, 0.3);
+  color: #f39c12;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toggle-actions-btn:hover {
+  background: rgba(243, 156, 18, 0.3);
+  border-color: rgba(243, 156, 18, 0.5);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.toggle-actions-btn:active {
+  transform: translateY(0);
+}
+
+.toggle-actions-btn i {
+  transition: transform 0.3s ease;
+}
+
+.toggle-actions-btn.collapsed i {
+  transform: rotate(180deg);
+}
+
+/* Animación para mostrar/ocultar el panel de acciones */
+.character-actions-panel {
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.character-actions-panel.collapsed {
+  max-height: 0;
+  padding: 0;
+  margin: 0;
+  opacity: 0;
 }
 </style>
