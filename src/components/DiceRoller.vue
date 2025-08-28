@@ -13,9 +13,11 @@
       <div class="dice-config">
         <div class="config-row">
           <label>Cantidad:</label>
-          <select v-model="diceCount">
-            <option v-for="n in 10" :key="n" :value="n">{{ n }}</option>
-          </select>
+          <input 
+            type="number" 
+            v-model="diceCount"
+            class="dice-count-input"
+          >
         </div>
         
         <div class="config-row">
@@ -356,7 +358,17 @@ const clearHistory = () => {
   text-align: center;
 }
 
-.modifier-input:focus, .config-row select:focus {
+.dice-count-input {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: #ecf0f1;
+  padding: 8px 12px;
+  width: 80px;
+  text-align: center;
+}
+
+.modifier-input:focus, .config-row select:focus, .dice-count-input:focus {
   outline: none;
   border-color: #9b59b6;
   box-shadow: 0 0 0 2px rgba(155, 89, 182, 0.2);
