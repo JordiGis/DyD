@@ -52,7 +52,11 @@
           </button>
           <button @click="toggleDraggableList" class="btn btn-outline-secondary">
             <i class="bi bi-list"></i>
-            Lista Flotante
+            Lista Iniciativa
+          </button>
+          <button @click="showTodoModal = true" class="btn btn-outline-primary">
+            <i class="bi bi-check-circle"></i>
+            Todo List
           </button>
         </div>
       </div>
@@ -894,6 +898,37 @@
       </div>
     </div>
 
+    <!-- Modal para la lista de tareas -->
+    <div v-if="showTodoModal" class="modal-overlay" id="todo-list" @click="showTodoModal = false">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>Lista de Tareas</h3>
+          <button @click="showTodoModal = false" class="btn-close">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="add-todo">
+            <input
+              v-model="newTodoItem"
+              type="text"
+              class="form-control"
+              placeholder="Nueva tarea"
+              @keyup.enter="addTodoItem"
+            />
+            <button @click="addTodoItem" class="btn btn-primary">Agregar</button>
+          </div>
+          <ul class="todo-list">
+            <li v-for="item in todoItems" :key="item.id">
+              <input type="checkbox" v-model="item.completed" @change="toggleTodoItem(item.id)" />
+              <span :class="{ completed: item.completed }">{{ item.text }}</span>
+              <button @click="deleteTodoItem(item.id)" class="btn btn-danger btn-sm">Eliminar</button>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
     <!-- Lista flotante draggable -->
     <DraggableList 
       v-if="showDraggableList"
@@ -918,14 +953,13 @@ const showCreateModal = ref(false);
 const showEditModal = ref(false);
 const showImportModal = ref(false);
 const showDeathModal = ref(false);
-const editingCharacter = ref(null);
+const showTodoModal = ref(false);
 const sortBy = ref("name");
 const importData = ref("");
 const defeatedCharacter = ref(null);
 const heroName = ref("");
-
-// Referencias
-const fileInput = ref(null);
+const todoItems = ref([]);
+const newTodoItem = ref("");
 
 // Nuevo personaje
 const newCharacter = ref({
@@ -956,8 +990,7 @@ const sortedCharacters = computed(() => {
       );
     default:
       return dmStore.charactersByName;
-  }
-});
+}});
 
 // Métodos
 const createCharacter = () => {
@@ -1376,6 +1409,56 @@ watch(collapsedCharacters, (newCollapsed) => {
   localStorage.setItem('collapsedCharacters', JSON.stringify(collapsedArray));
 }, { deep: true });
 
+// Todo List Methods
+const addTodoItem = () => {
+  if (newTodoItem.value.trim() === '') return;
+  const todo = {
+    id: Date.now(),
+    text: newTodoItem.value.trim(),
+    completed: false,
+    createdAt: new Date().toISOString()
+  };
+  
+  todoItems.value.push(todo);
+  newTodoItem.value = '';
+  saveTodoItems();
+};
+
+const deleteTodoItem = (id) => {
+  todoItems.value = todoItems.value.filter(item => item.id !== id);
+  saveTodoItems();
+};
+
+const toggleTodoItem = (id) => {
+  const item = todoItems.value.find(item => item.id === id);
+  if (item) {
+    saveTodoItems();
+  }
+};
+
+const saveTodoItems = () => {
+  localStorage.setItem('dnd-todo-items', JSON.stringify(todoItems.value));
+};
+
+const loadTodoItems = () => {
+  const savedItems = localStorage.getItem('dnd-todo-items');
+  if (savedItems) {
+    try {
+      todoItems.value = JSON.parse(savedItems);
+    } catch (e) {
+      console.error("Error loading todo items:", e);
+      todoItems.value = [];
+    }
+  }
+};
+
+// Drag and drop methods for todo items
+const dragTodoItem = (index) => {
+  const item = todoItems.value.splice(index, 1)[0];
+  todoItems.value.push(item);
+  saveTodoItems();
+};
+
 // Lifecycle
 onMounted(() => {
   // Cargar el estado de los personajes plegados desde localStorage
@@ -1390,6 +1473,9 @@ onMounted(() => {
       collapsedCharacters.value = new Set();
     }
   }
+
+  // Load todo items
+  loadTodoItems();
 
   dmStore.loadFromLocalStorage();
   initializeCharacterInputs();
@@ -1603,33 +1689,6 @@ onMounted(() => {
   color: palevioletred;
 }
 
-.detail-item.notas {
-  display: flex;
-  flex-direction: column;
-  padding: 10px;
-  border: 1px solid black;
-  margin-top: 10px;
-}
-
-.detail-label {
-  font-weight: 600;
-  margin-bottom: 5px;
-}
-
-.notas .detail-value {
-  /* color: #555; */
-  font-weight: normal;
-}
-
-.detail-item.notas .detail-value {
-  white-space: pre-wrap; /* Preserva saltos de línea y espacios */
-  word-wrap: break-word; /* Rompe palabras largas si es necesario */
-  font-family: inherit; /* Mantiene la fuente del resto del componente */
-  font-weight: normal;
-  line-height: 1.4; /* Mejora la legibilidad */
-  margin-top: 5px; /* Pequeño espacio entre label y contenido */
-}
-
 /* Opcional: Si quieres que las notas tengan un fondo diferente para distinguirlas mejor */
 .detail-item.notas {
   display: flex;
@@ -1645,6 +1704,15 @@ onMounted(() => {
   font-weight: 600;
   margin-bottom: 5px;
   color: #f39c12;
+}
+
+.detail-item.notas .detail-value {
+  white-space: pre-wrap; /* Preserva saltos de línea y espacios */
+  word-wrap: break-word; /* Rompe palabras largas si es necesario */
+  font-family: inherit; /* Mantiene la fuente del resto del componente */
+  font-weight: normal;
+  line-height: 1.4; /* Mejora la legibilidad */
+  margin-top: 5px; /* Pequeño espacio entre label y contenido */
 }
 
 /* Estilo para el textarea en los modales */
@@ -2228,5 +2296,307 @@ textarea.form-control {
   padding: 0;
   margin: 0;
   opacity: 0;
+}
+
+/* Modal Overlay */
+#todo-list {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Modal Content */
+#todo-list .modal-content {
+  background: linear-gradient(145deg, #2d2d3d, #1e1e2e);
+  border-radius: 16px;
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  width: 90%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Modal Header */
+#todo-list .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #4a4a5e, #3a3a4e);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#todo-list .modal-header h3 {
+  color: #ffffff;
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+#todo-list .btn-close {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #ffffff;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#todo-list .btn-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+/* Modal Body */
+#todo-list .modal-body {
+  padding: 24px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+/* Scrollbar personalizado */
+#todo-list .modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+#todo-list .modal-body::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+#todo-list .modal-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+#todo-list .modal-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Add Todo Section */
+#todo-list .add-todo {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+#todo-list .form-control {
+  flex: 1;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+#todo-list .form-control:focus {
+  outline: none;
+  border-color: #4a9eff;
+  box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.2);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+#todo-list .form-control::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+#todo-list .btn {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#todo-list .btn-primary {
+  background: linear-gradient(135deg, #4a9eff, #357abd);
+  color: white;
+  box-shadow: 0 2px 8px rgba(74, 158, 255, 0.3);
+}
+
+#todo-list .btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(74, 158, 255, 0.4);
+}
+
+#todo-list .btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Todo List */
+#todo-list .todo-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#todo-list .todo-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  transition: all 0.2s ease;
+}
+
+#todo-list .todo-list li:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateX(2px);
+}
+
+/* Custom Checkbox */
+#todo-list .todo-list input[type="checkbox"] {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+#todo-list .todo-list input[type="checkbox"]:checked {
+  background: linear-gradient(135deg, #4ade80, #22c55e);
+  border-color: #22c55e;
+}
+
+#todo-list .todo-list input[type="checkbox"]:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* Todo Text */
+#todo-list .todo-list span {
+  flex: 1;
+  color: #ffffff;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  transition: all 0.2s ease;
+}
+
+#todo-list .todo-list span.completed {
+  text-decoration: line-through !important;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Delete Button */
+#todo-list .btn-danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+}
+
+#todo-list .btn-danger:hover {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);
+}
+
+#todo-list .btn-sm {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Empty State */
+#todo-list .todo-list:empty::after {
+  content: 'No hay tareas aún. ¡Agrega tu primera tarea!';
+  display: block;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+  padding: 40px 20px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+
+/* Responsive */
+@media (max-width: 640px) {
+  .modal-content {
+    width: 95%;
+    margin: 20px;
+  }
+  
+  .modal-header {
+    padding: 16px 20px;
+  }
+  
+  .modal-body {
+    padding: 20px;
+  }
+  
+  .add-todo {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .todo-list li {
+    padding: 10px 12px;
+  }
+  
+  .modal-header h3 {
+    font-size: 1.2rem;
+  }
 }
 </style>
