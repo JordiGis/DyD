@@ -58,9 +58,18 @@
             <i class="bi bi-check-circle"></i>
             Todo List
           </button>
+          <button @click="showDiceRoller = true" class="btn btn-outline-info">
+            <i class="bi bi-dice-6"></i>
+            Lanzar Dados
+          </button>
         </div>
       </div>
     </div>
+    <DiceRoller 
+  v-if="showDiceRoller"
+  :characters="dmStore.characters"
+  @close="showDiceRoller = false"
+/>
 
     <!-- Estadísticas generales -->
     <div class="stats-overview">
@@ -943,10 +952,12 @@ import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
 import { useDMStore } from "../stores/useDMStore";
 import Swal from "sweetalert2";
 import DraggableList from "../components/DraggableList.vue";
+import DiceRoller from "../components/DiceRoller.vue";
 
 const dmStore = useDMStore();
 
 const showDraggableList = ref(false); // Declare the showDraggableList state
+const showDiceRoller = ref(false);
 
 // Estado local
 const showCreateModal = ref(false);
@@ -1112,6 +1123,10 @@ const applyResistantDamage = (character) => {
       showDeathModal.value = true;
     }
   }
+};
+
+const toggleDiceRoller = () => {
+  showDiceRoller.value = !showDiceRoller.value;
 };
 
 const saveHeroName = () => {
