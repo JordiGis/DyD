@@ -94,10 +94,18 @@ export const useDMStore = defineStore('dm', {
                 
                 // Asegurar que los valores sean números
                 if (updates.maxHp !== undefined) {
-                    character.maxHp = parseInt(updates.maxHp)
+                    const newMaxHp = parseInt(updates.maxHp)
+                    const oldMaxHp = character.maxHp
+                    character.maxHp = newMaxHp
+                    
                     // Si se reduce el HP máximo, ajustar el HP actual
                     if (character.currentHp > character.maxHp) {
                         character.currentHp = character.maxHp
+                    }
+                    
+                    // Si se aumenta el HP máximo, también actualizar originalMaxHp para mantener la referencia
+                    if (newMaxHp > character.originalMaxHp) {
+                        character.originalMaxHp = newMaxHp
                     }
                 }
                 if (updates.currentHp !== undefined) {
@@ -330,14 +338,40 @@ export const useDMStore = defineStore('dm', {
             this.characters.forEach(character => {
                 if (character.regeneration > 0 && character.currentHp > 0) {
                     const oldHp = character.currentHp
+                    const oldMaxHp = character.maxHp
+                    let maxHpRestored = 0
+                    
+                    // Si hay daño necro (maxHp < originalMaxHp), usar regeneración para restaurar maxHp
+                    if (character.maxHp < character.originalMaxHp) {
+                        const maxHpNeeded = character.originalMaxHp - character.maxHp
+                        const maxHpToRestore = Math.min(character.regeneration, maxHpNeeded)
+                        
+                        if (maxHpToRestore > 0) {
+                            character.maxHp = Math.min(character.originalMaxHp, character.maxHp + maxHpToRestore)
+                            maxHpRestored = character.maxHp - oldMaxHp
+                        }
+                    }
+                    
+                    // SIEMPRE curar HP actual con TODA la regeneración (incluyendo la que se usó para max HP)
                     character.currentHp = Math.min(
                         character.maxHp,
                         character.currentHp + character.regeneration
                     )
                     
                     const actualHealed = character.currentHp - oldHp
-                    if (actualHealed > 0) {
-                        this.addLogToCharacter(character.id, 'Regeneración Automática', `+${actualHealed} HP (${oldHp} → ${character.currentHp})`)
+                    
+                    // Crear mensaje de log detallado
+                    let logMessage = ''
+                    if (maxHpRestored > 0 && actualHealed > 0) {
+                        logMessage = `+${actualHealed} HP (${oldHp} → ${character.currentHp}) | HP máximo restaurado: +${maxHpRestored} (${oldMaxHp} → ${character.maxHp})`
+                    } else if (maxHpRestored > 0) {
+                        logMessage = `HP máximo restaurado: +${maxHpRestored} (${oldMaxHp} → ${character.maxHp})`
+                    } else if (actualHealed > 0) {
+                        logMessage = `+${actualHealed} HP (${oldHp} → ${character.currentHp})`
+                    }
+                    
+                    if (logMessage) {
+                        this.addLogToCharacter(character.id, 'Regeneración Automática', logMessage)
                     }
                 }
                 
