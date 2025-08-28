@@ -40,7 +40,7 @@ export const useDMStore = defineStore('dm', {
     
     actions: {
         // Crear un nuevo personaje
-        createCharacter(name, maxHp, regeneration = 0, xp = '', resistencias = '', inmunidades = '', fuerza = '', destreza = '', constitucion = '', inteligencia = '', sabiduria = '', carisma = '', notas = '') {
+        createCharacter(name, maxHp, regeneration = 0, xp = '', resistencias = '', inmunidades = '', fuerza = '', destreza = '', constitucion = '', inteligencia = '', sabiduria = '', carisma = '', notas = '', ca = '') {
             const character = {
                 id: Date.now() + Math.random(),
                 name: name.trim(),
@@ -58,6 +58,7 @@ export const useDMStore = defineStore('dm', {
                 sabiduria: sabiduria,
                 carisma: carisma,
                 notas: notas,
+                ca: ca,
                 isConfigured: true,
                 createdAt: new Date().toISOString(),
                 logs: [],
@@ -136,6 +137,9 @@ export const useDMStore = defineStore('dm', {
                 }
                 if (updates.carisma !== undefined) {
                     character.carisma = updates.carisma
+                }
+                if (updates.ca !== undefined) {
+                    character.ca = updates.ca
                 }
                 
                 this.saveToLocalStorage()

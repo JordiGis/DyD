@@ -204,6 +204,10 @@
                 <span class="detail-label">XP:</span>
                 <span class="detail-value">{{ character.xp }}</span>
               </div>
+              <div v-if="character.ca" class="detail-item">
+                <span class="detail-label">CA:</span>
+                <span class="detail-value">{{ character.ca }}</span>
+              </div>
               <div v-if="character.resistencias" class="detail-item">
                 <span class="detail-label">Resistencias:</span>
                 <span class="detail-value">{{ character.resistencias }}</span>
@@ -443,6 +447,16 @@
                 />
               </div>
               <div class="form-group">
+                <label for="ca">CA (Clase de Armadura):</label>
+                <input
+                  id="ca"
+                  v-model="newCharacter.ca"
+                  type="text"
+                  class="form-control"
+                  placeholder=""
+                />
+              </div>
+              <div class="form-group">
                 <label for="resistencias">Resistencias:</label>
                 <input
                   id="resistencias"
@@ -476,8 +490,6 @@
                         type="number"
                         class="form-control small-input"
                         placeholder="+0"
-                        min="-10"
-                        max="10"
                       />
                     </div>
                     <div class="form-group attribute-input">
@@ -488,8 +500,6 @@
                         type="number"
                         class="form-control small-input"
                         placeholder="+0"
-                        min="-10"
-                        max="10"
                       />
                     </div>
                     <div class="form-group attribute-input">
@@ -500,8 +510,6 @@
                         type="number"
                         class="form-control small-input"
                         placeholder="+0"
-                        min="-10"
-                        max="10"
                       />
                     </div>
                   </div>
@@ -514,8 +522,6 @@
                         type="number"
                         class="form-control small-input"
                         placeholder="+0"
-                        min="-10"
-                        max="10"
                       />
                     </div>
                     <div class="form-group attribute-input">
@@ -526,8 +532,6 @@
                         type="number"
                         class="form-control small-input"
                         placeholder="+0"
-                        min="-10"
-                        max="10"
                       />
                     </div>
                     <div class="form-group attribute-input">
@@ -538,8 +542,6 @@
                         type="number"
                         class="form-control small-input"
                         placeholder="+0"
-                        min="-10"
-                        max="10"
                       />
                     </div>
                   </div>
@@ -643,6 +645,15 @@
                 />
               </div>
               <div class="form-group">
+                <label for="editCa">CA (Clase de Armadura):</label>
+                <input
+                  id="editCa"
+                  v-model="editingCharacter.ca"
+                  type="text"
+                  class="form-control"
+                />
+              </div>
+              <div class="form-group">
                 <label for="editResistencias">Resistencias:</label>
                 <input
                   id="editResistencias"
@@ -674,8 +685,6 @@
                         type="number"
                         class="form-control small-input"
                         placeholder="+0"
-                        min="-10"
-                        max="10"
                       />
                     </div>
                     <div class="form-group attribute-input">
@@ -686,8 +695,6 @@
                         type="number"
                         class="form-control small-input"
                         placeholder="+0"
-                        min="-10"
-                        max="10"
                       />
                     </div>
                     <div class="form-group attribute-input">
@@ -698,8 +705,6 @@
                         type="number"
                         class="form-control small-input"
                         placeholder="+0"
-                        min="-10"
-                        max="10"
                       />
                     </div>
                   </div>
@@ -712,8 +717,6 @@
                         type="number"
                         class="form-control small-input"
                         placeholder="+0"
-                        min="-10"
-                        max="10"
                       />
                     </div>
                     <div class="form-group attribute-input">
@@ -724,8 +727,6 @@
                         type="number"
                         class="form-control small-input"
                         placeholder="+0"
-                        min="-10"
-                        max="10"
                       />
                     </div>
                     <div class="form-group attribute-input">
@@ -736,8 +737,6 @@
                         type="number"
                         class="form-control small-input"
                         placeholder="+0"
-                        min="-10"
-                        max="10"
                       />
                     </div>
                   </div>
@@ -942,7 +941,8 @@ const newCharacter = ref({
   inteligencia: "",
   sabiduria: "",
   carisma: "",
-  notas: ""
+  notas: "",
+  ca: ""
 });
 
 // Computed
@@ -975,11 +975,12 @@ const createCharacter = () => {
       newCharacter.value.inteligencia,
       newCharacter.value.sabiduria,
       newCharacter.value.carisma,
-      newCharacter.value.notas
+      newCharacter.value.notas,
+      newCharacter.value.ca
     );
 
     // Reset form
-    newCharacter.value = { name: "", maxHp: "", regeneration: "", xp: "", resistencias: "", inmunidades: "", fuerza: "", destreza: "", constitucion: "", inteligencia: "", sabiduria: "", carisma: "", notas: "" };
+    newCharacter.value = { name: "", maxHp: "", regeneration: "", xp: "", resistencias: "", inmunidades: "", fuerza: "", destreza: "", constitucion: "", inteligencia: "", sabiduria: "", carisma: "", notas: "", ca: "" };
     showCreateModal.value = false;
   }
 };
@@ -1005,7 +1006,8 @@ const saveCharacterEdit = () => {
       inteligencia: editingCharacter.value.inteligencia,
       sabiduria: editingCharacter.value.sabiduria,
       carisma: editingCharacter.value.carisma,
-      notas: editingCharacter.value.notas
+      notas: editingCharacter.value.notas,
+      ca: editingCharacter.value.ca
     });
     showEditModal.value = false;
     editingCharacter.value = null;
