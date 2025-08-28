@@ -45,6 +45,7 @@ export const useDMStore = defineStore('dm', {
                 id: Date.now() + Math.random(),
                 name: name.trim(),
                 maxHp: parseInt(maxHp),
+                originalMaxHp: parseInt(maxHp), // Guardar el HP máximo original
                 currentHp: parseInt(maxHp),
                 tempHp: 0,
                 regeneration: parseInt(regeneration) || 0,
@@ -214,12 +215,13 @@ export const useDMStore = defineStore('dm', {
         },
         
         // Hacer daño a un personaje
-        damageCharacter(characterId, amount) {
+        damageCharacter(characterId, amount, isNecroDamage = false) {
             const character = this.getCharacterById(characterId)
             if (character) {
                 let remainingDamage = parseInt(amount)
                 const oldHp = character.currentHp
                 const oldTempHp = character.tempHp
+                const oldMaxHp = character.maxHp
                 
                 // Primero se reduce la vida temporal
                 if (character.tempHp > 0) {
@@ -235,14 +237,25 @@ export const useDMStore = defineStore('dm', {
                 // Si aún hay daño, se reduce la vida actual
                 if (remainingDamage > 0) {
                     character.currentHp = Math.max(0, character.currentHp - remainingDamage)
+                    
+                    // Si es daño necro, también reduce la vida máxima
+                    if (isNecroDamage) {
+                        character.maxHp = Math.max(1, character.maxHp - remainingDamage)
+                    }
                 }
                 
                 // Agregar log de daño
                 let damageDetails = `-${amount} HP`
+                if (isNecroDamage) {
+                    damageDetails += ' (Necro)'
+                }
                 if (oldTempHp > 0) {
                     damageDetails += ` | Vida temporal: ${oldTempHp} → ${character.tempHp}`
                 }
                 damageDetails += ` | HP actual: ${oldHp} → ${character.currentHp}`
+                if (isNecroDamage && oldMaxHp !== character.maxHp) {
+                    damageDetails += ` | HP máximo: ${oldMaxHp} → ${character.maxHp}`
+                }
                 
                 this.addLogToCharacter(characterId, 'Daño Recibido', damageDetails)
                 this.saveToLocalStorage()
@@ -250,7 +263,8 @@ export const useDMStore = defineStore('dm', {
                 return {
                     damageDealt: amount,
                     remainingHp: character.currentHp,
-                    remainingTempHp: character.tempHp
+                    remainingTempHp: character.tempHp,
+                    maxHpReduced: isNecroDamage ? oldMaxHp - character.maxHp : 0
                 }
             }
             return null
@@ -273,13 +287,15 @@ export const useDMStore = defineStore('dm', {
             if (character) {
                 const oldHp = character.currentHp
                 const oldTempHp = character.tempHp
+                const oldMaxHp = character.maxHp
                 const oldDefeatedBy = character.defeatedBy
                 
-                character.currentHp = character.maxHp
+                character.currentHp = character.originalMaxHp
+                character.maxHp = character.originalMaxHp
                 character.tempHp = 0
                 character.defeatedBy = null // Eliminar el nombre del héroe al resetear
                 
-                this.addLogToCharacter(characterId, 'Reset HP', `HP restaurado al máximo (${oldHp} → ${character.maxHp}) | Vida temporal eliminada (${oldTempHp} → 0)${oldDefeatedBy ? ` | Héroe eliminado: ${oldDefeatedBy}` : ''}`)
+                this.addLogToCharacter(characterId, 'Reset HP', `HP restaurado al máximo original (${oldHp} → ${character.originalMaxHp}) | HP máximo restaurado (${oldMaxHp} → ${character.originalMaxHp}) | Vida temporal eliminada (${oldTempHp} → 0)${oldDefeatedBy ? ` | Héroe eliminado: ${oldDefeatedBy}` : ''}`)
                 this.saveToLocalStorage()
                 
                 return true

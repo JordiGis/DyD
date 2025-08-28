@@ -169,7 +169,7 @@
 
           <div class="character-stats">
             <div class="hp-section">
-              <div class="hp-bar-container">
+                            <div class="hp-bar-container">
                 <div class="hp-bar">
                   <div
                     class="hp-fill"
@@ -182,9 +182,21 @@
                         : getHpBarColor(character)
                     "
                   ></div>
+                  <!-- Indicador de daño necro en la barra -->
+                  <div
+                    v-if="character.maxHp < character.originalMaxHp"
+                    class="necro-bar-indicator"
+                    :style="{
+                      left: `${(character.maxHp / character.originalMaxHp) * 100}%`
+                    }"
+                    title="HP máximo reducido por daño necro"
+                  ></div>
                 </div>
                 <div class="hp-text">
                   {{ character.currentHp }} / {{ character.maxHp }} HP
+                  <span v-if="character.maxHp < character.originalMaxHp" class="necro-indicator" title="HP máximo reducido por daño necro">
+                    ⚠️
+                  </span>
                 </div>
               </div>
 
@@ -308,6 +320,20 @@
         <i class="bi bi-lightning"></i>
       </button>
     </div>
+    <div class="necro-checkbox">
+      <label class="necro-label">
+        <input
+          v-model="character.necroDamage"
+          type="checkbox"
+          class="necro-input"
+        />
+        <span class="necro-text">Daño Necro</span>
+        <i 
+          class="bi bi-info-circle necro-info-icon" 
+          title="El daño necro reduce permanentemente el HP máximo hasta que se restaure. Afecta tanto a la vida temporal como a la vida actual."
+        ></i>
+      </label>
+    </div>
   </div>
 
   <div class="action-group">
@@ -332,6 +358,21 @@
         <i class="bi bi-shield-slash"></i>
       </button>
     </div>
+    <div class="necro-checkbox">
+      <label class="necro-label">
+        <input
+          v-model="character.necroResistantDamage"
+          type="checkbox"
+          class="necro-input"
+        />
+        <span class="necro-text">Daño Necro</span>
+        <i 
+          class="bi bi-info-circle necro-info-icon" 
+          title="El daño necro reduce permanentemente el HP máximo hasta que se restaure. Afecta tanto a la vida temporal como a la vida actual."
+        ></i>
+      </label>
+    </div>
+  </div>
 
     <div class="action-group">
       <label class="action-label">Curación:</label>
@@ -369,21 +410,32 @@
           @click="applyTempHp(character)"
           class="btn btn-sm btn-info"
           :disabled="
-            !character.tempHpInput || character.tempHpInput <= 0
-          "
+            !character.tempHpInput || character.tempHpInput <= 0"
         >
           <i class="bi bi-shield"></i>
         </button>
       </div>
     </div>
 
-    <button
-      @click="dmStore.resetCharacterToMaxHp(character.id)"
-      class="btn btn-sm btn-outline-warning w-100"
-    >
-      <i class="bi bi-arrow-clockwise"></i>
-      Reset HP
-    </button>
+    <div class="reset-buttons">
+      <button
+        @click="dmStore.resetCharacterToMaxHp(character.id)"
+        class="btn btn-sm btn-outline-warning"
+        :class="{ 'w-100': character.maxHp >= character.originalMaxHp }"
+      >
+        <i class="bi bi-arrow-clockwise"></i>
+        Reset HP
+      </button>
+      <button
+        v-if="character.maxHp < character.originalMaxHp"
+        @click="restoreMaxHp(character.id)"
+        class="btn btn-sm btn-outline-danger"
+        title="Restaurar solo el HP máximo (daño necro)"
+      >
+        <i class="bi bi-heart-pulse"></i>
+        Restaurar HP Máx
+      </button>
+    </div>
 
     <button
       v-if="character.currentHp <= 0"
@@ -394,7 +446,6 @@
       Revivir
     </button>
   </div>
-</div>
         </div>
       </div>
 
@@ -990,7 +1041,9 @@ const newCharacter = ref({
   sabiduria: "",
   carisma: "",
   notas: "",
-  ca: ""
+  ca: "",
+  necroDamage: false,
+  necroResistantDamage: false
 });
 
 // Computed
@@ -1027,7 +1080,7 @@ const createCharacter = () => {
     );
 
     // Reset form
-    newCharacter.value = { name: "", maxHp: "", regeneration: "", xp: "", resistencias: "", inmunidades: "", fuerza: "", destreza: "", constitucion: "", inteligencia: "", sabiduria: "", carisma: "", notas: "", ca: "" };
+    newCharacter.value = { name: "", maxHp: "", regeneration: "", xp: "", resistencias: "", inmunidades: "", fuerza: "", destreza: "", constitucion: "", inteligencia: "", sabiduria: "", carisma: "", notas: "", ca: "", necroDamage: false, necroResistantDamage: false };
     showCreateModal.value = false;
   }
 };
@@ -1092,14 +1145,16 @@ const duplicateCharacter = (character) => {
     character.inteligencia,
     character.sabiduria,
     character.carisma,
-    character.notas
+    character.notas,
+    character.ca
   );
 };
 
 const applyDamage = (character) => {
   if (character.damageInput && character.damageInput > 0) {
     const oldHp = character.currentHp;
-    const result = dmStore.damageCharacter(character.id, character.damageInput);
+    const isNecroDamage = character.necroDamage || false;
+    const result = dmStore.damageCharacter(character.id, character.damageInput, isNecroDamage);
     character.damageInput = "";
 
     // Check if character died from this damage
@@ -1114,7 +1169,8 @@ const applyResistantDamage = (character) => {
   if (character.resistantDamageInput && character.resistantDamageInput > 0) {
     const damage = Math.floor(character.resistantDamageInput / 2);
     const oldHp = character.currentHp;
-    const result = dmStore.damageCharacter(character.id, damage);
+    const isNecroDamage = character.necroResistantDamage || false;
+    const result = dmStore.damageCharacter(character.id, damage, isNecroDamage);
     character.resistantDamageInput = "";
 
     // Check if character died from this damage
@@ -1222,6 +1278,26 @@ const applyTempHp = (character) => {
   if (character.tempHpInput && character.tempHpInput > 0) {
     dmStore.addTempHpToCharacter(character.id, character.tempHpInput);
     character.tempHpInput = "";
+  }
+};
+
+const restoreMaxHp = (characterId) => {
+  const character = dmStore.getCharacterById(characterId);
+  if (character && character.maxHp < character.originalMaxHp) {
+    const oldMaxHp = character.maxHp;
+    character.maxHp = character.originalMaxHp;
+    
+    // Agregar log de restauración
+    dmStore.addLogToCharacter(characterId, 'Restaurar HP Máximo', `HP máximo restaurado de ${oldMaxHp} a ${character.originalMaxHp} (daño necro revertido)`);
+    
+    // Mostrar confirmación
+    Swal.fire({
+      icon: 'success',
+      title: 'HP Máximo Restaurado',
+      text: `El HP máximo de ${character.name} ha sido restaurado de ${oldMaxHp} a ${character.originalMaxHp}`,
+      timer: 2000,
+      showConfirmButton: false
+    });
   }
 };
 
@@ -1394,6 +1470,8 @@ const initializeCharacterInputs = () => {
     character.healInput = "";
     character.tempHpInput = "";
     character.resistantDamageInput = "";
+    character.necroDamage = false;
+    character.necroResistantDamage = false;
   });
 };
 
@@ -1786,6 +1864,7 @@ textarea.form-control {
   border-radius: 10px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
 }
 
 .hp-fill {
@@ -1811,6 +1890,17 @@ textarea.form-control {
 
 .hp-fill.temp-hp {
   background: linear-gradient(90deg, #9b59b6, #8e44ad);
+}
+
+.necro-bar-indicator {
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: #e74c3c;
+  border-right: 1px solid #fff;
+  box-shadow: 0 0 4px rgba(231, 76, 60, 0.8);
+  z-index: 2;
 }
 
 .hp-text {
@@ -1926,6 +2016,74 @@ textarea.form-control {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
+}
+
+/* Estilos para el checkbox de daño necro */
+.necro-checkbox {
+  margin-top: 8px;
+}
+
+.necro-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.necro-input {
+  width: 16px;
+  height: 16px;
+  accent-color: #e74c3c;
+  cursor: pointer;
+}
+
+.necro-text {
+  color: #e74c3c;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.necro-info-icon {
+  color: #7f8c8d;
+  font-size: 0.8rem;
+  cursor: help;
+  transition: color 0.2s ease;
+}
+
+.necro-info-icon:hover {
+  color: #f39c12;
+}
+
+.necro-indicator {
+  margin-left: 8px;
+  font-size: 1.2rem;
+  animation: pulse-warning 2s infinite;
+}
+
+@keyframes pulse-warning {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.reset-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.reset-buttons .btn {
+  flex: 1;
+  min-width: 120px;
 }
 
 /* Modal styles */
