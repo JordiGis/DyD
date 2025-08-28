@@ -127,6 +127,17 @@
         <span class="btn-icon"><i data-v-6dd7d5c6="" class="bi bi-shield-slash"></i></span>
         <span class="btn-text">Daño Resistente</span>
       </button>
+      
+      <!-- Botón para curar daño necro (solo si hay daño necro) -->
+      <button 
+        v-if="characterStore.character.maxHp < characterStore.character.originalMaxHp"
+        @click="showHealNecroDialog" 
+        class="action-btn btn-restore-max"
+        title="Curar una cantidad específica de daño necro"
+      >
+        <span class="btn-icon">💖</span>
+        <span class="btn-text">Curar Daño Necro</span>
+      </button>
       </div>
 
 
@@ -135,17 +146,6 @@
       <button @click="resetToMaxHp" class="secondary-btn btn-reset">
         <span class="btn-icon">🔄</span>
         <span class="btn-text">Resetear HP</span>
-      </button>
-      
-      <!-- Botón para restaurar HP máximo (solo si hay daño necro) -->
-      <button 
-        v-if="characterStore.character.maxHp < characterStore.character.originalMaxHp"
-        @click="restoreMaxHp" 
-        class="secondary-btn btn-restore-max"
-        title="Restaurar solo el HP máximo (daño necro)"
-      >
-        <span class="btn-icon">💖</span>
-        <span class="btn-text">Restaurar HP Máx</span>
       </button>
       
       <button 
@@ -267,7 +267,7 @@ const showDamageDialog = () => {
   Swal.fire({
     title: 'Recibir Daño',
     html: `
-      <div style="margin-bottom: 20px;">
+      <div style="margin-bottom: 20px;display: flex;flex-direction: column;align-items: center;">
         <input id="damage-amount" type="number" placeholder="Ej: 25" min="1" max="999" class="swal2-input" style="width: 100%; margin-bottom: 15px;">
         <div style="text-align: left;">
           <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;">
@@ -304,7 +304,7 @@ const showResistantDamageDialog = () => {
   Swal.fire({
     title: 'Daño Resistente',
     html: `
-      <div style="margin-bottom: 20px;">
+      <div style="margin-bottom: 20px;display: flex;flex-direction: column;align-items: center;">
         <input id="resistant-damage-amount" type="number" placeholder="Ej: 20" min="1" max="999" class="swal2-input" style="width: 100%; margin-bottom: 15px;">
         <div style="text-align: left;">
           <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;">
@@ -422,6 +422,84 @@ const goToConfig = () => {
 
 const goToLogs = () => {
   router.push('/logs')
+}
+
+const showHealNecroDialog = () => {
+  // Calcular cuánto daño necro se puede curar
+  const necroDamage = characterStore.character.originalMaxHp - characterStore.character.maxHp;
+  
+  Swal.fire({
+    title: 'Curar Daño Necro',
+    html: `
+      <div style="margin-bottom: 20px;">
+        <p style="margin-bottom: 15px; color: #ecf0f1;">Daño necro acumulado: <strong style="color: #e74c3c;">${necroDamage} HP</strong></p>
+        <input id="heal-necro-amount" type="number" placeholder="Cantidad a curar" min="1" max="${necroDamage}" value="1" class="swal2-input" style="width: 100%; margin-bottom: 15px;">
+        <div style="text-align: left; background: rgba(231, 76, 60, 0.2); padding: 12px; border-radius: 8px; border: 1px solid rgba(231, 76, 60, 0.3);">
+          <p style="margin: 0; color: #e74c3c; font-size: 0.9rem;">
+            <strong>¿Qué hace esta acción?</strong><br>
+            - Aumenta tu HP máximo en la cantidad especificada<br>
+            - Cura tu HP actual en la misma cantidad
+          </p>
+        </div>
+      </div>
+    `,
+    showCancelButton: true,
+    confirmButtonText: 'Curar',
+    cancelButtonText: 'Cancelar',
+    preConfirm: () => {
+      const amount = document.getElementById('heal-necro-amount').value
+      
+      if (!amount || amount <= 0) {
+        Swal.showValidationMessage('Debes ingresar un número válido')
+        return false
+      }
+      
+      const healAmount = parseInt(amount);
+      if (healAmount > necroDamage) {
+        Swal.showValidationMessage(`No puedes curar más daño necro del acumulado (${necroDamage} HP)`)
+        return false
+      }
+      
+      return { amount: healAmount }
+    }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const { amount } = result.value
+      healNecroDamage(amount)
+    }
+  })
+}
+
+const healNecroDamage = (amount) => {
+  const oldMaxHp = characterStore.character.maxHp
+  const oldCurrentHp = characterStore.character.currentHp
+  
+  // Aumentar el HP máximo
+  characterStore.character.maxHp = Math.min(
+    characterStore.character.originalMaxHp,
+    characterStore.character.maxHp + amount
+  )
+  
+  // Curar al personaje en la misma cantidad
+  characterStore.character.currentHp = Math.min(
+    characterStore.character.maxHp,
+    characterStore.character.currentHp + amount
+  )
+  
+  // Agregar log de curación de daño necro
+  characterStore.addLog('Curar Daño Necro', `HP máximo restaurado: +${characterStore.character.maxHp - oldMaxHp} (${oldMaxHp} → ${characterStore.character.maxHp}) | HP actual curado: +${characterStore.character.currentHp - oldCurrentHp} (${oldCurrentHp} → ${characterStore.character.currentHp})`)
+  
+  // Guardar cambios
+  characterStore.saveToLocalStorage()
+  
+  // Mostrar confirmación
+  Swal.fire({
+    icon: 'success',
+    title: 'Daño Necro Curado',
+    text: `Has curado ${amount} puntos de daño necro`,
+    timer: 2000,
+    showConfirmButton: false
+  })
 }
 </script>
 
