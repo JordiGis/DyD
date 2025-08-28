@@ -7,6 +7,7 @@ export const useCharacterStore = defineStore('character', {
         character: {
             name: '',
             maxHp: 0,
+            originalMaxHp: 0, // HP máximo original para daño necro
             currentHp: 0,
             tempHp: 0,
             regeneration: 0, // Regeneración pasiva por turno
@@ -99,6 +100,7 @@ export const useCharacterStore = defineStore('character', {
         configureCharacter(name, maxHp, regeneration = 0) {
             this.character.name = name
             this.character.maxHp = maxHp
+            this.character.originalMaxHp = maxHp // Guardar el HP máximo original
             this.character.currentHp = maxHp
             this.character.tempHp = 0
             this.character.regeneration = regeneration
@@ -122,13 +124,40 @@ export const useCharacterStore = defineStore('character', {
             // Aplicar regeneración pasiva si existe
             if (this.character.regeneration > 0) {
                 const oldHp = this.character.currentHp
-                this.heal(this.character.regeneration, true) // true = es regeneración automática
+                const oldMaxHp = this.character.maxHp
+                let maxHpRestored = 0
                 
-                // Actualizar el log del turno con la regeneración
-                const turnLog = this.logs.find(log => log.turn === this.turn.current && log.action === 'Inicio de Turno')
-                if (turnLog) {
-                    turnLog.details += ` | Regeneración automática: +${this.character.regeneration} HP`
-                    turnLog.hpAfter = this.character.currentHp
+                // Si hay daño necro (maxHp < originalMaxHp), usar regeneración para restaurar maxHp
+                if (this.character.maxHp < this.character.originalMaxHp) {
+                    const maxHpNeeded = this.character.originalMaxHp - this.character.maxHp
+                    const maxHpToRestore = Math.min(this.character.regeneration, maxHpNeeded)
+                    
+                    if (maxHpToRestore > 0) {
+                        this.character.maxHp = Math.min(this.character.originalMaxHp, this.character.maxHp + maxHpToRestore)
+                        maxHpRestored = this.character.maxHp - oldMaxHp
+                    }
+                }
+                
+                // SIEMPRE curar HP actual con TODA la regeneración (incluyendo la que se usó para max HP)
+                this.character.currentHp = Math.min(
+                    this.character.maxHp,
+                    this.character.currentHp + this.character.regeneration
+                )
+                
+                const actualHealed = this.character.currentHp - oldHp
+                
+                // Crear mensaje de log detallado
+                let logMessage = ''
+                if (maxHpRestored > 0 && actualHealed > 0) {
+                    logMessage = `+${actualHealed} HP (${oldHp} → ${this.character.currentHp}) | HP máximo restaurado: +${maxHpRestored} (${oldMaxHp} → ${this.character.maxHp})`
+                } else if (maxHpRestored > 0) {
+                    logMessage = `HP máximo restaurado: +${maxHpRestored} (${oldMaxHp} → ${this.character.maxHp})`
+                } else if (actualHealed > 0) {
+                    logMessage = `+${actualHealed} HP (${oldHp} → ${this.character.currentHp})`
+                }
+                
+                if (logMessage) {
+                    this.addLog('Regeneración Automática', logMessage)
                 }
             }
             
@@ -182,10 +211,11 @@ export const useCharacterStore = defineStore('character', {
         },
         
         // Recibir daño
-        takeDamage(amount) {
+        takeDamage(amount, isNecroDamage = false) {
             let remainingDamage = amount
             const oldHp = this.character.currentHp
             const oldTempHp = this.character.tempHp
+            const oldMaxHp = this.character.maxHp
             
             // Primero se reduce la vida temporal
             if (this.character.tempHp > 0) {
@@ -201,14 +231,25 @@ export const useCharacterStore = defineStore('character', {
             // Si aún hay daño, se reduce la vida actual
             if (remainingDamage > 0) {
                 this.character.currentHp = Math.max(0, this.character.currentHp - remainingDamage)
+                
+                // Si es daño necro, también reduce la vida máxima
+                if (isNecroDamage) {
+                    this.character.maxHp = Math.max(1, this.character.maxHp - remainingDamage)
+                }
             }
             
             // Agregar log de daño
             let damageDetails = `-${amount} HP`
+            if (isNecroDamage) {
+                damageDetails += ' (Necro)'
+            }
             if (oldTempHp > 0) {
                 damageDetails += ` | Vida temporal: ${oldTempHp} → ${this.character.tempHp}`
             }
             damageDetails += ` | HP actual: ${oldHp} → ${this.character.currentHp}`
+            if (isNecroDamage && oldMaxHp !== this.character.maxHp) {
+                damageDetails += ` | HP máximo: ${oldMaxHp} → ${this.character.maxHp}`
+            }
             
             this.addLog('Daño Recibido', damageDetails)
             
@@ -219,12 +260,15 @@ export const useCharacterStore = defineStore('character', {
         resetToMaxHp() {
             const oldHp = this.character.currentHp
             const oldTempHp = this.character.tempHp
+            const oldMaxHp = this.character.maxHp
             
-            this.character.currentHp = this.character.maxHp
+            // Restaurar HP actual y máximo al valor original
+            this.character.currentHp = this.character.originalMaxHp
+            this.character.maxHp = this.character.originalMaxHp
             this.character.tempHp = 0
             
             // Agregar log de reset
-            this.addLog('Reset HP', `HP restaurado al máximo (${oldHp} → ${this.character.maxHp}) | Vida temporal eliminada (${oldTempHp} → 0)`)
+            this.addLog('Reset HP', `HP restaurado al máximo original (${oldHp} → ${this.character.originalMaxHp}) | HP máximo restaurado (${oldMaxHp} → ${this.character.originalMaxHp}) | Vida temporal eliminada (${oldTempHp} → 0)`)
             
             this.saveToLocalStorage()
         },
@@ -286,6 +330,12 @@ export const useCharacterStore = defineStore('character', {
                 try {
                     const parsed = JSON.parse(data)
                     this.character = { ...this.character, ...parsed.character }
+                    
+                    // Si no existe originalMaxHp, establecerlo igual a maxHp (para compatibilidad con datos existentes)
+                    if (this.character.originalMaxHp === undefined) {
+                        this.character.originalMaxHp = this.character.maxHp
+                    }
+                    
                     this.turn = { ...this.turn, ...parsed.turn }
                     this.logs = parsed.logs || []
                 } catch (error) {
@@ -299,6 +349,7 @@ export const useCharacterStore = defineStore('character', {
             this.character = {
                 name: '',
                 maxHp: 0,
+                originalMaxHp: 0,
                 currentHp: 0,
                 tempHp: 0,
                 regeneration: 0,

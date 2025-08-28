@@ -16,6 +16,10 @@
           <span class="current-hp">{{ characterStore.character.currentHp }}</span>
           <span class="separator">/</span>
           <span class="max-hp">{{ characterStore.character.maxHp }}</span>
+          <!-- Indicador de daño necro -->
+          <span v-if="characterStore.character.maxHp < characterStore.character.originalMaxHp" class="necro-indicator" title="HP máximo reducido por daño necro">
+            ⚠️
+          </span>
         </div>
       </div>
       
@@ -26,8 +30,23 @@
             :class="characterStore.hasTempHp ? 'temp-hp' : characterStore.hpBarColor"
             :style="{ width: `${characterStore.hpPercentage}%` }"
           ></div>
+          <!-- Indicador de daño necro en la barra -->
+          <div
+            v-if="characterStore.character.maxHp < characterStore.character.originalMaxHp"
+            class="necro-bar-indicator"
+            :style="{
+              left: `${(characterStore.character.maxHp / characterStore.character.originalMaxHp) * 100}%`
+            }"
+            title="HP máximo reducido por daño necro"
+          ></div>
         </div>
         <div class="health-percentage">{{ Math.round(characterStore.hpPercentage) }}%</div>
+      </div>
+      
+      <!-- Información de daño necro -->
+      <div v-if="characterStore.character.maxHp < characterStore.character.originalMaxHp" class="necro-info">
+        <span class="necro-icon">💀</span>
+        <span class="necro-text">HP máximo reducido por daño necro: {{ characterStore.character.maxHp }} / {{ characterStore.character.originalMaxHp }}</span>
       </div>
     </div>
 
@@ -53,6 +72,7 @@
       <span class="regeneration-icon">🔄</span>
       <span class="regeneration-text">Regeneración: +{{ characterStore.character.regeneration }} HP/turno</span>
     </div>
+    
     <!-- Estado del turno -->
     <!-- Botón de turno: solo uno visible según el estado -->
     <div class="action-buttons">
@@ -115,6 +135,17 @@
       <button @click="resetToMaxHp" class="secondary-btn btn-reset">
         <span class="btn-icon">🔄</span>
         <span class="btn-text">Resetear HP</span>
+      </button>
+      
+      <!-- Botón para restaurar HP máximo (solo si hay daño necro) -->
+      <button 
+        v-if="characterStore.character.maxHp < characterStore.character.originalMaxHp"
+        @click="restoreMaxHp" 
+        class="secondary-btn btn-restore-max"
+        title="Restaurar solo el HP máximo (daño necro)"
+      >
+        <span class="btn-icon">💖</span>
+        <span class="btn-text">Restaurar HP Máx</span>
       </button>
       
       <button 
@@ -235,27 +266,36 @@ const showTempHpDialog = () => {
 const showDamageDialog = () => {
   Swal.fire({
     title: 'Recibir Daño',
-    input: 'number',
-    inputLabel: 'Cantidad de daño',
-    inputPlaceholder: 'Ej: 25',
-    inputAttributes: {
-      min: '1',
-      max: '999'
-    },
+    html: `
+      <div style="margin-bottom: 20px;">
+        <input id="damage-amount" type="number" placeholder="Ej: 25" min="1" max="999" class="swal2-input" style="width: 100%; margin-bottom: 15px;">
+        <div style="text-align: left;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;">
+            <input id="necro-damage" type="checkbox" style="width: 16px; height: 16px; accent-color: #e74c3c;">
+            <span style="color: #e74c3c; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Daño Necro</span>
+            <span style="color: #7f8c8d; font-size: 0.8rem; cursor: help;" title="El daño necro reduce permanentemente el HP máximo hasta que se restaure. Afecta tanto a la vida temporal como a la vida actual.">ⓘ</span>
+          </label>
+        </div>
+      </div>
+    `,
     showCancelButton: true,
     confirmButtonText: 'Recibir Daño',
     cancelButtonText: 'Cancelar',
-    inputValidator: (value) => {
-      if (!value || value <= 0) {
-        return 'Debes ingresar un número válido'
+    preConfirm: () => {
+      const amount = document.getElementById('damage-amount').value
+      const isNecroDamage = document.getElementById('necro-damage').checked
+      
+      if (!amount || amount <= 0) {
+        Swal.showValidationMessage('Debes ingresar un número válido')
+        return false
       }
+      
+      return { amount: parseInt(amount), isNecroDamage }
     }
   }).then((result) => {
     if (result.isConfirmed) {
-      const amount = parseInt(result.value)
-      characterStore.takeDamage(amount)
-      
-
+      const { amount, isNecroDamage } = result.value
+      characterStore.takeDamage(amount, isNecroDamage)
     }
   })
 }
@@ -263,31 +303,41 @@ const showDamageDialog = () => {
 const showResistantDamageDialog = () => {
   Swal.fire({
     title: 'Daño Resistente',
-    input: 'number',
-    inputLabel: 'Cantidad de daño resistente',
-    inputPlaceholder: 'Ej: 20',
-    inputAttributes: {
-      min: '1',
-      max: '999'
-    },
+    html: `
+      <div style="margin-bottom: 20px;">
+        <input id="resistant-damage-amount" type="number" placeholder="Ej: 20" min="1" max="999" class="swal2-input" style="width: 100%; margin-bottom: 15px;">
+        <div style="text-align: left;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;">
+            <input id="necro-resistant-damage" type="checkbox" style="width: 16px; height: 16px; accent-color: #e74c3c;">
+            <span style="color: #e74c3c; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">Daño Necro</span>
+            <span style="color: #7f8c8d; font-size: 0.8rem; cursor: help;" title="El daño necro reduce permanentemente el HP máximo hasta que se restaure. Afecta tanto a la vida temporal como a la vida actual.">ⓘ</span>
+          </label>
+        </div>
+      </div>
+    `,
     showCancelButton: true,
     confirmButtonText: 'Aplicar Daño',
     cancelButtonText: 'Cancelar',
-    inputValidator: (value) => {
-      if (!value || value <= 0) {
-        return 'Debes ingresar un número válido'
+    preConfirm: () => {
+      const amount = document.getElementById('resistant-damage-amount').value
+      const isNecroDamage = document.getElementById('necro-resistant-damage').checked
+      
+      if (!amount || amount <= 0) {
+        Swal.showValidationMessage('Debes ingresar un número válido')
+        return false
       }
+      
+      return { amount: parseInt(amount), isNecroDamage }
     }
   }).then((result) => {
     if (result.isConfirmed) {
-      const amount = parseInt(result.value)
+      const { amount, isNecroDamage } = result.value
       const resistantDamage = Math.floor(amount / 2)
-      characterStore.takeDamage(resistantDamage)
-      
-
+      characterStore.takeDamage(resistantDamage, isNecroDamage)
     }
   })
 }
+
 const resetToMaxHp = () => {
   Swal.fire({
     title: '¿Resetear HP?',
@@ -301,6 +351,37 @@ const resetToMaxHp = () => {
       characterStore.resetToMaxHp()
       
 
+    }
+  })
+}
+
+const restoreMaxHp = () => {
+  Swal.fire({
+    title: '¿Restaurar HP Máximo?',
+    text: '¿Quieres restaurar solo el HP máximo reducido por daño necro?',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, restaurar',
+    cancelButtonText: 'Cancelar'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const oldMaxHp = characterStore.character.maxHp
+      characterStore.character.maxHp = characterStore.character.originalMaxHp
+      
+      // Agregar log de restauración
+      characterStore.addLog('Restaurar HP Máximo', `HP máximo restaurado de ${oldMaxHp} a ${characterStore.character.originalMaxHp} (daño necro revertido)`)
+      
+      // Guardar cambios
+      characterStore.saveToLocalStorage()
+      
+      // Mostrar confirmación
+      Swal.fire({
+        icon: 'success',
+        title: 'HP Máximo Restaurado',
+        text: `Tu HP máximo ha sido restaurado de ${oldMaxHp} a ${characterStore.character.originalMaxHp}`,
+        timer: 2000,
+        showConfirmButton: false
+      })
     }
   })
 }
@@ -431,6 +512,25 @@ const goToLogs = () => {
   font-weight: bold;
 }
 
+/* Indicador de daño necro */
+.necro-indicator {
+  margin-left: 8px;
+  font-size: 1.2rem;
+  animation: pulse-warning 2s infinite;
+}
+
+@keyframes pulse-warning {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
 .health-bar-container {
   position: relative;
 }
@@ -442,6 +542,7 @@ const goToLogs = () => {
   border-radius: 15px;
   overflow: hidden;
   border: 2px solid rgba(255, 255, 255, 0.2);
+  position: relative;
 }
 
 .health-fill {
@@ -456,6 +557,17 @@ const goToLogs = () => {
 .health-fill.dark { background: linear-gradient(90deg, #34495e, #2c3e50); }
 .health-fill.temp-hp { background: linear-gradient(90deg, #9b59b6, #8e44ad); }
 
+/* Indicador de daño necro en la barra */
+.necro-bar-indicator {
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: #e74c3c;
+  box-shadow: 0 0 4px rgba(231, 76, 60, 0.8);
+  z-index: 2;
+}
+
 .health-percentage {
   position: absolute;
   top: 50%;
@@ -465,6 +577,28 @@ const goToLogs = () => {
   font-weight: bold;
   font-size: 1.1rem;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* Información de daño necro */
+.necro-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(231, 76, 60, 0.2);
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  margin-top: 15px;
+}
+
+.necro-icon {
+  font-size: 1.2rem;
+}
+
+.necro-text {
+  color: #e74c3c;
+  font-weight: 500;
+  font-size: 0.9rem;
 }
 
 .temp-health-section {
@@ -608,6 +742,7 @@ const goToLogs = () => {
   gap: 15px;
   justify-content: center;
   margin-bottom: 25px;
+  flex-wrap: wrap;
 }
 
 .secondary-btn {
@@ -627,6 +762,17 @@ const goToLogs = () => {
 
 .secondary-btn:hover {
   background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.btn-restore-max {
+  background: linear-gradient(135deg, #e91e63, #c2185b);
+  color: white;
+  border: 1px solid rgba(233, 30, 99, 0.3);
+}
+
+.btn-restore-max:hover {
+  background: linear-gradient(135deg, #c2185b, #ad1457);
   transform: translateY(-2px);
 }
 
