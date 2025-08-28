@@ -961,6 +961,9 @@ const heroName = ref("");
 const todoItems = ref([]);
 const newTodoItem = ref("");
 
+// Personaje en edición
+const editingCharacter = ref(null);
+
 // Nuevo personaje
 const newCharacter = ref({
   name: "",
@@ -1902,6 +1905,12 @@ textarea.form-control {
 
 .action-inputs input {
   flex: 1;
+}
+
+.attributes-grid{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 
 /* Modal styles */
