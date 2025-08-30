@@ -1018,10 +1018,14 @@ const showDeathModal = ref(false);
 const showTodoModal = ref(false);
 const sortBy = ref("name");
 const importData = ref("");
+
 const defeatedCharacter = ref(null);
 const heroName = ref("");
 const todoItems = ref([]);
 const newTodoItem = ref("");
+
+// Referencia para el input de archivo
+const fileInput = ref(null);
 
 // Personaje en edición
 const editingCharacter = ref(null);
@@ -1346,7 +1350,9 @@ const exportData = () => {
 };
 
 const triggerFileImport = () => {
-  fileInput.value.click();
+  if (fileInput.value) {
+    fileInput.value.click();
+  }
 };
 
 const handleFileImport = (event) => {
