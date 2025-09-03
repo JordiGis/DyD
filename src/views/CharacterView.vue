@@ -143,6 +143,19 @@
 
     <!-- Botones adicionales -->
     <div class="secondary-actions">
+      
+      <!-- Botón Descanso Largo -->
+      <button @click="longRest" class="secondary-btn btn-long-rest">
+        <span class="btn-icon">🛌</span>
+        <span class="btn-text">Descanso Largo</span>
+      </button>
+
+      <!-- Botón Descanso Corto -->
+      <button @click="shortRest" class="secondary-btn btn-short-rest">
+        <span class="btn-icon">💤</span>
+        <span class="btn-text">Descanso Corto</span>
+      </button>
+      
       <button @click="resetToMaxHp" class="secondary-btn btn-reset">
         <span class="btn-icon">🔄</span>
         <span class="btn-text">Resetear HP</span>
@@ -161,7 +174,7 @@
         <span class="btn-icon">⏮️</span>
         <span class="btn-text">Resetear Turno</span>
       </button>
-      
+
       <button @click="goToLogs" class="secondary-btn btn-logs">
         <span class="btn-icon">📋</span>
         <span class="btn-text">Ver Historial</span>
@@ -596,6 +609,39 @@ const goToConfig = () => {
 
 const goToLogs = () => {
   router.push('/logs')
+}
+
+// Descanso Largo: resetea turno y HP
+const longRest = () => {
+  Swal.fire({
+    title: 'Descanso Largo',
+    text: '¿Quieres restaurar la vida al máximo y reiniciar el turno?',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, descansar',
+    cancelButtonText: 'Cancelar'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      characterStore.resetToMaxHp();
+      characterStore.resetTurn();
+    }
+  });
+}
+
+// Descanso Corto: resetea solo turnos
+const shortRest = () => {
+  Swal.fire({
+    title: 'Descanso Corto',
+    text: '¿Quieres reiniciar el contador de turnos? (La vida no se restaura)',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, reiniciar turnos',
+    cancelButtonText: 'Cancelar'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      characterStore.resetTurn();
+    }
+  });
 }
 
 const showHealNecroDialog = () => {
