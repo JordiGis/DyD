@@ -394,18 +394,18 @@ div.state-add-card {
   box-shadow: 0 0 16px #d4af3744, 0 4px 18px rgba(212,175,55,0.08);
 }
 .state-add-btn {
-  background: none;
-  border: none;
-  color: #d4af37;
-  font-size: 2.2rem;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  transition: color 0.2s;
+background: none;
+border: none;
+color: #d4af37;
+font-size: 2.2rem;
+cursor: pointer;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+width: 100%;
+height: 100%;
+transition: color 0.2s;
 }
 .state-fab-plus {
   font-size: 2.2rem;

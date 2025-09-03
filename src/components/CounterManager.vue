@@ -104,6 +104,7 @@ div.counter-add-card {
 
 button.counter-add-btn{
     padding: 0px;
+    font-family: 'Cinzel', serif;
 }
 
 .counter-add-btn {
