@@ -74,7 +74,7 @@
     </div>
 
     <!-- Contadores y Estados personalizados -->
-    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+  <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8 mb-2 custom-fold-row">
       <div>
         <button @click="toggleCounters" class="fold-btn">
           <span v-if="countersFolded">▶️ Mostrar Contadores</span>
@@ -785,6 +785,10 @@ const healNecroDamage = (amount) => {
 </script>
 
 <style scoped>
+/* Margen inferior para la fila de contadores y estados */
+.custom-fold-row {
+  margin-bottom: 10px;
+}
 /* Botón de plegado */
 .fold-btn {
   display: flex;
