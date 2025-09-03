@@ -6,12 +6,6 @@
         <span class="turn-label">Turno:</span>
         <span class="turn-number">{{ characterStore.turn.current }}</span>
       </div>
-
-    <!-- Contadores y Estados personalizados -->
-    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-      <CounterManager />
-      <StateManager />
-    </div>
     </div>
 
     <!-- Barra de vida principal -->
@@ -77,6 +71,28 @@
     <div v-if="characterStore.character.regeneration > 0" class="regeneration-info">
       <span class="regeneration-icon">🔄</span>
       <span class="regeneration-text">Regeneración: +{{ characterStore.character.regeneration }} HP/turno</span>
+    </div>
+
+    <!-- Contadores y Estados personalizados -->
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div>
+        <button @click="toggleCounters" class="fold-btn">
+          <span v-if="countersFolded">▶️ Mostrar Contadores</span>
+          <span v-else>🔽 Ocultar Contadores</span>
+        </button>
+        <div v-show="!countersFolded">
+          <CounterManager />
+        </div>
+      </div>
+      <div>
+        <button @click="toggleStates" class="fold-btn">
+          <span v-if="statesFolded">▶️ Mostrar Estados</span>
+          <span v-else>🔽 Ocultar Estados</span>
+        </button>
+        <div v-show="!statesFolded">
+          <StateManager />
+        </div>
+      </div>
     </div>
     
     <!-- Estado del turno -->
@@ -199,7 +215,7 @@
 <script setup>
 import CounterManager from '../components/CounterManager.vue';
 import StateManager from '../components/StateManager.vue';
-import { onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCharacterStore } from '../stores/useCharacterStore'
 import { useCounterStore } from '../stores/useCounterStore'
@@ -209,10 +225,43 @@ const router = useRouter()
 const characterStore = useCharacterStore()
 const counterStore = useCounterStore()
 
+// Estado de plegado para contadores y estados
+const countersFolded = ref(false)
+const statesFolded = ref(false)
+
+// Cargar estado de plegado desde localStorage
+function loadFoldState() {
+  try {
+    const data = localStorage.getItem('dnd-character-folds')
+    if (data) {
+      const parsed = JSON.parse(data)
+      countersFolded.value = !!parsed.countersFolded
+      statesFolded.value = !!parsed.statesFolded
+    }
+  } catch (e) {}
+}
+
+function saveFoldState() {
+  localStorage.setItem('dnd-character-folds', JSON.stringify({
+    countersFolded: countersFolded.value,
+    statesFolded: statesFolded.value
+  }))
+}
+
+function toggleCounters() {
+  countersFolded.value = !countersFolded.value
+  saveFoldState()
+}
+
+function toggleStates() {
+  statesFolded.value = !statesFolded.value
+  saveFoldState()
+}
+
 onMounted(() => {
   // Cargar datos del localStorage
   characterStore.loadFromLocalStorage()
-  
+  loadFoldState()
   // Si no hay personaje configurado, redirigir a configuración
   if (!characterStore.character.isConfigured) {
     router.push('/config')
@@ -736,6 +785,25 @@ const healNecroDamage = (amount) => {
 </script>
 
 <style scoped>
+/* Botón de plegado */
+.fold-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.08);
+  color: #f39c12;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  margin-top: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s;
+}
+.fold-btn:hover {
+  background: rgba(255,255,255,0.18);
+}
 .character-view-container {
   padding: 20px;
   max-width: 800px;
