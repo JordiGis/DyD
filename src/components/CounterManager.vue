@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h2 class="text-lg font-bold mb-2">Contadores</h2>
+    <h2 class="text-lg font-bold mb-2 title-conter">Contadores</h2>
     <div class="counter-grid">
       <template v-for="counter in counters" :key="counter.id">
         <div class="counter-card">
@@ -73,6 +73,10 @@
 </template>
 
 <style scoped>
+
+.title-conter{
+    color: #b8941f;
+}
 /* Grid de 3 columnas para los contadores */
 .counter-grid {
   display: grid;
@@ -203,11 +207,11 @@ button.counter-add-btn{
   background: #f7d774;
 }
 .counter-max-btn {
-  background: #2980b9;
+  background: #a87517;
   color: #fff;
 }
 .counter-max-btn:hover {
-  background: #206090;
+  background: #a86917;
 }
 .counter-values {
   color: #f7e7b3;

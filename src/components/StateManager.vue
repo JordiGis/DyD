@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h2 class="state-title">Estados</h2>
+    <h2 class="title-state">Estados</h2>
     <div class="state-grid">
       <template v-for="state in states" :key="state.id">
         <div :class="['state-card', 'dnd-theme-card', state.active ? 'active-state' : '']">
@@ -132,6 +132,9 @@ function closeModal() {
 }
 </script>
 <style scoped>
+.title-state{
+    color: #b8941f;
+}
     
 .dnd-theme-btn.active-btn {
   background: #e74c3c;
