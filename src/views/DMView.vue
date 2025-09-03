@@ -439,7 +439,7 @@
 
     <button
       v-if="character.currentHp <= 0"
-      @click="dmStore.reviveCharacter(character.id)"
+      @click="revivir(character.id)"
       class="btn btn-sm btn-success w-100"
     >
       <i class="bi bi-heart-pulse"></i>
@@ -1302,6 +1302,69 @@ const restoreMaxHp = (characterId) => {
       timer: 2000,
       showConfirmButton: false
     });
+  }
+};
+
+const revivir = async (characterId) => {
+  const character = dmStore.getCharacterById(characterId);
+  if (!character) return;
+
+  // Si el personaje tiene daño necro, restaurar el HP máximo primero
+  let maxHpRestaurado = false;
+  if (character.maxHp < character.originalMaxHp) {
+    const oldMaxHp = character.maxHp;
+    character.maxHp = character.originalMaxHp;
+    maxHpRestaurado = true;
+    dmStore.addLogToCharacter(characterId, 'Restaurar HP Máximo', `HP máximo restaurado de ${oldMaxHp} a ${character.originalMaxHp} (daño necro revertido)`);
+  }
+
+  // Modal de opciones de resurrección
+  const { value: reviveOption } = await Swal.fire({
+    title: `¿Cómo quieres revivir a ${character.name}?`,
+    html: `
+      <div style='text-align:left;'>
+        <label><input type='radio' name='reviveOption' value='1' checked> Revivir con 1 HP</label><br>
+        <label><input type='radio' name='reviveOption' value='half'> Revivir con la mitad de la vida máxima (${Math.floor(character.maxHp / 2)} HP)</label><br>
+        <label><input type='radio' name='reviveOption' value='custom'> Revivir con cantidad personalizada:</label>
+        <input id='customHpInput' type='number' min='1' max='${character.maxHp}' class='swal2-input' style='width:100%;margin:0;' placeholder='HP' disabled>
+      </div>
+    `,
+    showCancelButton: true,
+    confirmButtonText: 'Revivir',
+    cancelButtonText: 'Cancelar',
+    preConfirm: () => {
+      const selected = document.querySelector('input[name="reviveOption"]:checked').value;
+      if (selected === 'custom') {
+        const customValue = parseInt(document.getElementById('customHpInput').value);
+        if (isNaN(customValue) || customValue < 1 || customValue > character.maxHp) {
+          Swal.showValidationMessage(`Introduce un valor entre 1 y ${character.maxHp}`);
+          return false;
+        }
+        return customValue;
+      }
+      if (selected === 'half') {
+        return Math.floor(character.maxHp / 2);
+      }
+      return 1;
+    },
+    didOpen: () => {
+      const radios = Swal.getHtmlContainer().querySelectorAll('input[name="reviveOption"]');
+      const customInput = Swal.getHtmlContainer().querySelector('#customHpInput');
+      radios.forEach(radio => {
+        radio.addEventListener('change', () => {
+          if (radio.value === 'custom') {
+            customInput.disabled = false;
+            customInput.focus();
+          } else {
+            customInput.disabled = true;
+          }
+        });
+      });
+    }
+  });
+
+  if (reviveOption && reviveOption > 0) {
+    dmStore.reviveCharacter(characterId, reviveOption);
   }
 };
 

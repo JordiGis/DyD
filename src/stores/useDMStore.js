@@ -311,17 +311,19 @@ export const useDMStore = defineStore('dm', {
             return false
         },
         
-        // Revivir a un personaje muerto (pone en 1 HP)
-        reviveCharacter(characterId) {
+        // Revivir a un personaje muerto (puede elegir HP)
+        reviveCharacter(characterId, hp = 1) {
             const character = this.getCharacterById(characterId)
             if (character && character.currentHp <= 0) {
                 const oldHp = character.currentHp
                 const oldDefeatedBy = character.defeatedBy
-                character.currentHp = 1
+                // No puede revivir con más de su vida máxima
+                const reviveHp = Math.min(parseInt(hp) || 1, character.maxHp)
+                character.currentHp = reviveHp
                 character.tempHp = 0
                 character.defeatedBy = null // Eliminar el nombre del héroe al revivir
                 
-                this.addLogToCharacter(characterId, 'Revivir', `Personaje revivido de la muerte (${oldHp} → 1 HP)${oldDefeatedBy ? ` | Héroe anterior: ${oldDefeatedBy}` : ''}`)
+                this.addLogToCharacter(characterId, 'Revivir', `Personaje revivido de la muerte (${oldHp} → ${reviveHp} HP)${oldDefeatedBy ? ` | Héroe anterior: ${oldDefeatedBy}` : ''}`)
                 this.saveToLocalStorage()
                 
                 return true
