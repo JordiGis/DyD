@@ -6,6 +6,12 @@
         <span class="turn-label">Turno:</span>
         <span class="turn-number">{{ characterStore.turn.current }}</span>
       </div>
+
+    <!-- Contadores y Estados personalizados -->
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+      <CounterManager />
+      <StateManager />
+    </div>
     </div>
 
     <!-- Barra de vida principal -->
@@ -191,13 +197,17 @@
 </template>
 
 <script setup>
+import CounterManager from '../components/CounterManager.vue';
+import StateManager from '../components/StateManager.vue';
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCharacterStore } from '../stores/useCharacterStore'
+import { useCounterStore } from '../stores/useCounterStore'
 import Swal from 'sweetalert2'
 
 const router = useRouter()
 const characterStore = useCharacterStore()
+const counterStore = useCounterStore()
 
 onMounted(() => {
   // Cargar datos del localStorage
@@ -611,11 +621,11 @@ const goToLogs = () => {
   router.push('/logs')
 }
 
-// Descanso Largo: resetea turno y HP
+// Descanso Largo: resetea turno, HP y recarga contadores
 const longRest = () => {
   Swal.fire({
     title: 'Descanso Largo',
-    text: '¿Quieres restaurar la vida al máximo y reiniciar el turno?',
+    text: '¿Quieres restaurar la vida al máximo, reiniciar el turno y recargar contadores?',
     icon: 'question',
     showCancelButton: true,
     confirmButtonText: 'Sí, descansar',
@@ -624,15 +634,16 @@ const longRest = () => {
     if (result.isConfirmed) {
       characterStore.resetToMaxHp();
       characterStore.resetTurn();
+      counterStore.regenerateCountersByRest('long');
     }
   });
 }
 
-// Descanso Corto: resetea solo turnos
+// Descanso Corto: resetea turnos y recarga contadores
 const shortRest = () => {
   Swal.fire({
     title: 'Descanso Corto',
-    text: '¿Quieres reiniciar el contador de turnos? (La vida no se restaura)',
+    text: '¿Quieres reiniciar el contador de turnos y recargar contadores? (La vida no se restaura)',
     icon: 'question',
     showCancelButton: true,
     confirmButtonText: 'Sí, reiniciar turnos',
@@ -640,6 +651,7 @@ const shortRest = () => {
   }).then((result) => {
     if (result.isConfirmed) {
       characterStore.resetTurn();
+      counterStore.regenerateCountersByRest('short');
     }
   });
 }
