@@ -273,16 +273,16 @@ export const useCharacterStore = defineStore('character', {
             this.saveToLocalStorage()
         },
         
-        // Revivir al personaje muerto (pone en 1 HP)
-        revive() {
+        // Revivir al personaje muerto (puede elegir HP)
+        revive(hp = 1) {
             if (this.character.currentHp <= 0) {
                 const oldHp = this.character.currentHp
-                this.character.currentHp = 1
+                // No puede revivir con más de su vida máxima
+                const reviveHp = Math.min(parseInt(hp) || 1, this.character.maxHp)
+                this.character.currentHp = reviveHp
                 this.character.tempHp = 0
-                
                 // Agregar log de revivir
-                this.addLog('Revivir', `Personaje revivido de la muerte (${oldHp} → 1 HP)`)
-                
+                this.addLog('Revivir', `Personaje revivido de la muerte (${oldHp} → ${reviveHp} HP)`)
                 this.saveToLocalStorage()
                 return true
             }

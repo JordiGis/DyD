@@ -386,19 +386,193 @@ const restoreMaxHp = () => {
   })
 }
 
-const reviveCharacter = () => {
-  Swal.fire({
-    title: '¿Revivir Personaje?',
-    text: '¿Quieres revivir al personaje con 1 punto de vida?',
-    icon: 'question',
+const reviveCharacter = async () => {
+  // Si el personaje tiene daño necro, restaurar el HP máximo primero
+  let maxHpRestaurado = false;
+  if (characterStore.character.maxHp < characterStore.character.originalMaxHp) {
+    const oldMaxHp = characterStore.character.maxHp;
+    characterStore.character.maxHp = characterStore.character.originalMaxHp;
+    maxHpRestaurado = true;
+    characterStore.addLog('Restaurar HP Máximo', `HP máximo restaurado de ${oldMaxHp} a ${characterStore.character.originalMaxHp} (daño necro revertido)`);
+    characterStore.saveToLocalStorage();
+  }
+
+  // Modal de opciones de resurrección estilizado
+  const { value: reviveOption } = await Swal.fire({
+    title: `
+      <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:8px;">
+        <i class="bi bi-magic" style="color:#d4af37;font-size:1.4em;"></i>
+        <span>Ritual de Resurrección</span>
+        <i class="bi bi-magic" style="color:#d4af37;font-size:1.4em;"></i>
+      </div>
+    `,
+    html: `
+      <div style="background: linear-gradient(135deg, #2c1810 0%, #1a0f0a 100%); 
+                  border: 2px solid #d4af37; 
+                  border-radius: 12px; 
+                  padding: 20px; 
+                  margin: 10px 0;
+                  box-shadow: inset 0 0 20px rgba(212, 175, 55, 0.1);">
+        <div style="text-align: center; margin-bottom: 16px;">
+          <div style="color: #f39c12; font-size: 1.2em; font-weight: 700; text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">
+            ${characterStore.character.name}
+          </div>
+          <div style="color: #bbb; font-size: 0.9em; margin-top: 4px;">
+            Elige el método de resurrección
+          </div>
+        </div>
+        <div style="text-align: left; font-size: 1.05em;">
+          <!-- Opción 1: 1 HP -->
+          <label style="display: block; background: linear-gradient(90deg, rgba(39, 174, 96, 0.15) 0%, rgba(39, 174, 96, 0.05) 100%); border: 1px solid rgba(39, 174, 96, 0.3); border-radius: 8px; padding: 14px; margin-bottom: 12px; cursor: pointer; transition: all 0.3s ease; position: relative;"
+                 onmouseover="this.style.borderColor='rgba(39, 174, 96, 0.6)'; this.style.background='linear-gradient(90deg, rgba(39, 174, 96, 0.25) 0%, rgba(39, 174, 96, 0.08) 100%)'"
+                 onmouseout="this.style.borderColor='rgba(39, 174, 96, 0.3)'; this.style.background='linear-gradient(90deg, rgba(39, 174, 96, 0.15) 0%, rgba(39, 174, 96, 0.05) 100%)'">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <input type="radio" name="reviveOption" value="1" checked style="accent-color: #27ae60; transform: scale(1.2);">
+              <i class="bi bi-heart" style="color: #27ae60; font-size: 1.1em;"></i>
+              <div>
+                <div style="color: #27ae60; font-weight: 700; font-size: 1.05em;">Resurrección Básica</div>
+                <div style="color: #aaa; font-size: 0.9em;">Revive con 1 punto de vida</div>
+              </div>
+            </div>
+          </label>
+          <!-- Opción 2: Media vida -->
+          <label style="display: block; background: linear-gradient(90deg, rgba(243, 156, 18, 0.15) 0%, rgba(243, 156, 18, 0.05) 100%); border: 1px solid rgba(243, 156, 18, 0.3); border-radius: 8px; padding: 14px; margin-bottom: 12px; cursor: pointer; transition: all 0.3s ease;"
+                 onmouseover="this.style.borderColor='rgba(243, 156, 18, 0.6)'; this.style.background='linear-gradient(90deg, rgba(243, 156, 18, 0.25) 0%, rgba(243, 156, 18, 0.08) 100%)'"
+                 onmouseout="this.style.borderColor='rgba(243, 156, 18, 0.3)'; this.style.background='linear-gradient(90deg, rgba(243, 156, 18, 0.15) 0%, rgba(243, 156, 18, 0.05) 100%)'">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <input type="radio" name="reviveOption" value="half" style="accent-color: #f39c12; transform: scale(1.2);">
+              <i class="bi bi-heart-half" style="color: #f39c12; font-size: 1.1em;"></i>
+              <div>
+                <div style="color: #f39c12; font-weight: 700; font-size: 1.05em;">Resurrección Mejorada</div>
+                <div style="color: #aaa; font-size: 0.9em;">Revive con ${Math.floor(characterStore.character.maxHp / 2)} HP (50% vida máxima)</div>
+              </div>
+            </div>
+          </label>
+          <!-- Opción 3: Personalizada -->
+          <label style="display: block; background: linear-gradient(90deg, rgba(155, 89, 182, 0.15) 0%, rgba(155, 89, 182, 0.05) 100%); border: 1px solid rgba(155, 89, 182, 0.3); border-radius: 8px; padding: 14px; margin-bottom: 16px; cursor: pointer; transition: all 0.3s ease;"
+                 onmouseover="this.style.borderColor='rgba(155, 89, 182, 0.6)'; this.style.background='linear-gradient(90deg, rgba(155, 89, 182, 0.25) 0%, rgba(155, 89, 182, 0.08) 100%)'"
+                 onmouseout="this.style.borderColor='rgba(155, 89, 182, 0.3)'; this.style.background='linear-gradient(90deg, rgba(155, 89, 182, 0.15) 0%, rgba(155, 89, 182, 0.05) 100%)'">
+            <div style="display: flex; align-items: flex-start; gap: 10px;">
+              <input type="radio" name="reviveOption" value="custom" style="accent-color: #9b59b6; transform: scale(1.2); margin-top: 2px;">
+              <i class="bi bi-gear-fill" style="color: #9b59b6; font-size: 1.1em; margin-top: 2px;"></i>
+              <div style="flex: 1;">
+                <div style="color: #9b59b6; font-weight: 700; font-size: 1.05em; margin-bottom: 8px;">Resurrección Personalizada</div>
+                <input id="customHpInput" type="number" min="1" max="${characterStore.character.maxHp}" placeholder="Cantidad de HP" disabled style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(155, 89, 182, 0.4); border-radius: 6px; padding: 8px 12px; color: #fff; font-size: 0.95em; transition: all 0.3s ease;" onfocus="this.style.borderColor='#9b59b6'; this.style.boxShadow='0 0 8px rgba(155, 89, 182, 0.3)'" onblur="this.style.borderColor='rgba(155, 89, 182, 0.4)'; this.style.boxShadow='none'">
+                <div style="color: #aaa; font-size: 0.85em; margin-top: 4px;">Especifica la cantidad exacta de HP</div>
+              </div>
+            </div>
+          </label>
+        </div>
+        <div style="background: rgba(52, 152, 219, 0.1); border: 1px solid rgba(52, 152, 219, 0.3); border-radius: 6px; padding: 12px; text-align: center;">
+          <i class="bi bi-info-circle-fill" style="color: #3498db; margin-right: 8px;"></i>
+          <span style="color: #bbb; font-size: 0.9em;">Vida máxima actual: <strong style="color: #3498db;">${characterStore.character.maxHp} HP</strong></span>
+        </div>
+      </div>
+    `,
+    customClass: {
+      popup: 'dnd-modal-popup',
+      title: 'dnd-modal-title',
+      htmlContainer: 'dnd-modal-content',
+      confirmButton: 'dnd-confirm-btn',
+      cancelButton: 'dnd-cancel-btn'
+    },
     showCancelButton: true,
-    confirmButtonText: 'Sí, revivir',
-    cancelButtonText: 'Cancelar'
-  }).then((result) => {
-    if (result.isConfirmed) {
-      characterStore.revive()
+    confirmButtonText: `
+      <i class="bi bi-magic" style="margin-right: 8px; color: #d4af37;"></i>
+      Realizar Ritual
+    `,
+    cancelButtonText: `
+      <i class="bi bi-x-circle" style="margin-right: 6px;"></i>
+      Cancelar
+    `,
+    background: '#1a1a1a',
+    color: '#ffffff',
+    preConfirm: () => {
+      const selected = document.querySelector('input[name="reviveOption"]:checked').value;
+      if (selected === 'custom') {
+        const customValue = parseInt(document.getElementById('customHpInput').value);
+        if (isNaN(customValue) || customValue < 1 || customValue > characterStore.character.maxHp) {
+          Swal.showValidationMessage(`Introduce un valor entre 1 y ${characterStore.character.maxHp}`);
+          return false;
+        }
+        return customValue;
+      }
+      if (selected === 'half') {
+        return Math.floor(characterStore.character.maxHp / 2);
+      }
+      return 1;
+    },
+    didOpen: () => {
+      // Aplicar estilos CSS adicionales
+      const style = document.createElement('style');
+      style.textContent = `
+        .dnd-modal-popup {
+          background: linear-gradient(145deg, #2c2c2c 0%, #1a1a1a 100%) !important;
+          border: 2px solid #d4af37 !important;
+          border-radius: 16px !important;
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7), 0 0 30px rgba(212, 175, 55, 0.2) !important;
+        }
+        .dnd-modal-title {
+          color: #d4af37 !important;
+          text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8) !important;
+          font-weight: 700 !important;
+          font-size: 1.4em !important;
+        }
+        .dnd-confirm-btn {
+          background: linear-gradient(135deg, #d4af37 0%, #b8941f 100%) !important;
+          color: #1a1a1a !important;
+          border: none !important;
+          padding: 12px 24px !important;
+          border-radius: 8px !important;
+          font-weight: 600 !important;
+          font-size: 1.05em !important;
+          transition: all 0.3s ease !important;
+          box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3) !important;
+        }
+        .dnd-confirm-btn:hover {
+          background: linear-gradient(135deg, #e6c451 0%, #d4af37 100%) !important;
+          transform: translateY(-2px) !important;
+          box-shadow: 0 6px 16px rgba(212, 175, 55, 0.4) !important;
+        }
+        .dnd-cancel-btn {
+          background: linear-gradient(135deg, #555 0%, #333 100%) !important;
+          color: #fff !important;
+          border: 1px solid #666 !important;
+          padding: 12px 24px !important;
+          border-radius: 8px !important;
+          font-weight: 500 !important;
+          transition: all 0.3s ease !important;
+        }
+        .dnd-cancel-btn:hover {
+          background: linear-gradient(135deg, #666 0%, #444 100%) !important;
+          border-color: #777 !important;
+          transform: translateY(-1px) !important;
+        }
+        .swal2-actions {
+          gap: 16px !important;
+          margin-top: 24px !important;
+        }
+      `;
+      document.head.appendChild(style);
+      // Manejo de los radio buttons y el input personalizado
+      const radios = Swal.getHtmlContainer().querySelectorAll('input[name="reviveOption"]');
+      const customInput = Swal.getHtmlContainer().querySelector('#customHpInput');
+      radios.forEach(radio => {
+        radio.addEventListener('change', () => {
+          if (radio.value === 'custom') {
+            customInput.disabled = false;
+            customInput.focus();
+          } else {
+            customInput.disabled = true;
+          }
+        });
+      });
     }
-  })
+  });
+
+  if (reviveOption && reviveOption > 0) {
+    characterStore.revive(reviveOption);
+  }
 }
 
 const resetTurn = () => {
