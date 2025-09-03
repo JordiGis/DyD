@@ -76,25 +76,40 @@
 /* Grid de 3 columnas para los contadores */
 .counter-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr;
   gap: 1.2rem;
   margin-bottom: 1.5rem;
 }
+@media (min-width: 500px) {
+  .counter-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 900px) {
+  .counter-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
 
 /* Tarjeta para agregar contador */
-.counter-add-card {
+div.counter-add-card {
   display: flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #1a0f0a 0%, #2c1810 100%);
-  border: 2px dashed #27ae60;
-  color: #27ae60;
-  min-height: 170px;
+  min-height: 80px;
+  padding: 0;
+  border: 2.5px dashed #d4af37;
 }
+
+button.counter-add-btn{
+    padding: 0px;
+}
+
 .counter-add-btn {
   background: none;
   border: none;
-  color: #27ae60;
+  color: #d4af37;
   font-size: 2.2rem;
   cursor: pointer;
   display: flex;
@@ -105,8 +120,18 @@
   height: 100%;
   transition: color 0.2s;
 }
-.counter-add-btn:hover {
-  color: #219150;
+.counter-fab-plus {
+  font-size: 2.2rem;
+  line-height: 1;
+}
+@media (max-width: 500px) {
+  .counter-add-btn {
+    font-size: 1.3rem;
+    padding: 0.3rem 0.2rem;
+  }
+  .counter-fab-plus {
+    font-size: 1.3rem;
+  }
 }
 .counter-card {
   background: linear-gradient(135deg, #1a0f0a 0%, #2c1810 100%);

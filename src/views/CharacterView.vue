@@ -1237,7 +1237,7 @@ const healNecroDamage = (amount) => {
   }
   
   .action-buttons {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 15px;
     margin: 25px 15px;
   }
@@ -1258,7 +1258,8 @@ const healNecroDamage = (amount) => {
   }
   
   .secondary-actions {
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     align-items: center;
     gap: 12px;
     margin: 20px 15px 25px;

@@ -366,20 +366,31 @@ function closeModal() {
 /* Grid de 3 columnas para los estados */
 .state-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr;
   gap: 1.2rem;
   margin-bottom: 1.5rem;
 }
+@media (min-width: 500px) {
+  .state-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 900px) {
+  .state-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
 
 /* Tarjeta para agregar estado */
-.state-add-card {
+div.state-add-card {
   display: flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #1a0f0a 0%, #2c1810 100%);
   border: 2.5px dashed #d4af37;
   color: #d4af37;
-  min-height: 170px;
+  min-height: 80px;
+  padding: 0;
   box-shadow: 0 0 16px #d4af3744, 0 4px 18px rgba(212,175,55,0.08);
 }
 .state-add-btn {
@@ -395,18 +406,19 @@ function closeModal() {
   width: 100%;
   height: 100%;
   transition: color 0.2s;
-  font-family: 'Cinzel', serif;
-  letter-spacing: 1px;
-  text-shadow: 0 2px 8px #000a, 0 0 8px #d4af3744;
-}
-.state-add-btn:hover {
-  color: #f7d774;
-  text-shadow: 0 2px 12px #d4af37cc, 0 0 12px #fff2;
 }
 .state-fab-plus {
   font-size: 2.2rem;
   line-height: 1;
-  font-family: 'Cinzel', serif;
+}
+@media (max-width: 500px) {
+  .state-add-btn {
+    font-size: 1.3rem;
+    padding: 0.3rem 0.2rem;
+  }
+  .state-fab-plus {
+    font-size: 1.3rem;
+  }
 }
 .state-modal-overlay {
   position: fixed;
@@ -487,7 +499,6 @@ function closeModal() {
   color: #fff;
   border: 2px solid #d4af37;
   box-shadow: 0 0 8px #d4af37aa, 0 0 16px #e74c3c44;
-  text-shadow: 0 2px 8px #000a;
 }
 .dnd-theme-card.active-state {
   box-shadow: 0 0 24px #d4af37cc, 0 4px 18px rgba(212,175,55,0.18);
