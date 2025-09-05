@@ -1125,33 +1125,27 @@ const deleteCharacter = (id) => {
 };
 
 const duplicateCharacter = (character) => {
-  // Crear una copia del personaje con un nuevo nombre y ID
-  const duplicatedName = `${character.name} (Copia)`;
-  
-  // Verificar si ya existe un personaje con ese nombre y agregar número si es necesario
+  // Clonación profunda del personaje
+  const duplicatedCharacter = JSON.parse(JSON.stringify(character));
+  // Generar nuevo id y fecha
+  duplicatedCharacter.id = Date.now() + Math.random();
+  duplicatedCharacter.createdAt = new Date().toISOString();
+  // Cambiar el nombre, asegurando que sea único
+  let duplicatedName = `${character.name} (Copia)`;
   let finalName = duplicatedName;
   let counter = 1;
   while (dmStore.getCharacterByName(finalName)) {
     finalName = `${character.name} (Copia ${counter})`;
     counter++;
   }
-  
-  dmStore.createCharacter(
-    finalName,
-    character.maxHp,
-    character.regeneration,
-    character.xp,
-    character.resistencias,
-    character.inmunidades,
-    character.fuerza,
-    character.destreza,
-    character.constitucion,
-    character.inteligencia,
-    character.sabiduria,
-    character.carisma,
-    character.notas,
-    character.ca
-  );
+  duplicatedCharacter.name = finalName;
+  // Opcional: limpiar logs si no quieres copiar el historial
+  // duplicatedCharacter.logs = [];
+  // Agregar el personaje clonado directamente al array y guardar
+  dmStore.characters.push(duplicatedCharacter);
+  dmStore.saveToLocalStorage();
+  // Agregar log de clonación
+  dmStore.addLogToCharacter(duplicatedCharacter.id, 'Clonación', `Personaje clonado de ${character.name}`);
 };
 
 const applyDamage = (character) => {
