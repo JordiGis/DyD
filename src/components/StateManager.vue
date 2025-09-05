@@ -50,7 +50,14 @@
           </label>
           <label class="dnd-modal-label">
             Descuento al activar
-            <input v-model.number="newState.discountOnActivate" type="number" placeholder="Ej: 1" class="dnd-modal-input" />
+            <input v-model.number="newState.discountOnActivate" type="number" placeholder="Ej: 1" class="dnd-modal-input"/>
+          </label>
+          <label class="dnd-modal-label">
+            Tipo de descuento
+            <select v-model="newState.discountType" class="dnd-modal-input">
+              <option value="resta">Resta</option>
+              <option value="suma">Suma</option>
+            </select>
           </label>
           <button type="submit" class="dnd-modal-btn">{{ isEditing ? 'Guardar cambios' : 'Crear Estado' }}</button>
         </form>
@@ -70,6 +77,7 @@ const newState = ref({
   name: '',
   linkedCounterId: '',
   discountOnActivate: 0,
+  discountType: 'resta',
 });
 
 function toggleState(state) {
@@ -81,8 +89,9 @@ function addNewState() {
     name: newState.value.name,
     linkedCounterId: newState.value.linkedCounterId || null,
     discountOnActivate: newState.value.discountOnActivate,
+    discountType: newState.value.discountType,
   });
-  newState.value = { name: '', linkedCounterId: '', discountOnActivate: 0 };
+  newState.value = { name: '', linkedCounterId: '', discountOnActivate: 0, discountType: 'resta' };
   showModal.value = false;
 }
 
@@ -91,7 +100,10 @@ function canActivateState(state) {
   const counter = counters.find(c => c.id === state.linkedCounterId);
   if (!counter) return false;
   const cost = Math.abs(state.discountOnActivate || 1);
-  return counter.value >= cost;
+  if ((state.discountType === 'resta') && (counter.value - cost < counter.min)) {
+    return false;
+  }
+  return true;
 }
 
 function getCounterName(id) {
@@ -110,6 +122,7 @@ function openEditModal(state) {
     name: state.name,
     linkedCounterId: state.linkedCounterId || '',
     discountOnActivate: state.discountOnActivate,
+    discountType: state.discountType || 'resta',
   };
   showModal.value = true;
 }
@@ -120,6 +133,7 @@ function saveEditState() {
     states[idx].name = newState.value.name;
     states[idx].linkedCounterId = newState.value.linkedCounterId || null;
     states[idx].discountOnActivate = newState.value.discountOnActivate;
+    states[idx].discountType = newState.value.discountType;
   }
   closeModal();
 }
@@ -128,7 +142,7 @@ function closeModal() {
   showModal.value = false;
   isEditing.value = false;
   editingId = null;
-  newState.value = { name: '', linkedCounterId: '', discountOnActivate: 0 };
+  newState.value = { name: '', linkedCounterId: '', discountOnActivate: 0, discountType: 'resta' };
 }
 </script>
 <style scoped>

@@ -60,10 +60,16 @@
           <label class="counter-modal-label">
             Recarga por descanso corto
             <input v-model.number="newCounter.shortRest" type="number" placeholder="Ej: 0" class="counter-modal-input" />
+            <label style="display:flex;align-items:center;margin-top:4px;font-size:0.95em;">
+              <input type="checkbox" v-model="newCounter.shortRestReset" style="margin-right:6px;" /> Reset al valor introducido
+            </label>
           </label>
           <label class="counter-modal-label">
             Recarga por descanso largo
             <input v-model.number="newCounter.longRest" type="number" placeholder="Ej: 0" class="counter-modal-input" />
+            <label style="display:flex;align-items:center;margin-top:4px;font-size:0.95em;">
+              <input type="checkbox" v-model="newCounter.longRestReset" style="margin-right:6px;" /> Reset al valor introducido
+            </label>
           </label>
           <button type="submit" class="counter-modal-btn">{{ isEditing ? 'Guardar cambios' : 'Agregar' }}</button>
         </form>
@@ -338,7 +344,9 @@ const newCounter = ref({
   min: 0,
   max: 10,
   shortRest: 0,
+  shortRestReset: false,
   longRest: 0,
+  longRestReset: false,
 });
 const showModal = ref(false);
 
@@ -349,9 +357,11 @@ function addNewCounter() {
     min: newCounter.value.min,
     max: newCounter.value.max,
     shortRest: newCounter.value.shortRest,
+    shortRestReset: newCounter.value.shortRestReset,
     longRest: newCounter.value.longRest,
+    longRestReset: newCounter.value.longRestReset,
   });
-  newCounter.value = { name: '', initial: 0, min: 0, max: 10, shortRest: 0, longRest: 0 };
+  newCounter.value = { name: '', initial: 0, min: 0, max: 10, shortRest: 0, shortRestReset: false, longRest: 0, longRestReset: false };
   showModal.value = false;
 }
 
@@ -368,7 +378,9 @@ function openEditModal(counter) {
     min: counter.min,
     max: counter.max,
     shortRest: counter.shortRest,
+    shortRestReset: counter.shortRestReset || false,
     longRest: counter.longRest,
+    longRestReset: counter.longRestReset || false,
   };
   showModal.value = true;
 }
@@ -380,7 +392,9 @@ function saveEditCounter() {
     counters.value[idx].min = newCounter.value.min;
     counters.value[idx].max = newCounter.value.max;
     counters.value[idx].shortRest = newCounter.value.shortRest;
+    counters.value[idx].shortRestReset = newCounter.value.shortRestReset;
     counters.value[idx].longRest = newCounter.value.longRest;
+    counters.value[idx].longRestReset = newCounter.value.longRestReset;
     counters.value[idx].value = newCounter.value.initial;
   }
   closeModal();
@@ -390,6 +404,6 @@ function closeModal() {
   showModal.value = false;
   isEditing.value = false;
   editingId = null;
-  newCounter.value = { name: '', initial: 0, min: 0, max: 10, shortRest: 0, longRest: 0 };
+  newCounter.value = { name: '', initial: 0, min: 0, max: 10, shortRest: 0, shortRestReset: false, longRest: 0, longRestReset: false };
 }
 </script>

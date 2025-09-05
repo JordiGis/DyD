@@ -44,7 +44,9 @@ export const useCounterStore = defineStore('counter', () => {
       min,
       max,
       shortRest,
+      shortRestReset: arguments[0].shortRestReset || false,
       longRest,
+      longRestReset: arguments[0].longRestReset || false,
       buttons: buttons || [
         { label: '+1', increment: 1 },
         { label: '-1', increment: -1 },
@@ -80,6 +82,7 @@ export const useCounterStore = defineStore('counter', () => {
       name,
       linkedCounterId: linkedCounterId || null,
       discountOnActivate: discountOnActivate || 0,
+      discountType: discountType || 'resta', // 'suma' o 'resta'
       active: false,
     });
   }
@@ -88,9 +91,11 @@ export const useCounterStore = defineStore('counter', () => {
     const state = states.value.find(s => s.id === id);
     if (!state) return;
     state.active = !state.active;
-    // Si se activa y está vinculado, descuenta del contador
+    // Si se activa y está vinculado, suma o resta al contador según discountType
     if (state.active && state.linkedCounterId) {
-      updateCounterValue(state.linkedCounterId, -Math.abs(state.discountOnActivate || 1));
+      const amount = Math.abs(state.discountOnActivate || 1);
+      const delta = state.discountType === 'suma' ? amount : -amount;
+      updateCounterValue(state.linkedCounterId, delta);
     }
   }
 
@@ -98,10 +103,25 @@ export const useCounterStore = defineStore('counter', () => {
   function regenerateCountersByRest(type = 'short') {
     // Recargar todos los contadores según el tipo de descanso
     counters.value.forEach(counter => {
-      const amount = type === 'short' ? counter.shortRest : counter.longRest;
-      if (amount && typeof amount === 'number') {
-        // Sumar la recarga, pero no superar el máximo
-        counter.value = Math.min(counter.max, counter.value + amount);
+      if (type === 'short') {
+        if (counter.shortRestReset) {
+          // Resetear al valor indicado
+          counter.value = counter.shortRest;
+        } else {
+          const amount = counter.shortRest;
+          if (amount && typeof amount === 'number') {
+            counter.value = Math.min(counter.max, counter.value + amount);
+          }
+        }
+      } else if (type === 'long') {
+        if (counter.longRestReset) {
+          counter.value = counter.longRest;
+        } else {
+          const amount = counter.longRest;
+          if (amount && typeof amount === 'number') {
+            counter.value = Math.min(counter.max, counter.value + amount);
+          }
+        }
       }
     });
     // Desactivar todos los estados
