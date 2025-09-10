@@ -160,7 +160,14 @@
         <span class="btn-icon">💖</span>
         <span class="btn-text">Curar Daño Necro</span>
       </button>
+
+      <button @click="isAttackManagerVisible = true" class="action-btn btn-attack-manager">
+        <span class="btn-icon">⚔️</span>
+        <span class="btn-text">Gestor de Ataques</span>
+      </button>
       </div>
+
+    <AttackManager v-if="isAttackManagerVisible" @close="isAttackManagerVisible = false" />
 
 
     <!-- Botones adicionales -->
@@ -215,6 +222,7 @@
 <script setup>
 import CounterManager from '../components/CounterManager.vue';
 import StateManager from '../components/StateManager.vue';
+import AttackManager from '../components/AttackManager.vue';
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCharacterStore } from '../stores/useCharacterStore'
@@ -224,6 +232,8 @@ import Swal from 'sweetalert2'
 const router = useRouter()
 const characterStore = useCharacterStore()
 const counterStore = useCounterStore()
+
+const isAttackManagerVisible = ref(false);
 
 // Estado de plegado para contadores y estados
 const countersFolded = ref(false)
@@ -1108,6 +1118,11 @@ const healNecroDamage = (amount) => {
 
 .btn-resistant-damage {
   background: linear-gradient(135deg, #f39c12, #e67e22);
+  color: white;
+}
+
+.btn-attack-manager {
+  background: linear-gradient(135deg, #ff5252, #c62828);
   color: white;
 }
 
