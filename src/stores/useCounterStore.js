@@ -76,7 +76,7 @@ export const useCounterStore = defineStore('counter', () => {
 
   // --- Estados ---
 
-  function addState({ name, shortRest, longRest, linkedCounterId, discountOnActivate }) {
+  function addState({ name, shortRest, longRest, linkedCounterId, discountOnActivate, discountType }) {
     states.value.push({
       id: nanoid(),
       name,
