@@ -70,7 +70,11 @@
                   </div>
                   <div class="form-group-inline">
                     <label :for="`type-${index}`">Tipo</label>
-                    <input :id="`type-${index}`" type="text" v-model="roll.type" placeholder="slashing">
+                    <select :id="`type-${index}`" v-model="roll.type">
+                      <option v-for="dType in damageTypes" :key="dType.id" :value="dType.id">
+                        {{ dType.name }}
+                      </option>
+                    </select>
                   </div>
                   <div class="form-group-inline">
                     <label :for="`bonus-${index}`">Bonus</label>
@@ -114,6 +118,7 @@ import { ref, onMounted, reactive } from 'vue';
 import { useAttackStore } from '../stores/useAttackStore';
 import { useCharacterStore } from '../stores/useCharacterStore';
 import { executeAttack } from '../utils/attackLogic';
+import { damageTypes, getColorForType } from '../utils/damageTypes';
 import Swal from 'sweetalert2';
 
 const emit = defineEmits(['close']);
@@ -161,7 +166,7 @@ const showAttackForm = () => {
   setupForm({
     id: null,
     name: '',
-    damageRolls: [{ dice: '1d6', type: 'normal', bonus: 0, min: 1 }],
+    damageRolls: [{ dice: '1d6', type: 'slashing', bonus: 0, min: 1 }],
     lifeSteal: { percentage: 0 },
   });
 };
@@ -178,11 +183,11 @@ const hideAttackForm = () => {
 const addDamageRoll = () => {
   currentAttack.damageRolls.push({
     dice: '1d6',
-    type: 'normal',
+    type: 'slashing',
     bonus: 0,
     min: 1,
-    numDice: 1, // Valor por defecto para el nuevo input
-    diceType: 6, // Valor por defecto para el nuevo select
+    numDice: 1,
+    diceType: 6,
   });
 };
 
@@ -234,16 +239,18 @@ const confirmDelete = (attackId) => {
 const executeAndShowAttack = (attack) => {
   const result = executeAttack(attack);
 
-  // Formatear el resultado para SweetAlert
   let htmlResult = `<div class="attack-result-modal">`;
   htmlResult += `<h3>${result.name}</h3>`;
 
   for (const type in result.results) {
     const data = result.results[type];
+    const typeColor = getColorForType(type);
+    const typeName = (damageTypes.find(t => t.id === type) || { name: type }).name.toUpperCase();
+
     htmlResult += `
-      <div class="damage-type-block">
+      <div class="damage-type-block" style="border-left-color: ${typeColor};">
         <div class="damage-header">
-          <span class="damage-type">${type.toUpperCase()}</span>
+          <span class="damage-type" style="color: ${typeColor};">${typeName}</span>
           <span class="damage-total">${data.total}</span>
         </div>
         <div class="damage-details">
@@ -277,13 +284,11 @@ const executeAndShowAttack = (attack) => {
     }
   });
 
-  // Aplicar daño y curación al personaje
   characterStore.takeDamage(result.grandTotal);
   if (result.totalHealed > 0) {
     characterStore.heal(result.totalHealed);
   }
 
-  // Añadir al log
   characterStore.addLog(
     `Ataque: ${attack.name}`,
     `Daño total: ${result.grandTotal}. Curación por robo de vida: ${result.totalHealed}.`
@@ -583,6 +588,8 @@ const executeAndShowAttack = (attack) => {
   border-radius: 8px;
   padding: 15px;
   margin-bottom: 10px;
+  border-left: 5px solid transparent; /* Placeholder for color */
+  transition: border-color 0.3s;
 }
 
 .damage-header {
