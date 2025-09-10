@@ -305,9 +305,8 @@ const executeAndShowAttack = (attack) => {
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  overflow-y: auto;
+  padding: 5vh 0;
   z-index: 1000;
 }
 
@@ -316,10 +315,11 @@ const executeAndShowAttack = (attack) => {
   border-radius: 12px;
   width: 90%;
   max-width: 800px;
-  height: 80vh;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
+  max-height: 90vh;
 }
 
 .header {
@@ -443,9 +443,8 @@ const executeAndShowAttack = (attack) => {
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.8);
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  overflow-y: auto;
+  padding: 5vh 0;
   z-index: 1100;
 }
 
@@ -455,6 +454,7 @@ const executeAndShowAttack = (attack) => {
   border-radius: 10px;
   width: 90%;
   max-width: 600px;
+  margin: 0 auto;
 }
 
 .attack-form h3 {
