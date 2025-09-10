@@ -50,11 +50,25 @@
             <!-- Tiradas de daño -->
             <div class="damage-rolls-section">
               <h4>Tiradas de Daño</h4>
-              <div v-for="(roll, index) in currentAttack.damageRolls" :key="index" class="damage-roll-row">
-                <input type="text" v-model="roll.dice" placeholder="2d6">
-                <input type="text" v-model="roll.type" placeholder="slashing">
-                <input type="number" v-model.number="roll.bonus" placeholder="Bonus (+3)">
-                <input type="number" v-model.number="roll.min" placeholder="Mínimo (1)">
+              <div v-for="(roll, index) in currentAttack.damageRolls" :key="index" class="damage-roll-item">
+                <div class="damage-roll-inputs">
+                  <div class="form-group-inline">
+                    <label :for="`dice-${index}`">Dados</label>
+                    <input :id="`dice-${index}`" type="text" v-model="roll.dice" placeholder="2d6">
+                  </div>
+                  <div class="form-group-inline">
+                    <label :for="`type-${index}`">Tipo</label>
+                    <input :id="`type-${index}`" type="text" v-model="roll.type" placeholder="slashing">
+                  </div>
+                  <div class="form-group-inline">
+                    <label :for="`bonus-${index}`">Bonus</label>
+                    <input :id="`bonus-${index}`" type="number" v-model.number="roll.bonus" placeholder="+3">
+                  </div>
+                  <div class="form-group-inline">
+                    <label :for="`min-${index}`">Mínimo</label>
+                    <input :id="`min-${index}`" type="number" v-model.number="roll.min" placeholder="1">
+                  </div>
+                </div>
                 <button @click="removeDamageRoll(index)" class="btn-remove-roll">✕</button>
               </div>
               <button @click="addDamageRoll" class="btn-add-roll">
@@ -424,29 +438,52 @@ const executeAndShowAttack = (attack) => {
   margin-bottom: 10px;
 }
 
-.damage-roll-row {
+.damage-roll-item {
+  background: rgba(0,0,0,0.2);
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 15px;
   display: flex;
+  align-items: flex-end; /* Align to the bottom */
   gap: 10px;
-  margin-bottom: 10px;
-  align-items: center;
 }
 
-.damage-roll-row input {
+.damage-roll-inputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 15px;
+  width: 100%;
+}
+
+.form-group-inline {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group-inline label {
+  color: #99aab5;
+  font-size: 0.85rem;
+  margin-bottom: 5px;
+}
+
+.form-group-inline input {
   padding: 8px;
   background: #23272a;
   border: 1px solid #99aab5;
   border-radius: 5px;
   color: #ffffff;
+  width: 100%;
 }
 
 .btn-remove-roll {
   background: #f04747;
   color: white;
   border: none;
-  border-radius: 50%;
-  width: 25px;
-  height: 25px;
+  border-radius: 5px;
+  width: 36px;
+  height: 36px;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .btn-add-roll {
