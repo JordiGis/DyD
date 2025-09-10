@@ -53,8 +53,20 @@
               <div v-for="(roll, index) in currentAttack.damageRolls" :key="index" class="damage-roll-item">
                 <div class="damage-roll-inputs">
                   <div class="form-group-inline">
-                    <label :for="`dice-${index}`">Dados</label>
-                    <input :id="`dice-${index}`" type="text" v-model="roll.dice" placeholder="2d6">
+                    <label :for="`dice-num-${index}`">Cantidad</label>
+                    <input :id="`dice-num-${index}`" type="number" v-model.number="roll.numDice" min="1" class="input-narrow">
+                  </div>
+                  <div class="form-group-inline">
+                    <label :for="`dice-type-${index}`">Tipo de Dado</label>
+                    <select :id="`dice-type-${index}`" v-model.number="roll.diceType">
+                      <option value="4">d4</option>
+                      <option value="6">d6</option>
+                      <option value="8">d8</option>
+                      <option value="10">d10</option>
+                      <option value="12">d12</option>
+                      <option value="20">d20</option>
+                      <option value="100">d100</option>
+                    </select>
                   </div>
                   <div class="form-group-inline">
                     <label :for="`type-${index}`">Tipo</label>
@@ -123,22 +135,40 @@ onMounted(() => {
   attackStore.loadAttacks();
 });
 
-// Funciones del formulario
+// --- Lógica del formulario ---
+
+const parseDiceString = (diceString) => {
+  if (!diceString || !diceString.includes('d')) {
+    return { numDice: 1, diceType: 6 }; // Valores por defecto
+  }
+  const [num, type] = diceString.split('d');
+  return { numDice: Number(num) || 1, diceType: Number(type) || 6 };
+};
+
+const setupForm = (attack) => {
+  const attackCopy = JSON.parse(JSON.stringify(attack));
+  attackCopy.damageRolls.forEach(roll => {
+    const { numDice, diceType } = parseDiceString(roll.dice);
+    roll.numDice = numDice;
+    roll.diceType = diceType;
+  });
+  Object.assign(currentAttack, attackCopy);
+  isFormVisible.value = true;
+};
+
 const showAttackForm = () => {
   isEditing.value = false;
-  Object.assign(currentAttack, {
+  setupForm({
     id: null,
     name: '',
     damageRolls: [{ dice: '1d6', type: 'normal', bonus: 0, min: 1 }],
     lifeSteal: { percentage: 0 },
   });
-  isFormVisible.value = true;
 };
 
 const editAttack = (attack) => {
   isEditing.value = true;
-  Object.assign(currentAttack, JSON.parse(JSON.stringify(attack)));
-  isFormVisible.value = true;
+  setupForm(attack);
 };
 
 const hideAttackForm = () => {
@@ -146,7 +176,14 @@ const hideAttackForm = () => {
 };
 
 const addDamageRoll = () => {
-  currentAttack.damageRolls.push({ dice: '1d6', type: 'normal', bonus: 0, min: 1 });
+  currentAttack.damageRolls.push({
+    dice: '1d6',
+    type: 'normal',
+    bonus: 0,
+    min: 1,
+    numDice: 1, // Valor por defecto para el nuevo input
+    diceType: 6, // Valor por defecto para el nuevo select
+  });
 };
 
 const removeDamageRoll = (index) => {
@@ -159,10 +196,18 @@ const saveAttack = () => {
     return;
   }
 
+  const attackToSave = JSON.parse(JSON.stringify(currentAttack));
+
+  attackToSave.damageRolls.forEach(roll => {
+    roll.dice = `${roll.numDice || 1}d${roll.diceType || 6}`;
+    delete roll.numDice;
+    delete roll.diceType;
+  });
+
   if (isEditing.value) {
-    attackStore.updateAttack(JSON.parse(JSON.stringify(currentAttack)));
+    attackStore.updateAttack(attackToSave);
   } else {
-    attackStore.addAttack(JSON.parse(JSON.stringify(currentAttack)));
+    attackStore.addAttack(attackToSave);
   }
   hideAttackForm();
 };
@@ -450,8 +495,21 @@ const executeAndShowAttack = (attack) => {
 
 .damage-roll-inputs {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 15px;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+
+.form-group-inline select {
+  padding: 8px;
+  background: #23272a;
+  border: 1px solid #99aab5;
+  border-radius: 5px;
+  color: #ffffff;
+  width: 100%;
+}
+
+.input-narrow {
   width: 100%;
 }
 
