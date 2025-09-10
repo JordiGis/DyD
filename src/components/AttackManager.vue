@@ -290,7 +290,6 @@ const executeAndShowAttack = (attack) => {
     }
   });
 
-  characterStore.takeDamage(result.grandTotal);
   if (result.totalHealed > 0) {
     characterStore.heal(result.totalHealed);
   }
