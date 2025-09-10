@@ -25,44 +25,49 @@ export function executeAttack(attack) {
   let totalHealed = 0;
 
   attack.damageRolls.forEach(damageRoll => {
-    let { dice, min = 1, bonus = 0, type } = damageRoll;
+    let { dice, min = 1, bonus = 0, type, lifeSteal = { percentage: 0 } } = damageRoll;
 
-    // Asegurarse de que los valores numéricos sean correctos
     min = Number(min) || 1;
     bonus = Number(bonus) || 0;
+    const lifeStealPercentage = Number(lifeSteal.percentage) || 0;
 
-    const rolls = rollDice(dice).map(roll => Math.max(roll, min));
-    const rollSum = rolls.reduce((sum, roll) => sum + roll, 0);
-    const total = rollSum + bonus;
+    const currentRolls = rollDice(dice);
+    const appliedMinRolls = currentRolls.map(roll => Math.max(roll, min));
+    const rollSum = appliedMinRolls.reduce((sum, roll) => sum + roll, 0);
+    const damageRollTotal = rollSum + bonus;
 
-    grandTotal += total;
+    grandTotal += damageRollTotal;
 
     if (!results[type]) {
       results[type] = {
         rolls: [],
         bonus: 0,
         total: 0,
-        lifeSteal: null,
+        lifeSteal: { healed: 0, percentages: [] },
       };
     }
 
-    results[type].rolls.push(...rolls);
+    results[type].rolls.push(...appliedMinRolls);
     results[type].bonus += bonus;
-    results[type].total += total;
+    results[type].total += damageRollTotal;
 
-    if (attack.lifeSteal && attack.lifeSteal.percentage > 0) {
-      const healed = Math.floor(total * (attack.lifeSteal.percentage / 100));
+    if (lifeStealPercentage > 0) {
+      const healed = Math.floor(damageRollTotal * (lifeStealPercentage / 100));
       totalHealed += healed;
-
-      if (!results[type].lifeSteal) {
-        results[type].lifeSteal = {
-          percentage: attack.lifeSteal.percentage,
-          healed: 0,
-        };
-      }
       results[type].lifeSteal.healed += healed;
+      results[type].lifeSteal.percentages.push(lifeStealPercentage);
     }
   });
+
+  for (const type in results) {
+    if (results[type].lifeSteal.healed === 0) {
+      results[type].lifeSteal = null;
+    } else {
+      const uniquePercentages = [...new Set(results[type].lifeSteal.percentages)];
+      results[type].lifeSteal.percentage_display = uniquePercentages.join('% / ') + '%';
+      delete results[type].lifeSteal.percentages;
+    }
+  }
 
   return {
     name: attack.name,

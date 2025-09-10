@@ -84,21 +84,16 @@
                     <label :for="`min-${index}`">Mínimo</label>
                     <input :id="`min-${index}`" type="number" v-model.number="roll.min" placeholder="1">
                   </div>
+                  <div class="form-group-inline">
+                    <label :for="`lifesteal-${index}`">Robo Vida (%)</label>
+                    <input :id="`lifesteal-${index}`" type="number" v-model.number="roll.lifeSteal.percentage" placeholder="0">
+                  </div>
                 </div>
                 <button @click="removeDamageRoll(index)" class="btn-remove-roll">✕</button>
               </div>
               <button @click="addDamageRoll" class="btn-add-roll">
                 <i class="bi bi-plus"></i> Añadir tipo de daño
               </button>
-            </div>
-
-            <!-- Robo de vida -->
-            <div class="lifesteal-section">
-              <h4>Robo de Vida (Opcional)</h4>
-              <div class="form-group">
-                <label>Porcentaje de Robo de Vida (%)</label>
-                <input type="number" v-model.number="currentAttack.lifeSteal.percentage" placeholder="Ej: 30">
-              </div>
             </div>
 
             <!-- Acciones del formulario -->
@@ -128,14 +123,14 @@ const characterStore = useCharacterStore();
 
 const isFormVisible = ref(false);
 const isEditing = ref(false);
+
+// Estructura del ataque reactiva, ahora sin lifeSteal a nivel superior
 const currentAttack = reactive({
   id: null,
   name: '',
   damageRolls: [],
-  lifeSteal: { percentage: 0 },
 });
 
-// Cargar ataques al montar el componente
 onMounted(() => {
   attackStore.loadAttacks();
 });
@@ -143,9 +138,7 @@ onMounted(() => {
 // --- Lógica del formulario ---
 
 const parseDiceString = (diceString) => {
-  if (!diceString || !diceString.includes('d')) {
-    return { numDice: 1, diceType: 6 }; // Valores por defecto
-  }
+  if (!diceString || !diceString.includes('d')) return { numDice: 1, diceType: 6 };
   const [num, type] = diceString.split('d');
   return { numDice: Number(num) || 1, diceType: Number(type) || 6 };
 };
@@ -156,6 +149,10 @@ const setupForm = (attack) => {
     const { numDice, diceType } = parseDiceString(roll.dice);
     roll.numDice = numDice;
     roll.diceType = diceType;
+    // Asegurarse de que lifeSteal exista
+    if (!roll.lifeSteal) {
+      roll.lifeSteal = { percentage: 0 };
+    }
   });
   Object.assign(currentAttack, attackCopy);
   isFormVisible.value = true;
@@ -163,12 +160,21 @@ const setupForm = (attack) => {
 
 const showAttackForm = () => {
   isEditing.value = false;
-  setupForm({
+  // Objeto base para un nuevo ataque
+  const newAttackBase = {
     id: null,
     name: '',
-    damageRolls: [{ dice: '1d6', type: 'slashing', bonus: 0, min: 1 }],
-    lifeSteal: { percentage: 0 },
-  });
+    damageRolls: [
+      {
+        dice: '1d6',
+        type: 'slashing',
+        bonus: 0,
+        min: 1,
+        lifeSteal: { percentage: 0 }
+      }
+    ],
+  };
+  setupForm(newAttackBase);
 };
 
 const editAttack = (attack) => {
@@ -188,6 +194,7 @@ const addDamageRoll = () => {
     min: 1,
     numDice: 1,
     diceType: 6,
+    lifeSteal: { percentage: 0 },
   });
 };
 
@@ -235,7 +242,6 @@ const confirmDelete = (attackId) => {
   });
 };
 
-// Ejecución del ataque
 const executeAndShowAttack = (attack) => {
   const result = executeAttack(attack);
 
@@ -262,7 +268,7 @@ const executeAndShowAttack = (attack) => {
       htmlResult += `
         <div class="lifesteal-details">
           <i class="bi bi-heart-fill"></i>
-          <span>Curado: ${data.lifeSteal.healed}</span>
+          <span>Curado: ${data.lifeSteal.healed} (${data.lifeSteal.percentage_display})</span>
         </div>
       `;
     }

@@ -13,9 +13,43 @@ export const useAttackStore = defineStore('attack', {
       const data = localStorage.getItem('dnd-attacks-data');
       if (data) {
         try {
-          this.attacks = JSON.parse(data);
+          const parsedAttacks = JSON.parse(data);
+
+          // Migración de datos para el nuevo formato de lifeSteal
+          const migratedAttacks = parsedAttacks.map(attack => {
+            let needsSave = false;
+            // Si existe un lifeSteal a nivel de ataque, es el formato antiguo
+            if (attack.lifeSteal && attack.lifeSteal.percentage > 0) {
+              attack.damageRolls.forEach(roll => {
+                // Solo añadir si no existe ya para no sobrescribir
+                if (!roll.lifeSteal) {
+                  roll.lifeSteal = { percentage: attack.lifeSteal.percentage };
+                }
+              });
+              delete attack.lifeSteal; // Eliminar el obsoleto
+              needsSave = true;
+            }
+
+            // Asegurarse de que todos los rollos tengan la propiedad lifeSteal
+            attack.damageRolls.forEach(roll => {
+              if (!roll.lifeSteal) {
+                roll.lifeSteal = { percentage: 0 };
+                needsSave = true;
+              }
+            });
+
+            return attack;
+          });
+
+          this.attacks = migratedAttacks;
+
+          // Si se hizo alguna migración, guardar de nuevo para actualizar el formato en localStorage
+          if (migratedAttacks.some(attack => !parsedAttacks.includes(attack))) {
+              this.saveAttacks();
+          }
+
         } catch (error) {
-          console.error('Error loading attacks from localStorage:', error);
+          console.error('Error loading or migrating attacks from localStorage:', error);
           this.attacks = [];
         }
       }
