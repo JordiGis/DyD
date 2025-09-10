@@ -369,6 +369,10 @@ const executeAndShowAttack = (attack) => {
       }
     }
   });
+  
+  if (result.totalHealed > 0) {
+    characterStore.heal(result.totalHealed);
+  }
 
   characterStore.addLog(
     `Ataque: ${attack.name}`,
