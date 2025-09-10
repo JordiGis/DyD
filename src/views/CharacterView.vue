@@ -161,7 +161,7 @@
         <span class="btn-text">Curar Daño Necro</span>
       </button>
 
-      <button @click="isAttackManagerVisible = true" class="action-btn btn-attack-manager">
+      <button @click="isAttackManagerVisible = true" class="action-btn btn-attack-manager" :disabled="!characterStore.isAlive">
         <span class="btn-icon">⚔️</span>
         <span class="btn-text">Gestor de Ataques</span>
       </button>
