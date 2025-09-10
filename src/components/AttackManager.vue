@@ -246,12 +246,13 @@ const executeAndShowAttack = (attack) => {
   const result = executeAttack(attack);
 
   let htmlResult = `<div class="attack-result-modal">`;
-  htmlResult += `<h3>${result.name}</h3>`;
+  htmlResult += `<h3 class="dnd-title">${result.name}</h3>`;
 
   for (const type in result.results) {
     const data = result.results[type];
     const typeColor = getColorForType(type);
-    const typeName = (damageTypes.find(t => t.id === type) || { name: type }).name.toUpperCase();
+    const typeInfo = damageTypes.find(t => t.id === type) || { name: type };
+    const typeName = typeInfo.name.toUpperCase();
 
     htmlResult += `
       <div class="damage-type-block" style="border-left-color: ${typeColor};">
@@ -260,15 +261,15 @@ const executeAndShowAttack = (attack) => {
           <span class="damage-total">${data.total}</span>
         </div>
         <div class="damage-details">
-          <span>Tiradas: [${data.rolls.join(', ')}]</span>
-          <span>Bonus: ${data.bonus > 0 ? '+' : ''}${data.bonus}</span>
+          <span><strong>Tiradas:</strong> [${data.rolls.join(', ')}]</span>
+          <span><strong>Bonus:</strong> ${data.bonus > 0 ? '+' : ''}${data.bonus}</span>
         </div>
     `;
     if (data.lifeSteal) {
       htmlResult += `
         <div class="lifesteal-details">
           <i class="bi bi-heart-fill"></i>
-          <span>Curado: ${data.lifeSteal.healed} (${data.lifeSteal.percentage_display})</span>
+          <span><strong>Curado:</strong> ${data.lifeSteal.healed} (${data.lifeSteal.percentage_display})</span>
         </div>
       `;
     }
@@ -281,15 +282,79 @@ const executeAndShowAttack = (attack) => {
   }
   htmlResult += `</div>`;
 
+  const styleId = 'dnd-modal-styles';
+
   Swal.fire({
-    title: 'Resultado del Ataque',
+    width: 600,
+    title: `<span class="dnd-title">Resultado del Ataque</span>`,
     html: htmlResult,
     confirmButtonText: '¡Entendido!',
     customClass: {
-      popup: 'attack-result-swal'
+      popup: 'dnd-swal-popup',
+      title: 'dnd-swal-title',
+      confirmButton: 'dnd-swal-confirm',
+    },
+    didOpen: () => {
+      if (document.getElementById(styleId)) return;
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.innerHTML = `
+        @import url('https://fonts.googleapis.com/css2?family=MedievalSharp&family=IM+Fell+English+SC&display=swap');
+
+        .dnd-swal-popup {
+          background-image: url('https://www.transparenttextures.com/patterns/old-paper.png');
+          background-color: #fdf5e6; /* Parchment color */
+          border: 3px solid #5a3a1a;
+          border-radius: 5px;
+          box-shadow: 0 0 20px rgba(0,0,0,0.7);
+        }
+        .dnd-title {
+          font-family: 'MedievalSharp', cursive;
+          color: #5a3a1a;
+          font-size: 2rem;
+        }
+        .dnd-swal-title {
+          margin-bottom: 25px !important;
+        }
+        .dnd-swal-popup .attack-result-modal {
+          color: #3a241d;
+          font-family: 'IM Fell English SC', serif;
+        }
+        .dnd-swal-popup .damage-type-block {
+          background: rgba(0,0,0,0.05);
+          border: 1px solid rgba(90, 58, 26, 0.2);
+        }
+        .dnd-swal-popup .damage-total {
+          font-family: 'MedievalSharp', cursive;
+          font-size: 2.2rem;
+          color: #a32a2a;
+          text-shadow: 1px 1px 1px #000;
+        }
+        .dnd-swal-popup .grand-total, .dnd-swal-popup .total-healed {
+          font-family: 'MedievalSharp', cursive;
+          font-size: 1.5rem;
+          margin-top: 20px;
+        }
+        .dnd-swal-popup .lifesteal-details {
+          color: #2e7d32;
+        }
+        .dnd-swal-confirm {
+          background-color: #5a3a1a !important;
+          font-family: 'IM Fell English SC', serif !important;
+          font-size: 1.1rem !important;
+        }
+      `;
+      document.head.appendChild(style);
+    },
+     didClose: () => {
+      const styleElement = document.getElementById(styleId);
+      if (styleElement) {
+        styleElement.remove();
+      }
     }
   });
 
+  characterStore.takeDamage(result.grandTotal);
   if (result.totalHealed > 0) {
     characterStore.heal(result.totalHealed);
   }
