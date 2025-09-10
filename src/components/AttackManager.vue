@@ -246,7 +246,7 @@ const executeAndShowAttack = (attack) => {
   const result = executeAttack(attack);
 
   let htmlResult = `<div class="attack-result-modal">`;
-  htmlResult += `<h3 class="dnd-title">${result.name}</h3>`;
+  htmlResult += `<h3 class="dnd-title-modern">${result.name}</h3>`;
 
   for (const type in result.results) {
     const data = result.results[type];
@@ -255,10 +255,10 @@ const executeAndShowAttack = (attack) => {
     const typeName = typeInfo.name.toUpperCase();
 
     htmlResult += `
-      <div class="damage-type-block" style="border-left-color: ${typeColor};">
+      <div class="damage-type-block-modern" style="border-left-color: ${typeColor};">
         <div class="damage-header">
-          <span class="damage-type" style="color: ${typeColor};">${typeName}</span>
-          <span class="damage-total">${data.total}</span>
+          <span class="damage-type-modern" style="color: ${typeColor};">${typeName}</span>
+          <span class="damage-total-modern">${data.total}</span>
         </div>
         <div class="damage-details">
           <span><strong>Tiradas:</strong> [${data.rolls.join(', ')}]</span>
@@ -276,72 +276,88 @@ const executeAndShowAttack = (attack) => {
     htmlResult += `</div>`;
   }
 
-  htmlResult += `<div class="grand-total">Daño Total: ${result.grandTotal}</div>`;
+  htmlResult += `<div class="grand-total-modern">Daño Total: ${result.grandTotal}</div>`;
   if (result.totalHealed > 0) {
-    htmlResult += `<div class="total-healed">Curación Total: ${result.totalHealed}</div>`;
+    htmlResult += `<div class="total-healed-modern">Curación Total: ${result.totalHealed}</div>`;
   }
   htmlResult += `</div>`;
 
-  const styleId = 'dnd-modal-styles';
+  const styleId = 'dnd-modern-modal-styles';
 
   Swal.fire({
     width: 600,
-    title: `<span class="dnd-title">Resultado del Ataque</span>`,
     html: htmlResult,
-    confirmButtonText: '¡Entendido!',
+    showConfirmButton: false,
+    showCloseButton: true,
     customClass: {
-      popup: 'dnd-swal-popup',
-      title: 'dnd-swal-title',
-      confirmButton: 'dnd-swal-confirm',
+      popup: 'dnd-modern-swal-popup',
+      htmlContainer: 'dnd-modern-swal-container',
     },
     didOpen: () => {
       if (document.getElementById(styleId)) return;
       const style = document.createElement('style');
       style.id = styleId;
       style.innerHTML = `
-        @import url('https://fonts.googleapis.com/css2?family=MedievalSharp&family=IM+Fell+English+SC&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Teko:wght@700&display=swap');
 
-        .dnd-swal-popup {
-          background-image: url('https://www.transparenttextures.com/patterns/old-paper.png');
-          background-color: #fdf5e6; /* Parchment color */
-          border: 3px solid #5a3a1a;
-          border-radius: 5px;
-          box-shadow: 0 0 20px rgba(0,0,0,0.7);
+        .dnd-modern-swal-popup {
+          background: #1e1e1e;
+          border: 1px solid #444;
+          border-radius: 10px;
+          color: #f0f0f0;
+          box-shadow: 0 5px 20px rgba(0,0,0,0.5);
         }
-        .dnd-title {
-          font-family: 'MedievalSharp', cursive;
-          color: #5a3a1a;
-          font-size: 2rem;
+        .dnd-modern-swal-container {
+          padding: 0 !important;
         }
-        .dnd-swal-title {
-          margin-bottom: 25px !important;
+        .dnd-title-modern {
+          font-family: 'Teko', sans-serif;
+          font-size: 2.5rem;
+          color: #f0f0f0;
+          text-align: center;
+          padding: 15px;
+          background: #111;
+          border-top-left-radius: 9px;
+          border-top-right-radius: 9px;
         }
-        .dnd-swal-popup .attack-result-modal {
-          color: #3a241d;
-          font-family: 'IM Fell English SC', serif;
+        .dnd-modern-swal-popup .attack-result-modal {
+          padding: 20px;
+          font-family: 'Roboto', sans-serif;
         }
-        .dnd-swal-popup .damage-type-block {
-          background: rgba(0,0,0,0.05);
-          border: 1px solid rgba(90, 58, 26, 0.2);
+        .damage-type-block-modern {
+          background: #2a2a2a;
+          border-left: 4px solid;
+          margin-bottom: 15px;
+          padding: 15px;
+          border-radius: 4px;
         }
-        .dnd-swal-popup .damage-total {
-          font-family: 'MedievalSharp', cursive;
-          font-size: 2.2rem;
-          color: #a32a2a;
-          text-shadow: 1px 1px 1px #000;
-        }
-        .dnd-swal-popup .grand-total, .dnd-swal-popup .total-healed {
-          font-family: 'MedievalSharp', cursive;
+        .damage-type-modern {
+          font-family: 'Teko', sans-serif;
           font-size: 1.5rem;
+        }
+        .damage-total-modern {
+          font-family: 'Teko', sans-serif;
+          font-size: 2.8rem;
+          color: #ff4d4d;
+        }
+        .grand-total-modern, .total-healed-modern {
+          font-family: 'Teko', sans-serif;
+          font-size: 2rem;
+          text-align: center;
           margin-top: 20px;
+          padding: 10px;
+          border-radius: 5px;
         }
-        .dnd-swal-popup .lifesteal-details {
-          color: #2e7d32;
+        .grand-total-modern {
+          background: rgba(255, 77, 77, 0.1);
+          color: #ff4d4d;
         }
-        .dnd-swal-confirm {
-          background-color: #5a3a1a !important;
-          font-family: 'IM Fell English SC', serif !important;
-          font-size: 1.1rem !important;
+        .total-healed-modern {
+          background: rgba(77, 255, 126, 0.1);
+          color: #4dff7e;
+        }
+        .dnd-modern-swal-popup .lifesteal-details {
+          color: #4dff7e;
         }
       `;
       document.head.appendChild(style);
@@ -353,11 +369,6 @@ const executeAndShowAttack = (attack) => {
       }
     }
   });
-
-  characterStore.takeDamage(result.grandTotal);
-  if (result.totalHealed > 0) {
-    characterStore.heal(result.totalHealed);
-  }
 
   characterStore.addLog(
     `Ataque: ${attack.name}`,
