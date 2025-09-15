@@ -719,4 +719,66 @@ const executeAndShowAttack = (attack) => {
 
 .grand-total { color: #f04747; }
 .total-healed { color: #43b581; }
+
+/* Media Queries for Responsiveness */
+@media (max-width: 768px) {
+  .attack-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 15px;
+  }
+
+  .attack-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .action-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .damage-roll-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .damage-roll-inputs {
+    grid-template-columns: 1fr 1fr; /* Two columns for smaller screens */
+  }
+
+  .btn-remove-roll {
+    margin-top: 10px;
+    width: 100%;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .btn-save, .btn-cancel {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+
+  .damage-roll-inputs {
+    grid-template-columns: 1fr; /* Single column for very small screens */
+  }
+
+  .attack-info {
+    text-align: center;
+  }
+
+  .attack-summary {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
 </style>
