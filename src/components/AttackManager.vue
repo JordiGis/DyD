@@ -22,9 +22,11 @@
               </div>
             </div>
             <div class="attack-actions">
-              <button @click="executeAndShowAttack(attack)" class="action-btn btn-execute">Ejecutar</button>
-              <button @click="editAttack(attack)" class="action-btn btn-edit">Editar</button>
-              <button @click="confirmDelete(attack.id)" class="action-btn btn-delete">Eliminar</button>
+              <button @click="executeAndShowAttack(attack)" class="action-btn btn-execute">Atacar</button>
+              <div class="secondary-actions">
+                <button @click="editAttack(attack)" class="action-btn btn-edit">Editar</button>
+                <button @click="confirmDelete(attack.id)" class="action-btn btn-delete">Eliminar</button>
+              </div>
             </div>
           </div>
         </div>
@@ -485,16 +487,27 @@ const executeAndShowAttack = (attack) => {
 
 .attack-actions {
   display: flex;
-  gap: 10px;
+  flex-direction: column;
+  gap: 8px;
+  width: 180px;
+  flex-shrink: 0;
+}
+
+.secondary-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
 
 .action-btn {
-  padding: 8px 15px;
+  padding: 8px 12px;
   border: none;
   border-radius: 5px;
   color: #ffffff;
   cursor: pointer;
   font-weight: bold;
+  font-size: 0.9rem;
+  text-align: center;
 }
 
 .btn-execute { background-color: #43b581; }
