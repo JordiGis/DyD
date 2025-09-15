@@ -22,9 +22,11 @@
               </div>
             </div>
             <div class="attack-actions">
-              <button @click="executeAndShowAttack(attack)" class="action-btn btn-execute">Ejecutar</button>
-              <button @click="editAttack(attack)" class="action-btn btn-edit">Editar</button>
-              <button @click="confirmDelete(attack.id)" class="action-btn btn-delete">Eliminar</button>
+              <button @click="executeAndShowAttack(attack)" class="action-btn btn-execute">Atacar</button>
+              <div class="secondary-actions">
+                <button @click="editAttack(attack)" class="action-btn btn-edit">Editar</button>
+                <button @click="confirmDelete(attack.id)" class="action-btn btn-delete">Eliminar</button>
+              </div>
             </div>
           </div>
         </div>
@@ -485,16 +487,27 @@ const executeAndShowAttack = (attack) => {
 
 .attack-actions {
   display: flex;
-  gap: 10px;
+  flex-direction: column;
+  gap: 8px;
+  width: 180px;
+  flex-shrink: 0;
+}
+
+.secondary-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
 
 .action-btn {
-  padding: 8px 15px;
+  padding: 8px 12px;
   border: none;
   border-radius: 5px;
   color: #ffffff;
   cursor: pointer;
   font-weight: bold;
+  font-size: 0.9rem;
+  text-align: center;
 }
 
 .btn-execute { background-color: #43b581; }
@@ -719,4 +732,66 @@ const executeAndShowAttack = (attack) => {
 
 .grand-total { color: #f04747; }
 .total-healed { color: #43b581; }
+
+/* Media Queries for Responsiveness */
+@media (max-width: 768px) {
+  .attack-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 15px;
+  }
+
+  .attack-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .action-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .damage-roll-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .damage-roll-inputs {
+    grid-template-columns: 1fr 1fr; /* Two columns for smaller screens */
+  }
+
+  .btn-remove-roll {
+    margin-top: 10px;
+    width: 100%;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .btn-save, .btn-cancel {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+
+  .damage-roll-inputs {
+    grid-template-columns: 1fr; /* Single column for very small screens */
+  }
+
+  .attack-info {
+    text-align: center;
+  }
+
+  .attack-summary {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
 </style>
