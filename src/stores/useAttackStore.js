@@ -81,8 +81,11 @@ export const useAttackStore = defineStore('attack', {
 
     // Eliminar un ataque
     deleteAttack(attackId) {
-      this.attacks = this.attacks.filter(a => a.id !== attackId);
-      this.saveAttacks();
+      const index = this.attacks.findIndex(a => a.id === attackId);
+      if (index !== -1) {
+        this.attacks.splice(index, 1);
+        this.saveAttacks();
+      }
     },
 
     // Obtener un ataque por su ID
