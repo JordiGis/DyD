@@ -155,11 +155,12 @@ const characterStore = useCharacterStore();
 const isFormVisible = ref(false);
 const isEditing = ref(false);
 
-// Estructura del ataque reactiva, ahora sin lifeSteal a nivel superior
+// Estructura del ataque reactiva
 const currentAttack = reactive({
   id: null,
   name: '',
   damageRolls: [],
+  rerollDice: [],
 });
 
 onMounted(() => {
@@ -177,7 +178,6 @@ const parseDiceString = (diceString) => {
 const setupForm = (attack) => {
   const attackCopy = JSON.parse(JSON.stringify(attack));
 
-  // Procesar damageRolls
   attackCopy.damageRolls.forEach(roll => {
     const { numDice, diceType } = parseDiceString(roll.dice);
     roll.numDice = numDice;
@@ -187,7 +187,6 @@ const setupForm = (attack) => {
     }
   });
 
-  // Procesar rerollDice
   if (attackCopy.rerollDice) {
     attackCopy.rerollDice.forEach(reroll => {
       const { numDice, diceType } = parseDiceString(reroll.dice);
@@ -204,7 +203,6 @@ const setupForm = (attack) => {
 
 const showAttackForm = () => {
   isEditing.value = false;
-  // Objeto base para un nuevo ataque
   const newAttackBase = {
     id: null,
     name: '',
@@ -217,7 +215,7 @@ const showAttackForm = () => {
         lifeSteal: { percentage: 0 }
       }
     ],
-    rerollDice: [], // Inicializar el array de reroll
+    rerollDice: [],
   };
   setupForm(newAttackBase);
 };
@@ -311,9 +309,7 @@ const confirmDelete = (attackId) => {
 };
 
 const executeAndShowAttack = (attack) => {
-  const initialResult = executeAttack(attack);
-  const attackResult = ref(initialResult);
-  const rerollResults = ref(null);
+  let attackResult = executeAttack(attack);
 
   const getRollsHTML = (rolls) => {
     return rolls.map(r =>
@@ -321,22 +317,22 @@ const executeAndShowAttack = (attack) => {
     ).join(', ');
   };
 
-  const getRerollResultsHTML = () => {
-    if (!rerollResults.value) return '';
+  const getRerollResultsHTML = (rerollResults) => {
+    if (!rerollResults) return '';
     let html = `<div class="reroll-results-block-modern"><h4><i class="bi bi-dice-5"></i> Resultados del Reroll</h4>`;
-    for (const type in rerollResults.value) {
-      html += `<div class="reroll-type"><strong>${type}:</strong> [${rerollResults.value[type].join(', ')}]</div>`;
+    for (const type in rerollResults) {
+      html += `<div class="reroll-type"><strong>${type}:</strong> [${rerollResults[type].join(', ')}]</div>`;
     }
     html += '</div>';
     return html;
   };
 
-  const renderModalContent = () => {
+  const renderModalContent = (result, rerollResults = null) => {
     let htmlResult = `<div class="attack-result-modal">`;
-    htmlResult += `<h3 class="dnd-title-modern">${attackResult.value.name}</h3>`;
+    htmlResult += `<h3 class="dnd-title-modern">${result.name}</h3>`;
 
-    for (const type in attackResult.value.results) {
-      const data = attackResult.value.results[type];
+    for (const type in result.results) {
+      const data = result.results[type];
       const typeColor = getColorForType(type);
       const typeInfo = damageTypes.find(t => t.id === type) || { name: type };
       const typeName = typeInfo.name.toUpperCase();
@@ -363,11 +359,11 @@ const executeAndShowAttack = (attack) => {
       htmlResult += `</div>`;
     }
 
-    htmlResult += getRerollResultsHTML();
+    htmlResult += getRerollResultsHTML(rerollResults);
 
-    htmlResult += `<div class="grand-total-modern">Daño Total: ${attackResult.value.grandTotal}</div>`;
-    if (attackResult.value.totalHealed > 0) {
-      htmlResult += `<div class="total-healed-modern">Curación Total: ${attackResult.value.totalHealed}</div>`;
+    htmlResult += `<div class="grand-total-modern">Daño Total: ${result.grandTotal}</div>`;
+    if (result.totalHealed > 0) {
+      htmlResult += `<div class="total-healed-modern">Curación Total: ${result.totalHealed}</div>`;
     }
     htmlResult += `</div>`;
     return htmlResult;
@@ -393,41 +389,59 @@ const executeAndShowAttack = (attack) => {
     .reroll-results-block-modern h4 { color: #f39c12; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
     .reroll-type { margin-bottom: 5px; padding-left: 10px; }
     .swal2-actions { gap: 15px !important; }
-    .dnd-reroll-button { background-color: #9b59b6 !important; }
-    .dnd-replace-button { background-color: #f39c12 !important; }`;
+    .dnd-reroll-button { background-color: #9b59b6 !important; color: white !important; }
+    .dnd-replace-button { background-color: #f39c12 !important; color: white !important; }`;
 
-  const handleReroll = () => {
-    rerollResults.value = rollRerollDice(attack.rerollDice);
-    Swal.update({
-      html: renderModalContent(),
+  const showFinalModal = (result, rerollData) => {
+    Swal.fire({
+      width: 600,
+      html: renderModalContent(result, rerollData),
+      showConfirmButton: true,
+      confirmButtonText: 'Cerrar',
       showDenyButton: false,
       showCancelButton: true,
-    });
-  };
-
-  const handleReplace = () => {
-    attackResult.value = replaceDice(attackResult.value, rerollResults.value);
-    Swal.update({
-      html: renderModalContent(),
-      showCancelButton: false,
+      cancelButtonText: 'Reemplazar Dados',
+      showCloseButton: true,
+      customClass: {
+        popup: 'dnd-modern-swal-popup',
+        htmlContainer: 'dnd-modern-swal-container',
+        cancelButton: 'dnd-replace-button',
+      },
+      didOpen: () => {
+        if (document.getElementById(styleId)) return;
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.innerHTML = originalStyles + newStyles;
+        document.head.appendChild(style);
+      },
+      didClose: () => {
+        if (attackResult.totalHealed > 0) characterStore.heal(attackResult.totalHealed);
+        characterStore.addLog(`Ataque: ${attack.name}`, `Daño total: ${attackResult.grandTotal}. Curación por robo de vida: ${attackResult.totalHealed}.`);
+      },
+      preCancel: () => {
+        attackResult = replaceDice(result, rerollData);
+        Swal.getCancelButton().disabled = true;
+        Swal.update({
+          html: renderModalContent(attackResult, rerollData)
+        });
+        return false;
+      }
     });
   };
 
   Swal.fire({
     width: 600,
-    html: renderModalContent(),
+    html: renderModalContent(attackResult),
     showConfirmButton: true,
     confirmButtonText: 'Cerrar',
     showDenyButton: attack.rerollDice && attack.rerollDice.length > 0,
     denyButtonText: 'Lanzar Reroll',
     showCancelButton: false,
-    cancelButtonText: 'Reemplazar Dados',
     showCloseButton: true,
     customClass: {
       popup: 'dnd-modern-swal-popup',
       htmlContainer: 'dnd-modern-swal-container',
       denyButton: 'dnd-reroll-button',
-      cancelButton: 'dnd-replace-button',
     },
     didOpen: () => {
       if (document.getElementById(styleId)) return;
@@ -437,25 +451,15 @@ const executeAndShowAttack = (attack) => {
       document.head.appendChild(style);
     },
     didClose: () => {
-      const styleElement = document.getElementById(styleId);
-      if (styleElement) styleElement.remove();
-
-      if (attackResult.value.totalHealed > 0) {
-        characterStore.heal(attackResult.value.totalHealed);
-      }
-
-      characterStore.addLog(
-        `Ataque: ${attack.name}`,
-        `Daño total: ${attackResult.value.grandTotal}. Curación por robo de vida: ${attackResult.value.totalHealed}.`
-      );
+      if (attackResult.totalHealed > 0) characterStore.heal(attackResult.totalHealed);
+      characterStore.addLog(`Ataque: ${attack.name}`, `Daño total: ${attackResult.grandTotal}. Curación por robo de vida: ${attackResult.totalHealed}.`);
     },
     preDeny: () => {
-      handleReroll();
-      return false; // Prevent modal from closing
-    },
-    preCancel: () => {
-      handleReplace();
-      return false; // Prevent modal from closing
+      const rerollData = rollRerollDice(attack.rerollDice);
+      // Close the current modal and open the second one
+      Swal.close();
+      showFinalModal(attackResult, rerollData);
+      return false;
     }
   });
 };
