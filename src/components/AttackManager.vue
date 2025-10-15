@@ -392,42 +392,7 @@ const executeAndShowAttack = (attack) => {
     .dnd-reroll-button { background-color: #9b59b6 !important; color: white !important; }
     .dnd-replace-button { background-color: #f39c12 !important; color: white !important; }`;
 
-  const showFinalModal = (result, rerollData) => {
-    Swal.fire({
-      width: 600,
-      html: renderModalContent(result, rerollData),
-      showConfirmButton: true,
-      confirmButtonText: 'Cerrar',
-      showDenyButton: false,
-      showCancelButton: true,
-      cancelButtonText: 'Reemplazar Dados',
-      showCloseButton: true,
-      customClass: {
-        popup: 'dnd-modern-swal-popup',
-        htmlContainer: 'dnd-modern-swal-container',
-        cancelButton: 'dnd-replace-button',
-      },
-      didOpen: () => {
-        if (document.getElementById(styleId)) return;
-        const style = document.createElement('style');
-        style.id = styleId;
-        style.innerHTML = originalStyles + newStyles;
-        document.head.appendChild(style);
-      },
-      didClose: () => {
-        if (attackResult.totalHealed > 0) characterStore.heal(attackResult.totalHealed);
-        characterStore.addLog(`Ataque: ${attack.name}`, `Daño total: ${attackResult.grandTotal}. Curación por robo de vida: ${attackResult.totalHealed}.`);
-      },
-      preCancel: () => {
-        attackResult = replaceDice(result, rerollData);
-        Swal.getCancelButton().disabled = true;
-        Swal.update({
-          html: renderModalContent(attackResult, rerollData)
-        });
-        return false;
-      }
-    });
-  };
+  let rerollData = null;
 
   Swal.fire({
     width: 600,
@@ -442,6 +407,7 @@ const executeAndShowAttack = (attack) => {
       popup: 'dnd-modern-swal-popup',
       htmlContainer: 'dnd-modern-swal-container',
       denyButton: 'dnd-reroll-button',
+      cancelButton: 'dnd-replace-button',
     },
     didOpen: () => {
       if (document.getElementById(styleId)) return;
@@ -455,10 +421,21 @@ const executeAndShowAttack = (attack) => {
       characterStore.addLog(`Ataque: ${attack.name}`, `Daño total: ${attackResult.grandTotal}. Curación por robo de vida: ${attackResult.totalHealed}.`);
     },
     preDeny: () => {
-      const rerollData = rollRerollDice(attack.rerollDice);
-      // Close the current modal and open the second one
-      Swal.close();
-      showFinalModal(attackResult, rerollData);
+      rerollData = rollRerollDice(attack.rerollDice);
+      Swal.update({
+        html: renderModalContent(attackResult, rerollData),
+        showDenyButton: false,
+        showCancelButton: true,
+        cancelButtonText: 'Reemplazar Dados',
+      });
+      return false;
+    },
+    preCancel: () => {
+      attackResult = replaceDice(attackResult, rerollData);
+      Swal.getCancelButton().disabled = true;
+      Swal.update({
+        html: renderModalContent(attackResult, rerollData)
+      });
       return false;
     }
   });
