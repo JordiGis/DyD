@@ -393,6 +393,8 @@ const executeAndShowAttack = (attack) => {
     .dnd-replace-button { background-color: #f39c12 !important; color: white !important; }`;
 
   let rerollData = null;
+  // Estado local para controlar si ya se ha aplicado el reemplazo
+  let hasReplaced = false;
 
   Swal.fire({
     width: 600,
@@ -421,21 +423,62 @@ const executeAndShowAttack = (attack) => {
       characterStore.addLog(`Ataque: ${attack.name}`, `Daño total: ${attackResult.grandTotal}. Curación por robo de vida: ${attackResult.totalHealed}.`);
     },
     preDeny: () => {
+      // Generar reroll pero no aplicar aún. Mostrar los resultados de reroll y ofrecer 'Reemplazar Dados'.
       rerollData = rollRerollDice(attack.rerollDice);
+      hasReplaced = false;
       Swal.update({
         html: renderModalContent(attackResult, rerollData),
         showDenyButton: false,
-        showCancelButton: true,
-        cancelButtonText: 'Reemplazar Dados',
+        showCancelButton: false,
+        footer: '<button id="swal-replace-btn" class="swal2-styled dnd-replace-button">Reemplazar Dados</button>',
       });
+
+      // Añadir listener al botón normal de "Reemplazar Dados"
+      // Usamos setTimeout para esperar a que SweetAlert haya renderizado el footer
+      setTimeout(() => {
+        const replaceBtn = document.getElementById('swal-replace-btn');
+        if (!replaceBtn) return;
+        replaceBtn.onclick = () => {
+          if (!rerollData) {
+            rerollData = rollRerollDice(attack.rerollDice);
+          }
+          // Aplicar reemplazo y actualizar modal (sin cerrarlo)
+          attackResult = replaceDice(attackResult, rerollData);
+          hasReplaced = true;
+          Swal.update({
+            html: renderModalContent(attackResult, rerollData),
+            showConfirmButton: true,
+            showDenyButton: false,
+            showCancelButton: false,
+            footer: '' // quitar el botón para evitar reaplicaciones
+          });
+        };
+      }, 0);
+      // Evitar que el modal se cierre por defecto
       return false;
     },
     preCancel: () => {
+      // Reemplazar dados NUNCA debe cerrar el modal. Siempre aplicamos el reemplazo
+      // (si no hay rerollData, lo generamos) y actualizamos el modal. Devolvemos false
+      // para evitar el cierre del modal.
+      if (!rerollData) {
+        rerollData = rollRerollDice(attack.rerollDice);
+      }
+
+      // Aplicar reemplazo: sustituir los dados más bajos por los mejores reroll
       attackResult = replaceDice(attackResult, rerollData);
-      Swal.getCancelButton().disabled = true;
+      hasReplaced = true;
+
+      // Actualizar el modal mostrando los dados reemplazados; mantener el modal abierto.
+      // Ocultamos el botón de reemplazo para evitar re-aplicaciones.
       Swal.update({
-        html: renderModalContent(attackResult, rerollData)
+        html: renderModalContent(attackResult, rerollData),
+        showCancelButton: false,
+        showConfirmButton: true,
+        confirmButtonText: 'Cerrar'
       });
+
+      // Evitar cierre del modal
       return false;
     }
   });
