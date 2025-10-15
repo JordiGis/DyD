@@ -38,6 +38,12 @@ export const useAttackStore = defineStore('attack', {
               }
             });
 
+            // Añadir rerollDice si no existe
+            if (!attack.rerollDice) {
+              attack.rerollDice = [];
+              needsSave = true;
+            }
+
             return attack;
           });
 
