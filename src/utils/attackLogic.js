@@ -98,12 +98,14 @@ export function rollRerollDice(rerollDiceConf) {
 
   rerollDiceConf.forEach(reroll => {
     const diceType = `d${reroll.dice.split('d')[1]}`;
+    const min = Number(reroll.min) || 1;
     const rolls = rollDice(reroll.dice);
+    const appliedMinRolls = rolls.map(roll => Math.max(roll, min));
 
     if (!rerollResults[diceType]) {
       rerollResults[diceType] = [];
     }
-    rerollResults[diceType].push(...rolls);
+    rerollResults[diceType].push(...appliedMinRolls);
   });
 
   // Ordenar cada grupo de resultados de mayor a menor

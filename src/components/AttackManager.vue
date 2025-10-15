@@ -119,6 +119,10 @@
                       <option value="100">d100</option>
                     </select>
                   </div>
+                  <div class="form-group-inline">
+                    <label :for="`reroll-min-${index}`">Mínimo</label>
+                    <input :id="`reroll-min-${index}`" type="number" v-model.number="reroll.min" placeholder="1">
+                  </div>
                 </div>
                 <button @click="removeRerollDice(index)" class="btn-remove-roll">✕</button>
               </div>
@@ -253,6 +257,7 @@ const addRerollDice = () => {
     dice: '1d6',
     numDice: 1,
     diceType: 6,
+    min: 1,
   });
 };
 
