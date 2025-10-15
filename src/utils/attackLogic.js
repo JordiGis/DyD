@@ -153,15 +153,28 @@ export function replaceDice(attackResults, rerollResults) {
     }
   }
 
-  // Recalcular los totales
+  // Recalcular los totales y el robo de vida
   let newGrandTotal = 0;
+  let newTotalHealed = 0;
   for (const damageType in updatedResults.results) {
     const typeData = updatedResults.results[damageType];
     const newSum = typeData.rolls.reduce((sum, roll) => sum + roll.value, 0);
     typeData.total = newSum + typeData.bonus;
     newGrandTotal += typeData.total;
+
+    // Recalcular el robo de vida si existe
+    if (typeData.lifeSteal) {
+      const percentageDisplay = typeData.lifeSteal.percentage_display;
+      const mainPercentage = parseFloat(percentageDisplay);
+      if (!isNaN(mainPercentage)) {
+        const healed = Math.floor(typeData.total * (mainPercentage / 100));
+        typeData.lifeSteal.healed = healed;
+        newTotalHealed += healed;
+      }
+    }
   }
   updatedResults.grandTotal = newGrandTotal;
+  updatedResults.totalHealed = newTotalHealed;
 
   return updatedResults;
 }
