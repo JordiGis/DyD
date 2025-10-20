@@ -201,7 +201,14 @@ const setupForm = (attack) => {
     attackCopy.rerollDice = [];
   }
 
-  Object.assign(currentAttack, attackCopy);
+  // Rellenar el formulario de forma reactiva para evitar problemas
+  currentAttack.id = attackCopy.id;
+  currentAttack.name = attackCopy.name;
+
+  // Limpiar y rellenar los arrays para mantener la reactividad
+  currentAttack.damageRolls.splice(0, currentAttack.damageRolls.length, ...attackCopy.damageRolls);
+  currentAttack.rerollDice.splice(0, currentAttack.rerollDice.length, ...attackCopy.rerollDice);
+
   isFormVisible.value = true;
 };
 
