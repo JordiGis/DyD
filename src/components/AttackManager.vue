@@ -892,6 +892,13 @@ const executeAndShowAttack = (attack) => {
 
 /* Media Queries for Responsiveness */
 @media (max-width: 768px) {
+  .drag-handle {
+    align-self: flex-start; /* Evita que el handle ocupe todo el ancho */
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px;
+    border-radius: 5px;
+  }
+
   .attack-item {
     flex-direction: column;
     align-items: stretch;
