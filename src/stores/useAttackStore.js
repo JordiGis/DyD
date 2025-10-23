@@ -44,6 +44,12 @@ export const useAttackStore = defineStore('attack', {
               needsSave = true;
             }
 
+            // Asignar un ID si falta
+            if (!attack.id) {
+              attack.id = uuidv4();
+              needsSave = true;
+            }
+
             return attack;
           });
 
@@ -69,8 +75,8 @@ export const useAttackStore = defineStore('attack', {
     // Crear un nuevo ataque
     addAttack(attackData) {
       const newAttack = {
-        id: uuidv4(),
         ...attackData,
+        id: uuidv4(),
       };
       this.attacks.push(newAttack);
       this.saveAttacks();
