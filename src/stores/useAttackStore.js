@@ -44,6 +44,12 @@ export const useAttackStore = defineStore('attack', {
               needsSave = true;
             }
 
+            // Asignar un ID si falta
+            if (!attack.id) {
+              attack.id = uuidv4();
+              needsSave = true;
+            }
+
             return attack;
           });
 
@@ -69,8 +75,8 @@ export const useAttackStore = defineStore('attack', {
     // Crear un nuevo ataque
     addAttack(attackData) {
       const newAttack = {
-        id: uuidv4(),
         ...attackData,
+        id: uuidv4(),
       };
       this.attacks.push(newAttack);
       this.saveAttacks();
@@ -81,6 +87,22 @@ export const useAttackStore = defineStore('attack', {
       const index = this.attacks.findIndex(a => a.id === updatedAttack.id);
       if (index !== -1) {
         this.attacks[index] = updatedAttack;
+        this.saveAttacks();
+      }
+    },
+
+    // Duplicar un ataque
+    duplicateAttack(attackId) {
+      const originalAttack = this.attacks.find(a => a.id === attackId);
+      if (originalAttack) {
+        const duplicatedAttack = JSON.parse(JSON.stringify(originalAttack));
+        duplicatedAttack.id = uuidv4();
+        duplicatedAttack.name = `${originalAttack.name} (Copia)`;
+
+        // Encontrar el índice del ataque original para insertar la copia después
+        const originalIndex = this.attacks.findIndex(a => a.id === attackId);
+        this.attacks.splice(originalIndex + 1, 0, duplicatedAttack);
+
         this.saveAttacks();
       }
     },
@@ -97,6 +119,13 @@ export const useAttackStore = defineStore('attack', {
     // Obtener un ataque por su ID
     getAttackById(attackId) {
       return this.attacks.find(a => a.id === attackId);
+    },
+
+    // Reordenar ataques
+    updateAttackOrder(newOrder) {
+      const orderedAttacks = newOrder.map(id => this.attacks.find(a => a.id === id));
+      this.attacks = orderedAttacks.filter(a => a); // Filtrar posibles indefinidos
+      this.saveAttacks();
     },
   },
 });
