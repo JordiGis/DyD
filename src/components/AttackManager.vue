@@ -574,7 +574,7 @@ const executeAndShowAttack = (attack) => {
   border-radius: 12px;
   width: 90%;
   max-width: 800px;
-  height: 90vh;
+  height: 80vh;
   display: flex;
   flex-direction: column;
   box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
@@ -934,7 +934,7 @@ const executeAndShowAttack = (attack) => {
 @media (max-width: 768px) {
   .attack-manager-container {
     width: 95%;
-    height: 90vh;
+    height: 80vh;
   }
 
   .drag-handle {
@@ -1018,7 +1018,7 @@ const executeAndShowAttack = (attack) => {
 @media (max-width: 480px) {
   .attack-manager-container {
     width: 100%;
-    height: 90vh;
+    height: 80vh;
     border-radius: 0;
   }
 
