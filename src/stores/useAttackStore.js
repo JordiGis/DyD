@@ -85,6 +85,22 @@ export const useAttackStore = defineStore('attack', {
       }
     },
 
+    // Duplicar un ataque
+    duplicateAttack(attackId) {
+      const originalAttack = this.attacks.find(a => a.id === attackId);
+      if (originalAttack) {
+        const duplicatedAttack = JSON.parse(JSON.stringify(originalAttack));
+        duplicatedAttack.id = uuidv4();
+        duplicatedAttack.name = `${originalAttack.name} (Copia)`;
+
+        // Encontrar el índice del ataque original para insertar la copia después
+        const originalIndex = this.attacks.findIndex(a => a.id === attackId);
+        this.attacks.splice(originalIndex + 1, 0, duplicatedAttack);
+
+        this.saveAttacks();
+      }
+    },
+
     // Eliminar un ataque
     deleteAttack(attackId) {
       const index = this.attacks.findIndex(a => a.id === attackId);
@@ -97,6 +113,13 @@ export const useAttackStore = defineStore('attack', {
     // Obtener un ataque por su ID
     getAttackById(attackId) {
       return this.attacks.find(a => a.id === attackId);
+    },
+
+    // Reordenar ataques
+    updateAttackOrder(newOrder) {
+      const orderedAttacks = newOrder.map(id => this.attacks.find(a => a.id === id));
+      this.attacks = orderedAttacks.filter(a => a); // Filtrar posibles indefinidos
+      this.saveAttacks();
     },
   },
 });

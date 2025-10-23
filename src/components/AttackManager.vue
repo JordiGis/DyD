@@ -12,7 +12,8 @@
           <div v-if="attackStore.attacks.length === 0" class="no-attacks">
             No hay ataques guardados. ¡Crea uno nuevo!
           </div>
-          <div v-for="attack in attackStore.attacks" :key="attack.id" class="attack-item">
+          <div v-for="attack in attackStore.attacks" :key="attack.id" class="attack-item" :data-id="attack.id">
+            <div class="drag-handle"><i class="bi bi-grip-vertical"></i></div>
             <div class="attack-info">
               <span class="attack-name">{{ attack.name }}</span>
               <div class="attack-summary">
@@ -25,6 +26,7 @@
               <button @click="executeAndShowAttack(attack)" class="action-btn btn-execute">Atacar</button>
               <div class="secondary-actions">
                 <button @click="editAttack(attack)" class="action-btn btn-edit">Editar</button>
+                <button @click="duplicateAttack(attack)" class="action-btn btn-duplicate">Duplicar</button>
                 <button @click="confirmDelete(attack.id)" class="action-btn btn-delete">Eliminar</button>
               </div>
             </div>
@@ -144,7 +146,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive } from 'vue';
+import { ref, onMounted, reactive, nextTick } from 'vue';
+import Sortable from 'sortablejs';
 import { useAttackStore } from '../stores/useAttackStore';
 import { useCharacterStore } from '../stores/useCharacterStore';
 import { executeAttack, rollRerollDice, replaceDice } from '../utils/attackLogic';
@@ -169,6 +172,22 @@ const currentAttack = reactive({
 
 onMounted(() => {
   attackStore.loadAttacks();
+  nextTick(() => {
+    const listEl = document.querySelector('.attacks-list');
+    if (listEl) {
+      new Sortable(listEl, {
+        animation: 150,
+        handle: '.drag-handle',
+        ghostClass: 'sortable-ghost',
+        onEnd: (evt) => {
+          const newOrder = Array.from(evt.target.children)
+                                .map(el => el.dataset.id)
+                                .filter(id => id); // Filtrar elementos sin data-id
+          attackStore.updateAttackOrder(newOrder);
+        }
+      });
+    }
+  });
 });
 
 // --- Lógica del formulario ---
@@ -234,6 +253,10 @@ const showAttackForm = () => {
 const editAttack = (attack) => {
   isEditing.value = true;
   setupForm(attack);
+};
+
+const duplicateAttack = (attack) => {
+  attackStore.duplicateAttack(attack.id);
 };
 
 const hideAttackForm = () => {
@@ -574,9 +597,24 @@ const executeAndShowAttack = (attack) => {
   border-radius: 8px;
   padding: 15px;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  align-items: center; /* Alinear verticalmente */
+  gap: 15px; /* Espacio entre el handle y el contenido */
   border-left: 5px solid #7289da;
+}
+
+.drag-handle {
+  color: #99aab5;
+  cursor: grab;
+  font-size: 1.5rem;
+}
+
+.sortable-ghost {
+  opacity: 0.4;
+  background: #7289da;
+}
+
+.attack-info {
+  flex-grow: 1; /* El contenido principal ocupa el espacio restante */
 }
 
 .attack-name {
@@ -609,7 +647,7 @@ const executeAndShowAttack = (attack) => {
 
 .secondary-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
 }
 
@@ -626,6 +664,7 @@ const executeAndShowAttack = (attack) => {
 
 .btn-execute { background-color: #43b581; }
 .btn-edit { background-color: #faa61a; }
+.btn-duplicate { background-color: #5865f2; }
 .btn-delete { background-color: #f04747; }
 
 /* Área de nuevo ataque */
