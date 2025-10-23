@@ -606,6 +606,8 @@ const executeAndShowAttack = (attack) => {
   color: #99aab5;
   cursor: grab;
   font-size: 1.5rem;
+  display: flex;
+  align-items: center;
 }
 
 .sortable-ghost {
@@ -615,18 +617,20 @@ const executeAndShowAttack = (attack) => {
 
 .attack-info {
   flex-grow: 1; /* El contenido principal ocupa el espacio restante */
+  min-width: 0; /* Permite que el contenido se ajuste correctamente */
 }
 
 .attack-name {
   color: #ffffff;
   font-size: 1.2rem;
   font-weight: bold;
+  margin-bottom: 8px;
 }
 
 .attack-summary {
   display: flex;
   gap: 8px;
-  margin-top: 8px;
+  flex-wrap: wrap; /* Permite que los tags se envuelvan si son muchos */
 }
 
 .damage-tag {
@@ -635,19 +639,19 @@ const executeAndShowAttack = (attack) => {
   padding: 3px 8px;
   border-radius: 4px;
   font-size: 0.8rem;
+  white-space: nowrap;
 }
 
 .attack-actions {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 8px;
-  width: 180px;
+  align-items: center;
   flex-shrink: 0;
 }
 
 .secondary-actions {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
   gap: 8px;
 }
 
