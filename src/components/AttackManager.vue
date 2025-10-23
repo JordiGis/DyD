@@ -13,22 +13,23 @@
             No hay ataques guardados. ¡Crea uno nuevo!
           </div>
           <div v-for="attack in attackStore.attacks" :key="attack.id" class="attack-item" :data-id="attack.id">
-            <div class="drag-handle"><i class="bi bi-grip-vertical"></i></div>
-            <div class="attack-info">
-              <span class="attack-name">{{ attack.name }}</span>
-              <div class="attack-summary">
-                <span v-for="(roll, index) in attack.damageRolls" :key="index" class="damage-tag">
-                  {{ roll.dice }} {{ roll.type }}
-                </span>
+            <div class="header-attack">
+              <div class="drag-handle"><i class="bi bi-grip-vertical"></i></div>
+              <div class="attack-info">
+                <span class="attack-name">{{ attack.name }}</span>
+                <div class="attack-summary">
+                  <span v-for="(roll, index) in attack.damageRolls" :key="index" class="damage-tag">
+                    {{ roll.dice }} {{ roll.type }}
+                  </span>
+                </div>
               </div>
             </div>
+            
             <div class="attack-actions">
               <button @click="executeAndShowAttack(attack)" class="action-btn btn-execute">Atacar</button>
-              <div class="secondary-actions">
-                <button @click="editAttack(attack)" class="action-btn btn-edit">Editar</button>
-                <button @click="duplicateAttack(attack)" class="action-btn btn-duplicate">Duplicar</button>
-                <button @click="confirmDelete(attack.id)" class="action-btn btn-delete">Eliminar</button>
-              </div>
+              <button @click="editAttack(attack)" class="action-btn btn-edit">Editar</button>
+              <button @click="duplicateAttack(attack)" class="action-btn btn-duplicate">Duplicar</button>
+              <button @click="confirmDelete(attack.id)" class="action-btn btn-delete">Eliminar</button>
             </div>
           </div>
         </div>
@@ -146,7 +147,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, reactive, nextTick } from 'vue';
 import Sortable from 'sortablejs';
 import { useAttackStore } from '../stores/useAttackStore';
 import { useCharacterStore } from '../stores/useCharacterStore';
@@ -171,6 +172,9 @@ const currentAttack = reactive({
 });
 
 onMounted(() => {
+  // Deshabilitar scroll en el body
+  document.body.style.overflow = 'hidden';
+  
   attackStore.loadAttacks();
   nextTick(() => {
     const listEl = document.querySelector('.attacks-list');
@@ -187,7 +191,36 @@ onMounted(() => {
         }
       });
     }
+
+    // Redirigir el scroll del overlay al contenido del modal
+    const overlay = document.querySelector('.attack-manager-overlay');
+    const content = document.querySelector('.content');
+    
+    if (overlay && content) {
+      const handleWheel = (e) => {
+        // Prevenir el scroll por defecto
+        e.preventDefault();
+        // Aplicar el scroll al contenido del modal
+        content.scrollTop += e.deltaY;
+      };
+      
+      overlay.addEventListener('wheel', handleWheel, { passive: false });
+      
+      // Guardar el listener para poder removerlo después
+      overlay._wheelHandler = handleWheel;
+    }
   });
+});
+
+onUnmounted(() => {
+  // Rehabilitar scroll en el body al cerrar el componente
+  document.body.style.overflow = '';
+  
+  // Remover el listener del scroll
+  const overlay = document.querySelector('.attack-manager-overlay');
+  if (overlay && overlay._wheelHandler) {
+    overlay.removeEventListener('wheel', overlay._wheelHandler);
+  }
 });
 
 // --- Lógica del formulario ---
@@ -529,9 +562,11 @@ const executeAndShowAttack = (attack) => {
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.7);
-  overflow-y: auto;
-  padding: 5vh 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   z-index: 1000;
+  padding: 20px;
 }
 
 .attack-manager-container {
@@ -539,11 +574,10 @@ const executeAndShowAttack = (attack) => {
   border-radius: 12px;
   width: 90%;
   max-width: 800px;
-  margin: 0 auto;
+  height: 90vh;
   display: flex;
   flex-direction: column;
   box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
-  max-height: 90vh;
 }
 
 .header {
@@ -640,6 +674,12 @@ const executeAndShowAttack = (attack) => {
   border-radius: 4px;
   font-size: 0.8rem;
   white-space: nowrap;
+}
+
+.header-attack {
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
 
 .attack-actions {
@@ -892,20 +932,55 @@ const executeAndShowAttack = (attack) => {
 
 /* Media Queries for Responsiveness */
 @media (max-width: 768px) {
+  .attack-manager-container {
+    width: 95%;
+    height: 95vh;
+  }
+
+  .drag-handle {
+    align-self: flex-start;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px;
+    border-radius: 5px;
+  }
+
   .attack-item {
     flex-direction: column;
     align-items: stretch;
-    gap: 15px;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .attack-name {
+    font-size: 1.1rem;
   }
 
   .attack-actions {
-    flex-direction: column;
+    display: grid;
+  grid-template-columns: 1fr 1fr;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .secondary-actions {
+    flex-direction: row;
+    gap: 8px;
     width: 100%;
   }
 
   .action-btn {
     width: 100%;
     text-align: center;
+    padding: 10px 12px;
+    font-size: 0.95rem;
+  }
+
+  .btn-execute {
+    order: -1; /* El botón Atacar siempre primero */
+  }
+
+  .secondary-actions .action-btn {
+    flex: 1; /* Los botones secundarios ocupan espacio igual */
   }
 
   .damage-roll-item {
@@ -920,35 +995,105 @@ const executeAndShowAttack = (attack) => {
   .btn-remove-roll {
     margin-top: 10px;
     width: 100%;
+    height: 40px;
   }
 
   .form-actions {
     flex-direction: column;
+    gap: 12px;
   }
 
   .btn-save, .btn-cancel {
     width: 100%;
+    padding: 12px 20px;
+    font-size: 1rem;
+  }
+
+  .btn-new-attack {
+    width: 100%;
+    justify-content: center;
   }
 }
 
 @media (max-width: 480px) {
+  .attack-manager-container {
+    width: 100%;
+    height: 100vh;
+    border-radius: 0;
+  }
+
   .header {
+    flex-direction: row;
+    padding: 12px 15px;
+    border-radius: 0;
+  }
+
+  .header h2 {
+    font-size: 1.2rem;
+  }
+
+  .close-btn {
+    font-size: 1.6rem;
+  }
+
+  .content {
+    padding: 15px;
+  }
+
+  .attack-item {
+    padding: 10px;
+  }
+
+  .attack-name {
+    font-size: 1rem;
+    text-align: left;
+  }
+
+  .damage-tag {
+    font-size: 0.75rem;
+    padding: 2px 6px;
+  }
+
+  .attack-summary {
+    justify-content: flex-start;
+  }
+
+  .secondary-actions {
     flex-direction: column;
-    gap: 10px;
-    text-align: center;
+    gap: 8px;
+  }
+
+  .secondary-actions .action-btn {
+    width: 100%;
+  }
+
+  .action-btn {
+    padding: 10px;
+    font-size: 0.9rem;
   }
 
   .damage-roll-inputs {
     grid-template-columns: 1fr; /* Single column for very small screens */
   }
 
-  .attack-info {
-    text-align: center;
+  .btn-new-attack {
+    font-size: 1rem;
+    padding: 10px 20px;
   }
 
-  .attack-summary {
+  .attack-form {
+    width: 95%;
+    padding: 20px;
+  }
+
+  .form-group-inline label {
+    font-size: 0.8rem;
+  }
+
+  .btn-add-roll {
+    width: 100%;
     justify-content: center;
-    flex-wrap: wrap;
+    padding: 10px;
   }
 }
 </style>
