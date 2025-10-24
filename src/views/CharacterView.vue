@@ -1,7 +1,11 @@
 <template>
   <div class="character-view-container fade-in">
     <div class="character-header">
-      <h1 class="character-name">{{ characterStore.character.name }}</h1>
+      <div v-if="stateStore.selectedState" class="character-state-display">
+        <img v-if="selectedStateImageUrl" :src="selectedStateImageUrl" alt="Estado del personaje" class="state-image-display"/>
+        <h1 class="character-name">{{ characterStore.character.name }} <span class="state-title-display">({{ stateStore.selectedState.title }})</span></h1>
+      </div>
+      <h1 v-else class="character-name">{{ characterStore.character.name }}</h1>
       <div class="turn-info">
         <span class="turn-label">Turno:</span>
         <span class="turn-number">{{ characterStore.turn.current }}</span>
@@ -223,15 +227,24 @@
 import CounterManager from '../components/CounterManager.vue';
 import StateManager from '../components/StateManager.vue';
 import AttackManager from '../components/AttackManager.vue';
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCharacterStore } from '../stores/useCharacterStore'
 import { useCounterStore } from '../stores/useCounterStore'
+import { useCharacterStateStore } from '../stores/useCharacterStateStore'
 import Swal from 'sweetalert2'
 
 const router = useRouter()
 const characterStore = useCharacterStore()
 const counterStore = useCounterStore()
+const stateStore = useCharacterStateStore()
+
+const selectedStateImageUrl = computed(() => {
+  if (stateStore.selectedState && stateStore.selectedState.image) {
+    return URL.createObjectURL(stateStore.selectedState.image);
+  }
+  return null;
+});
 
 const isAttackManagerVisible = ref(false);
 
@@ -268,9 +281,10 @@ function toggleStates() {
   saveFoldState()
 }
 
-onMounted(() => {
+onMounted(async () => {
   // Cargar datos del localStorage
   characterStore.loadFromLocalStorage()
+  await stateStore.loadStates();
   loadFoldState()
   // Si no hay personaje configurado, redirigir a configuración
   if (!characterStore.character.isConfigured) {
@@ -795,6 +809,22 @@ const healNecroDamage = (amount) => {
 </script>
 
 <style scoped>
+.character-state-display {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.state-image-display {
+  max-width: 150px;
+  max-height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #f39c12;
+  margin-bottom: 10px;
+}
+.state-title-display {
+  color: #f39c12;
+  font-style: italic;
+}
 /* Margen inferior para la fila de contadores y estados */
 .custom-fold-row {
   margin-bottom: 10px;

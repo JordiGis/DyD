@@ -49,6 +49,8 @@
         </button>
       </form>
       
+      <CharacterStateManager />
+
       <div v-if="hasExistingData" class="existing-data">
         <h3>Datos Existentes</h3>
         <p>Ya tienes un personaje configurado. ¿Quieres cargarlo o crear uno nuevo?</p>
@@ -70,6 +72,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCharacterStore } from '../stores/useCharacterStore'
 import Swal from 'sweetalert2'
+import CharacterStateManager from '../components/CharacterStateManager.vue'
 
 const router = useRouter()
 const characterStore = useCharacterStore()

@@ -12,6 +12,8 @@
     "predeploy": "npm run build"
   },
   "dependencies": {
+    "browser-image-compression": "^2.0.2",
+    "localforage": "^1.10.0",
     "pinia": "^3.0.2",
     "sortablejs": "^1.15.6",
     "sweetalert2": "^11.22.4",
