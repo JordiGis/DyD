@@ -1,7 +1,12 @@
 <template>
   <div class="character-view-container fade-in">
     <div class="character-header">
-      <h1 class="character-name">{{ characterStore.character.name }}</h1>
+      <div v-if="stateStore.selectedState" class="character-state-display">
+        <img v-if="selectedStateImageUrl" :src="selectedStateImageUrl" alt="Estado del personaje" class="state-image-display"/>
+        <h1 class="character-name">{{ characterStore.character.name }}</h1>
+        <span class="state-title-display">{{ stateStore.selectedState.title }}</span>
+      </div>
+      <h1 v-else class="character-name">{{ characterStore.character.name }}</h1>
       <div class="turn-info">
         <span class="turn-label">Turno:</span>
         <span class="turn-number">{{ characterStore.turn.current }}</span>
@@ -184,6 +189,56 @@
         <span class="btn-icon">💤</span>
         <span class="btn-text">Descanso Corto</span>
       </button>
+
+      <!-- Selector de estados con botones navegables -->
+      <div v-if="stateStore.selectedState" class="state-selector-wrapper">
+        <button @click="toggleStateSelector" class="state-selector-fold-btn">
+          <span v-if="stateSelectorFolded">▶️ Mostrar Selector de Estados</span>
+          <span v-else>🔽 Ocultar Selector de Estados</span>
+        </button>
+        
+        <div v-show="!stateSelectorFolded" class="state-selector-navigation">
+          <button @click="previousState" 
+            class="state-nav-btn state-nav-prev"
+            :disabled="stateStore.states.length <= 1"
+            title="Estado anterior"
+          >
+            <span>◀</span>
+          </button>
+          
+          <div class="state-indicators">
+            <button
+              v-for="state in stateStore.states"
+              :key="state.id"
+              @click="handleStateChange(state.id)"
+              class="state-indicator"
+              :class="{ 'active': state.id === stateStore.selectedStateId }"
+            >
+              <div class="state-preview">
+                <img 
+                  v-if="state.image" 
+                  :src="getStateImageUrl(state)" 
+                  :alt="state.title"
+                  class="state-preview-image"
+                />
+                <div v-else class="state-preview-placeholder">
+                  <span>📋</span>
+                </div>
+              </div>
+              <span class="state-preview-title">{{ state.title }}</span>
+            </button>
+          </div>
+          
+          <button 
+            @click="nextState" 
+            class="state-nav-btn state-nav-next"
+            :disabled="stateStore.states.length <= 1"
+            title="Estado siguiente"
+          >
+            <span>▶</span>
+          </button>
+        </div>
+      </div>
       
       <button @click="resetToMaxHp" class="secondary-btn btn-reset">
         <span class="btn-icon">🔄</span>
@@ -223,21 +278,62 @@
 import CounterManager from '../components/CounterManager.vue';
 import StateManager from '../components/StateManager.vue';
 import AttackManager from '../components/AttackManager.vue';
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCharacterStore } from '../stores/useCharacterStore'
 import { useCounterStore } from '../stores/useCounterStore'
+import { useCharacterStateStore } from '../stores/useCharacterStateStore'
 import Swal from 'sweetalert2'
 
 const router = useRouter()
 const characterStore = useCharacterStore()
 const counterStore = useCounterStore()
+const stateStore = useCharacterStateStore()
+
+const selectedStateImageUrl = computed(() => {
+  if (stateStore.selectedState && stateStore.selectedState.image) {
+    return URL.createObjectURL(stateStore.selectedState.image);
+  }
+  return null;
+});
+
+const getStateImageUrl = (state) => {
+  if (state && state.image) {
+    return URL.createObjectURL(state.image);
+  }
+  return null;
+};
+
+const handleStateChange = (stateId) => {
+  stateStore.setSelectedState(stateId);
+};
+
+const previousState = () => {
+  const currentIndex = stateStore.states.findIndex(s => s.id === stateStore.selectedStateId);
+  if (currentIndex > 0) {
+    stateStore.setSelectedState(stateStore.states[currentIndex - 1].id);
+  } else {
+    // Ciclar al último estado
+    stateStore.setSelectedState(stateStore.states[stateStore.states.length - 1].id);
+  }
+};
+
+const nextState = () => {
+  const currentIndex = stateStore.states.findIndex(s => s.id === stateStore.selectedStateId);
+  if (currentIndex < stateStore.states.length - 1) {
+    stateStore.setSelectedState(stateStore.states[currentIndex + 1].id);
+  } else {
+    // Ciclar al primer estado
+    stateStore.setSelectedState(stateStore.states[0].id);
+  }
+};
 
 const isAttackManagerVisible = ref(false);
 
 // Estado de plegado para contadores y estados
 const countersFolded = ref(false)
 const statesFolded = ref(false)
+const stateSelectorFolded = ref(true) // Por defecto plegado
 
 // Cargar estado de plegado desde localStorage
 function loadFoldState() {
@@ -247,6 +343,7 @@ function loadFoldState() {
       const parsed = JSON.parse(data)
       countersFolded.value = !!parsed.countersFolded
       statesFolded.value = !!parsed.statesFolded
+      stateSelectorFolded.value = parsed.stateSelectorFolded !== undefined ? !!parsed.stateSelectorFolded : true
     }
   } catch (e) {}
 }
@@ -254,7 +351,8 @@ function loadFoldState() {
 function saveFoldState() {
   localStorage.setItem('dnd-character-folds', JSON.stringify({
     countersFolded: countersFolded.value,
-    statesFolded: statesFolded.value
+    statesFolded: statesFolded.value,
+    stateSelectorFolded: stateSelectorFolded.value
   }))
 }
 
@@ -268,9 +366,15 @@ function toggleStates() {
   saveFoldState()
 }
 
-onMounted(() => {
+function toggleStateSelector() {
+  stateSelectorFolded.value = !stateSelectorFolded.value
+  saveFoldState()
+}
+
+onMounted(async () => {
   // Cargar datos del localStorage
   characterStore.loadFromLocalStorage()
+  await stateStore.loadStates();
   loadFoldState()
   // Si no hay personaje configurado, redirigir a configuración
   if (!characterStore.character.isConfigured) {
@@ -795,6 +899,223 @@ const healNecroDamage = (amount) => {
 </script>
 
 <style scoped>
+.character-state-display {
+  text-align: center;
+  margin-bottom: 30px;
+  padding: 25px;
+}
+
+.state-image-display {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 5px solid #f39c12;
+  margin: 0 auto 20px;
+  display: block;
+  box-shadow: 0 10px 30px rgba(243, 156, 18, 0.4),
+              inset 0 0 20px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.state-image-display:hover {
+  transform: scale(1.05);
+  box-shadow: 0 15px 40px rgba(243, 156, 18, 0.6),
+              inset 0 0 20px rgba(0, 0, 0, 0.2);
+}
+
+.state-title-display {
+  color: #f39c12;
+  font-style: italic;
+  font-weight: 700;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.5px;
+  font-size: 1.3rem;
+  display: block;
+  margin-top: 10px;
+}
+
+/* Navegación de estados con botones */
+.state-selector-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.state-nav-btn {
+  background: linear-gradient(135deg, rgba(243, 156, 18, 0.3) 0%, rgba(243, 156, 18, 0.2) 100%);
+  border: 2px solid rgba(243, 156, 18, 0.5);
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  min-width: 50px;
+  min-height: 50px;
+  max-width: 50px;
+  max-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #f39c12;
+  font-size: 1.2rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.state-nav-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(243, 156, 18, 0.5) 0%, rgba(243, 156, 18, 0.3) 100%);
+  border-color: #f39c12;
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(243, 156, 18, 0.4);
+}
+
+.state-nav-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.state-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.state-indicators {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 12px 20px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(243, 156, 18, 0.5) rgba(0, 0, 0, 0.2);
+}
+
+.state-indicators::-webkit-scrollbar {
+  height: 6px;
+}
+
+.state-indicators::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+.state-indicators::-webkit-scrollbar-thumb {
+  background: rgba(243, 156, 18, 0.5);
+  border-radius: 10px;
+}
+
+.state-indicators::-webkit-scrollbar-thumb:hover {
+  background: rgba(243, 156, 18, 0.7);
+}
+
+.state-indicator {
+  background: rgba(0, 0, 0, 0.4);
+  border: 2px solid rgba(243, 156, 18, 0.3);
+  border-radius: 12px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 70px;
+}
+
+.state-indicator:hover {
+  background: rgba(243, 156, 18, 0.15);
+  border-color: rgba(243, 156, 18, 0.6);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(243, 156, 18, 0.3);
+}
+
+.state-indicator.active {
+  background: rgba(243, 156, 18, 0.25);
+  border-color: #f39c12;
+  box-shadow: 0 0 20px rgba(243, 156, 18, 0.6),
+              0 0 40px rgba(243, 156, 18, 0.3);
+  animation: pulse-glow-border 2s infinite;
+}
+
+.state-preview {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid rgba(243, 156, 18, 0.5);
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.state-indicator:hover .state-preview {
+  border-color: #f39c12;
+  transform: scale(1.1);
+}
+
+.state-indicator.active .state-preview {
+  border-color: #f39c12;
+  border-width: 3px;
+  box-shadow: 0 0 15px rgba(243, 156, 18, 0.6);
+}
+
+.state-preview-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: all 0.3s ease;
+}
+
+.state-indicator:hover .state-preview-image {
+  transform: scale(1.1);
+}
+
+.state-preview-placeholder {
+  font-size: 1.5rem;
+  color: rgba(243, 156, 18, 0.6);
+}
+
+.state-preview-title {
+  font-size: 0.75rem;
+  color: rgba(243, 156, 18, 0.8);
+  text-align: center;
+  font-weight: 600;
+  line-height: 1.2;
+  max-width: 100%;
+  word-wrap: break-word;
+  transition: all 0.3s ease;
+}
+
+.state-indicator:hover .state-preview-title {
+  color: #f39c12;
+}
+
+.state-indicator.active .state-preview-title {
+  color: #f39c12;
+  text-shadow: 0 0 8px rgba(243, 156, 18, 0.6);
+  font-weight: 700;
+}
+
+@keyframes pulse-glow-border {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(243, 156, 18, 0.6),
+                0 0 40px rgba(243, 156, 18, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(243, 156, 18, 0.8),
+                0 0 60px rgba(243, 156, 18, 0.4);
+  }
+}
 /* Margen inferior para la fila de contadores y estados */
 .custom-fold-row {
   margin-bottom: 10px;
@@ -1140,6 +1461,40 @@ const healNecroDamage = (amount) => {
   justify-content: center;
   margin-bottom: 25px;
   flex-wrap: wrap;
+  align-items: center;
+}
+
+.secondary-actions .state-selector-wrapper {
+  flex: 1 1 100%;
+  margin-top: 10px;
+}
+
+.state-selector-fold-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(243, 156, 18, 0.15);
+  color: #f39c12;
+  border: 2px solid rgba(243, 156, 18, 0.4);
+  border-radius: 10px;
+  padding: 12px 20px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+}
+
+.state-selector-fold-btn:hover {
+  background: rgba(243, 156, 18, 0.25);
+  border-color: rgba(243, 156, 18, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);
+}
+
+.secondary-actions .state-selector-navigation {
+  margin-top: 15px;
 }
 
 .secondary-btn {
@@ -1230,6 +1585,52 @@ const healNecroDamage = (amount) => {
   .character-view-container {
     padding: 15px;
     min-height: calc(100vh - 65px);
+  }
+  
+  .character-state-display {
+    padding: 20px 15px;
+    margin-bottom: 20px;
+    border-radius: 15px;
+  }
+  
+  .state-image-display {
+    width: 140px;
+    height: 140px;
+    border-width: 4px;
+    margin-bottom: 15px;
+  }
+  
+  .state-title-display {
+    font-size: 1.1rem;
+  }
+  
+  .state-nav-btn {
+    width: 45px;
+    height: 45px;
+    min-width: 45px;
+    min-height: 45px;
+    max-width: 45px;
+    max-height: 45px;
+    font-size: 1.1rem;
+  }
+  
+  .state-indicators {
+    gap: 12px;
+    padding: 10px 16px;
+  }
+  
+  .state-indicator {
+    min-width: 65px;
+    padding: 6px;
+  }
+  
+  .state-preview {
+    width: 45px;
+    height: 45px;
+  }
+  
+  .state-preview-title {
+    font-size: 0.7rem;
   }
   
   .character-header {
@@ -1352,6 +1753,20 @@ const healNecroDamage = (amount) => {
     margin: 20px 15px 25px;
   }
   
+  .secondary-actions .state-selector-wrapper {
+    grid-column: 1 / -1;
+    margin-top: 5px;
+  }
+
+  .state-selector-fold-btn {
+    font-size: 0.95rem;
+    padding: 12px 16px;
+  }
+
+  .secondary-actions .state-selector-navigation {
+    margin-top: 10px;
+  }
+  
   .secondary-btn {
     width: 100%;
     padding: 16px 20px;
@@ -1390,6 +1805,60 @@ const healNecroDamage = (amount) => {
 @media (max-width: 480px) {
   .character-view-container {
     padding: 10px;
+  }
+  
+  .character-state-display {
+    padding: 15px 12px;
+    margin-bottom: 15px;
+    border-radius: 12px;
+  }
+  
+  .state-image-display {
+    width: 120px;
+    height: 120px;
+    border-width: 3px;
+    margin-bottom: 12px;
+  }
+  
+  .state-title-display {
+    font-size: 1rem;
+  }
+  
+  .state-selector-navigation {
+    gap: 12px;
+  }
+  
+  .state-nav-btn {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    max-width: 40px;
+    max-height: 40px;
+    font-size: 1rem;
+  }
+  
+  .state-indicators {
+    gap: 10px;
+    padding: 8px 12px;
+  }
+  
+  .state-indicator {
+    min-width: 55px;
+    padding: 6px;
+  }
+  
+  .state-preview {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .state-preview-placeholder {
+    font-size: 1.2rem;
+  }
+  
+  .state-preview-title {
+    font-size: 0.65rem;
   }
   
   .character-header {
@@ -1462,6 +1931,16 @@ const healNecroDamage = (amount) => {
   .secondary-actions {
     margin: 15px 10px 20px;
     gap: 10px;
+  }
+
+  .state-selector-fold-btn {
+    font-size: 0.9rem;
+    padding: 10px 14px;
+  }
+  
+  .secondary-actions .state-selector-navigation {
+    gap: 10px;
+    margin-top: 8px;
   }
   
   .secondary-btn {
