@@ -66,11 +66,12 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
+import { storeToRefs } from 'pinia';
 import { useCharacterStateStore } from '../stores/useCharacterStateStore';
 import Swal from 'sweetalert2';
 
 const stateStore = useCharacterStateStore();
-const { states, selectedStateId, isLoading } = stateStore;
+const { states, selectedStateId, isLoading } = storeToRefs(stateStore);
 
 const newStateTitle = ref('');
 const newStateImage = ref(null);
