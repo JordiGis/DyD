@@ -24,6 +24,8 @@ export const useCharacterStateStore = defineStore('characterState', () => {
       }
       if (storedSelectedId) {
         selectedStateId.value = storedSelectedId;
+      } else if (states.value.length > 0) {
+        setSelectedState(states.value[0].id);
       }
     } catch (error) {
       console.error('Error loading character states:', error);
@@ -49,7 +51,18 @@ export const useCharacterStateStore = defineStore('characterState', () => {
       };
 
       states.value.push(newState);
-      await localforage.setItem('characterStates', toRaw(states.value));
+
+      const statesToStore = states.value.map(state => ({
+        id: state.id,
+        title: state.title,
+        image: toRaw(state.image)
+      }));
+
+      await localforage.setItem('characterStates', statesToStore);
+
+      if (states.value.length === 1) {
+        setSelectedState(newState.id);
+      }
     } catch (error) {
       console.error('Error adding character state:', error);
     } finally {
@@ -63,12 +76,21 @@ export const useCharacterStateStore = defineStore('characterState', () => {
   }
 
   async function deleteState(stateId) {
-    states.value = states.value.filter(s => s.id !== stateId);
+    const newStates = states.value.filter(s => s.id !== stateId);
+    states.value = newStates;
+
     if (selectedStateId.value === stateId) {
-      selectedStateId.value = null;
-      await localforage.removeItem('selectedCharacterStateId');
+      const newSelectedId = newStates.length > 0 ? newStates[0].id : null;
+      setSelectedState(newSelectedId);
     }
-    await localforage.setItem('characterStates', toRaw(states.value));
+
+    const statesToStore = newStates.map(state => ({
+      id: state.id,
+      title: state.title,
+      image: toRaw(state.image)
+    }));
+
+    await localforage.setItem('characterStates', statesToStore);
   }
 
   async function getStorageUsage() {

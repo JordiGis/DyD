@@ -9,7 +9,6 @@
             <option :value="state.id" v-for="state in stateStore.states" :key="state.id" :selected="state.id === stateStore.selectedStateId">
               {{ state.title }}
             </option>
-            <option value="">Quitar estado</option>
           </select>
         </div>
       </div>
@@ -255,7 +254,7 @@ const selectedStateImageUrl = computed(() => {
 });
 
 const handleStateChange = (stateId) => {
-  stateStore.setSelectedState(stateId || null);
+  stateStore.setSelectedState(stateId);
 };
 
 const isAttackManagerVisible = ref(false);
