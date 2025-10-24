@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
+import { ref, computed, toRaw } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
 import localforage from '../utils/localforage';
 import imageCompression from 'browser-image-compression';
@@ -19,7 +19,7 @@ export const useCharacterStateStore = defineStore('characterState', () => {
       const storedStates = await localforage.getItem('characterStates');
       const storedSelectedId = await localforage.getItem('selectedCharacterStateId');
 
-      if (storedStates) {
+      if (storedStates && Array.isArray(storedStates)) {
         states.value = storedStates;
       }
       if (storedSelectedId) {
@@ -49,7 +49,7 @@ export const useCharacterStateStore = defineStore('characterState', () => {
       };
 
       states.value.push(newState);
-      await localforage.setItem('characterStates', states.value);
+      await localforage.setItem('characterStates', toRaw(states.value));
     } catch (error) {
       console.error('Error adding character state:', error);
     } finally {
@@ -68,7 +68,7 @@ export const useCharacterStateStore = defineStore('characterState', () => {
       selectedStateId.value = null;
       await localforage.removeItem('selectedCharacterStateId');
     }
-    await localforage.setItem('characterStates', states.value);
+    await localforage.setItem('characterStates', toRaw(states.value));
   }
 
   async function getStorageUsage() {

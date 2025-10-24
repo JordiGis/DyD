@@ -4,6 +4,14 @@
       <div v-if="stateStore.selectedState" class="character-state-display">
         <img v-if="selectedStateImageUrl" :src="selectedStateImageUrl" alt="Estado del personaje" class="state-image-display"/>
         <h1 class="character-name">{{ characterStore.character.name }} <span class="state-title-display">({{ stateStore.selectedState.title }})</span></h1>
+        <div class="state-selector-wrapper">
+          <select @change="handleStateChange($event.target.value)" class="state-selector">
+            <option :value="state.id" v-for="state in stateStore.states" :key="state.id" :selected="state.id === stateStore.selectedStateId">
+              {{ state.title }}
+            </option>
+            <option value="">Quitar estado</option>
+          </select>
+        </div>
       </div>
       <h1 v-else class="character-name">{{ characterStore.character.name }}</h1>
       <div class="turn-info">
@@ -245,6 +253,10 @@ const selectedStateImageUrl = computed(() => {
   }
   return null;
 });
+
+const handleStateChange = (stateId) => {
+  stateStore.setSelectedState(stateId || null);
+};
 
 const isAttackManagerVisible = ref(false);
 
@@ -824,6 +836,17 @@ const healNecroDamage = (amount) => {
 .state-title-display {
   color: #f39c12;
   font-style: italic;
+}
+.state-selector-wrapper {
+  margin-top: 15px;
+}
+.state-selector {
+  background-color: rgba(0, 0, 0, 0.3);
+  color: #f39c12;
+  border: 1px solid #f39c12;
+  border-radius: 5px;
+  padding: 8px 12px;
+  font-size: 1rem;
 }
 /* Margen inferior para la fila de contadores y estados */
 .custom-fold-row {
