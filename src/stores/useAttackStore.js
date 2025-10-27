@@ -5,11 +5,41 @@ import { v4 as uuidv4 } from 'uuid';
 export const useAttackStore = defineStore('attack', {
   state: () => ({
     attacks: [],
+    criticalHit: {
+      rule: 'default', // 'default' o 'dad'
+      characterLevel: 1,
+    },
   }),
 
   actions: {
+    loadCriticalHitConfig() {
+      const data = localStorage.getItem('dnd-critical-hit-config');
+      if (data) {
+        try {
+          const config = JSON.parse(data);
+          // Asegurarse de que las propiedades existan para evitar errores
+          if (config && typeof config === 'object') {
+            this.criticalHit.rule = config.rule || 'default';
+            this.criticalHit.characterLevel = config.characterLevel || 1;
+          }
+        } catch (error) {
+          console.error('Error loading critical hit config from localStorage:', error);
+        }
+      }
+    },
+
+    saveCriticalHitConfig() {
+      localStorage.setItem('dnd-critical-hit-config', JSON.stringify(this.criticalHit));
+    },
+
+    updateCriticalHitConfig(config) {
+      this.criticalHit = { ...this.criticalHit, ...config };
+      this.saveCriticalHitConfig();
+    },
+
     // Cargar ataques desde localStorage
     loadAttacks() {
+      this.loadCriticalHitConfig();
       const data = localStorage.getItem('dnd-attacks-data');
       if (data) {
         try {

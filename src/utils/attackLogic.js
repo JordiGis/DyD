@@ -1,4 +1,5 @@
 // src/utils/attackLogic.js
+import { calculateDadBonus } from './damageCalculations';
 
 /**
  * Lanza los dados según una cadena de texto (ej: "2d6").
@@ -83,6 +84,101 @@ export function executeAttack(attack) {
     totalHealed,
   };
 }
+
+export function executeCriticalAttack(attack, criticalConfig) {
+  const { rule, characterLevel } = criticalConfig;
+
+  if (rule === 'default') {
+    // Duplicar la cantidad de dados
+    const criticalAttack = JSON.parse(JSON.stringify(attack));
+    criticalAttack.name = `${attack.name} (Crítico)`;
+    criticalAttack.damageRolls.forEach(roll => {
+      const [numDice, diceSize] = roll.dice.split('d');
+      roll.dice = `${Number(numDice) * 2}d${diceSize}`;
+    });
+    return executeAttack(criticalAttack);
+  }
+
+  if (rule === 'dad') {
+    const results = {};
+    let grandTotal = 0;
+    let totalHealed = 0;
+
+    // Calcular el bonus de daño DAD
+    const dadBonus = calculateDadBonus(characterLevel);
+
+    attack.damageRolls.forEach(damageRoll => {
+      let { dice, min = 1, bonus = 0, type, lifeSteal = { percentage: 0 } } = damageRoll;
+
+      const [numDice, diceSize] = dice.split('d').map(Number);
+      min = Number(min) || 1;
+      bonus = Number(bonus) || 0;
+      const lifeStealPercentage = Number(lifeSteal.percentage) || 0;
+
+      // Cada dado hace su daño máximo + una tirada aleatoria
+      let rollSum = 0;
+      const rolls = [];
+      for (let i = 0; i < numDice; i++) {
+        const randomRoll = Math.floor(Math.random() * diceSize) + 1;
+        const totalPerDie = diceSize + Math.max(randomRoll, min);
+        rollSum += totalPerDie;
+        rolls.push({ value: totalPerDie, originalValue: `${diceSize} + ${randomRoll}` });
+      }
+
+      const damageRollTotal = rollSum + bonus;
+      grandTotal += damageRollTotal;
+
+      if (!results[type]) {
+        results[type] = { rolls: [], bonus: 0, total: 0, lifeSteal: { healed: 0, percentages: [] } };
+      }
+
+      results[type].rolls.push(...rolls);
+      results[type].bonus += bonus;
+      results[type].total += damageRollTotal;
+
+      if (lifeStealPercentage > 0) {
+        const healed = Math.floor(damageRollTotal * (lifeStealPercentage / 100));
+        totalHealed += healed;
+        results[type].lifeSteal.healed += healed;
+        results[type].lifeSteal.percentages.push(lifeStealPercentage);
+      }
+    });
+
+    // Añadir el bonus DAD como un tipo de daño separado "Fuerza"
+    if (dadBonus > 0) {
+        const dadType = 'force'; // Tipo de daño de fuerza
+        if (!results[dadType]) {
+            results[dadType] = { rolls: [{value: dadBonus, originalValue: dadBonus}], bonus: 0, total: dadBonus, lifeSteal: { healed: 0, percentages: [] } };
+        } else {
+            results[dadType].total += dadBonus;
+            results[dadType].rolls.push({ value: dadBonus, originalValue: dadBonus });
+        }
+        grandTotal += dadBonus;
+    }
+
+
+    for (const type in results) {
+      if (results[type].lifeSteal.healed === 0) {
+        results[type].lifeSteal = null;
+      } else {
+        const uniquePercentages = [...new Set(results[type].lifeSteal.percentages)];
+        results[type].lifeSteal.percentage_display = uniquePercentages.join('% / ') + '%';
+        delete results[type].lifeSteal.percentages;
+      }
+    }
+
+    return {
+      name: `${attack.name} (Crítico DAD)`,
+      results,
+      grandTotal,
+      totalHealed,
+    };
+  }
+
+  // Si no hay regla, ejecutar un ataque normal
+  return executeAttack(attack);
+}
+
 
 /**
  * Lanza los dados de reroll y los agrupa por tipo.
