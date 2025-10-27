@@ -115,14 +115,18 @@ export function executeCriticalAttack(attack, criticalConfig) {
       bonus = Number(bonus) || 0;
       const lifeStealPercentage = Number(lifeSteal.percentage) || 0;
 
-      // Cada dado hace su daño máximo + una tirada aleatoria
+      // Cada dado hace su daño máximo + una tirada aleatoria, mostrados por separado
       let rollSum = 0;
       const rolls = [];
       for (let i = 0; i < numDice; i++) {
-        const randomRoll = Math.floor(Math.random() * diceSize) + 1;
-        const totalPerDie = diceSize + Math.max(randomRoll, min);
-        rollSum += totalPerDie;
-        rolls.push({ value: totalPerDie, originalValue: `${diceSize} + ${randomRoll}` });
+        const randomRollValue = Math.max(Math.floor(Math.random() * diceSize) + 1, min);
+        const maxRollValue = diceSize;
+
+        rollSum += maxRollValue + randomRollValue;
+
+        // Añadir el valor máximo y la tirada aleatoria como tiradas separadas para el desglose
+        rolls.push({ value: maxRollValue, originalValue: `${diceSize} (Máx)` });
+        rolls.push({ value: randomRollValue, originalValue: `${randomRollValue} (Aleatorio)` });
       }
 
       const damageRollTotal = rollSum + bonus;
