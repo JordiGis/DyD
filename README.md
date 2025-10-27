@@ -5,35 +5,51 @@ Esta es una aplicación completa para gestionar la vida de personajes en sesione
 ## 🎯 Funcionalidades Principales
 
 ### Para Jugadores Individuales
-- **Puntos de Vida**: Gestión completa de HP máximo y actual
-- **Vida Temporal**: Sistema de HP temporal que se consume primero
-- **Sistema de Curación**: Curación inteligente con límites
-- **Regeneración**: Regeneración pasiva por turno configurable
-- **Control de Turnos**: Contador de turnos con gestión automática
-- **Historial Completo**: Logs detallados de todas las acciones
+- **Puntos de Vida**: Gestión completa de HP máximo, actual y temporal.
+- **Gestor de Ataques**: Crea y personaliza ataques con múltiples dados, modificadores y efectos.
+- **Estados de Personaje**: Define diferentes estados para tu personaje, cada uno con su propia imagen para reflejar su aspecto actual (ej. normal, enfurecido, transformado).
+- **Contadores Personalizados**: Añade contadores para gestionar cualquier recurso (puntos de ki, cargas de habilidad, etc.) con botones configurables.
+- **Descansos Cortos y Largos**: Funciones para recuperar recursos y vida según las reglas de D&D.
+- **Historial Completo**: Logs detallados de todas las acciones.
 
 ### Para Dungeon Masters (DM)
-- **Múltiples Personajes**: Crear y gestionar tantos personajes como necesites
-- **Vista General**: Estado de vida de todos los personajes en un solo lugar
-- **Gestión Masiva**: Control de turnos que afecta a todos los personajes
-- **Acciones Rápidas**: Aplicar daño, curación y vida temporal a cualquier personaje
-- **Importar/Exportar**: Funcionalidad para respaldar y compartir partidas
+- **Gestión de Múltiples Personajes**: Crea, edita y gestiona NPCs y enemigos de forma masiva.
+- **Panel de Combate Avanzado**: Controla el estado de todos los personajes, su HP y sus turnos.
+- **Seguimiento de Derrotas**: Asigna quién ha derrotado a cada enemigo para un seguimiento narrativo y de experiencia.
+- **Función de Revivir**: Revive a cualquier NPC con un solo clic, especificando la cantidad de vida.
+- **Tirador de Dados Integrado**: Lanza dados directamente desde el panel del DM.
+- **Lista de Tareas (To-do List)**: Gestiona notas y recordatorios importantes durante la sesión.
+- **Importar/Exportar Partidas**: Guarda y carga el estado completo de tus encuentros.
 
-## ⚔️ Funcionalidades de Combate
+## ⚔️ Gestión de Personajes (Jugador)
 
-### Gestión de Vida Individual
-- Barra de vida visual con colores dinámicos según el porcentaje
-- Entrada manual de HP
-- Botones de daño y curación rápidos
-- Acciones rápidas con valores personalizables
-- Sistema de vida temporal que se consume antes que la vida real
+### Estados del Personaje
+- **Imágenes Personalizadas**: Asigna una imagen diferente a cada "estado" de tu personaje (normal, furia, transformación, etc.) para visualizar su condición actual.
+- **Cambio Rápido**: Cambia entre estados con un solo clic para que la imagen se actualice al instante.
 
-### Gestión de Vida para DM
-- **Vista de Estado**: Ver el HP de todos los personajes de un vistazo
-- **Acciones Masivas**: Aplicar daño, curación o vida temporal a múltiples personajes
-- **Control de Turnos**: Sistema de turnos que afecta a todos los personajes
-- **Regeneración Automática**: Aplicar regeneración pasiva a todos los personajes
-- **Estados Visuales**: Identificación rápida de personajes muertos, críticos o heridos
+### Gestor de Ataques
+- **Ataques Complejos**: Configura ataques con múltiples tiradas de daño (ej. 2d6 + 1d8), modificadores fijos y efectos adicionales.
+- **Críticos Configurables**: Define cómo se calculan los golpes críticos, ya sea duplicando los dados o tirando dados adicionales.
+- **Robo de Vida (Lifesteal)**: Añade robo de vida a tus ataques para recuperar un porcentaje del daño infligido.
+
+### Contadores y Recursos
+- **Contadores Ilimitados**: Crea tantos contadores como necesites para gestionar puntos de ki, cargas de conjuros, usos de habilidad, etc.
+- **Botones de Acceso Rápido**: Cada contador tiene botones personalizables (+1, -1, etc.) para un ajuste rápido.
+- **Vinculación con Estados**: Asocia contadores a estados para que al activar un estado, se consuma automáticamente un recurso del contador.
+
+### Descansos
+- **Descanso Corto y Largo**: Recupera vida y recursos con las funciones de descanso, que reponen automáticamente los contadores según las reglas que hayas configurado.
+
+## 🎲 Panel del Dungeon Master
+
+### Combate y Seguimiento
+- **Vista de Combate Centralizada**: Visualiza el HP, CA y estado de todos los NPCs y enemigos en una sola pantalla.
+- **Asignación de Derrotas**: Cuando un enemigo es derrotado, puedes asignar el "golpe de gracia" a un jugador para llevar un registro.
+- **Función de Revivir**: Revive a un NPC caído con la cantidad de HP que elijas.
+
+### Herramientas del DM
+- **Tirador de Dados**: Realiza cualquier tipo de tirada de dados (d4, d6, d8, d10, d12, d20, d100) directamente desde la aplicación.
+- **Lista de Tareas (To-Do List)**: Mantén un registro de eventos importantes, recordatorios o ideas para la sesión.
 
 ## 🚀 Tecnologías Utilizadas
 
@@ -106,9 +122,12 @@ src/
 │   ├── LogsView.vue             # Historial de acciones del personaje
 │   └── DMView.vue               # Panel del Dungeon Master
 ├── stores/
-│   ├── useCharacterStore.js     # Estado del personaje individual
+│   ├── useCharacterStore.js     # Estado principal del personaje (vida, HP, etc.)
+│   ├── useAttackStore.js        # Gestión de ataques y sus configuraciones
+│   ├── useCharacterStateStore.js # Gestión de estados de personaje (imágenes)
+│   ├── useCounterStore.js       # Gestión de contadores y recursos personalizados
 │   ├── useGameStore.js          # Estado global del juego
-│   └── useDMStore.js            # Estado para gestión de múltiples personajes
+│   └── useDMStore.js            # Lógica y estado del panel del Dungeon Master
 ├── router/
 │   ├── index.js
 │   └── routes.js
@@ -152,13 +171,13 @@ characters: [
 
 ## 🎯 Próximas Características
 
-- [ ] Sistema de hechizos y habilidades
-- [ ] Efectos y condiciones de estado
-- [ ] Calculadora de daño avanzada
-- [ ] Sistema de iniciativa y orden de turnos
-- [ ] Gestión de NPCs y enemigos
-- [ ] Sistema de experiencia y niveles
-- [ ] Integración con APIs de D&D
+- [x] **Gestor de Ataques**: Sistema completo para crear y gestionar ataques.
+- [x] **Estados y Contadores**: Gestión de estados de personaje y contadores de recursos.
+- [ ] **Sistema de Iniciativa**: Una herramienta integrada para gestionar el orden de turnos en combate.
+- [ ] **Gestor de Inventario**: Para que los jugadores puedan llevar un registro de sus objetos.
+- [ ] **Libro de Hechizos**: Una interfaz para que los lanzadores de conjuros gestionen sus hechizos preparados y disponibles.
+- [ ] **Integración con APIs de D&D**: Para importar monstruos, hechizos y objetos directamente desde fuentes oficiales.
+- [ ] **Modo Multijugador en Tiempo Real**: Sincronización en tiempo real entre la vista del DM y la de los jugadores.
 
 ## 🎭 Casos de Uso
 
