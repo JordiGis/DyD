@@ -193,7 +193,9 @@
                   ></div>
                 </div>
                 <div class="hp-text">
-                  {{ character.currentHp }} / {{ character.maxHp }} HP
+                  {{ character.currentHp }} / {{ character.maxHp }} HP ({{
+                    Math.round((character.currentHp / character.maxHp) * 100)
+                  }}%)
                   <span v-if="character.maxHp < character.originalMaxHp" class="necro-indicator" title="HP máximo reducido por daño necro">
                     ⚠️
                   </span>
