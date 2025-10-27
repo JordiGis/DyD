@@ -3,7 +3,10 @@
     <div class="attack-manager-container">
       <div class="header">
         <h2><i class="bi bi-hammer"></i> Gestor de Ataques</h2>
-        <button @click="$emit('close')" class="close-btn">✕</button>
+        <div class="header-actions">
+          <button @click="showSettingsForm" class="settings-btn"><i class="bi bi-gear-fill"></i></button>
+          <button @click="$emit('close')" class="close-btn">✕</button>
+        </div>
       </div>
 
       <div class="content">
@@ -26,7 +29,8 @@
             </div>
             
             <div class="attack-actions">
-              <button @click="executeAndShowAttack(attack)" class="action-btn btn-execute">Atacar</button>
+              <button @click="executeAndShowAttack(attack, false)" class="action-btn btn-execute">Atacar</button>
+              <button @click="executeAndShowAttack(attack, true)" class="action-btn btn-critical">Crítico</button>
               <button @click="editAttack(attack)" class="action-btn btn-edit">Editar</button>
               <button @click="duplicateAttack(attack)" class="action-btn btn-duplicate">Duplicar</button>
               <button @click="confirmDelete(attack.id)" class="action-btn btn-delete">Eliminar</button>
@@ -141,27 +145,71 @@
             </div>
           </div>
         </div>
+
+        <!-- Formulario de configuración de críticos -->
+        <div v-if="isSettingsVisible" class="attack-form-overlay" @click.self="hideSettingsForm">
+          <div class="attack-form">
+            <h3><i class="bi bi-gear-fill"></i> Configuración de Daño Crítico</h3>
+
+            <div class="form-group">
+              <label for="critical-rule">Regla de Daño Crítico</label>
+              <select id="critical-rule" v-model="criticalHitConfig.rule" class="settings-select">
+                <option value="default">Regla por Defecto (Duplicar Dados)</option>
+                <option value="dad">Daño Masivo (DAD)</option>
+              </select>
+            </div>
+
+            <div v-if="criticalHitConfig.rule === 'dad'" class="form-group">
+              <label for="character-level">Nivel del Personaje</label>
+              <input type="number" id="character-level" v-model.number="criticalHitConfig.characterLevel" min="1" class="settings-input">
+              <div v-if="dadBonusDamage > 0" class="dad-bonus-display">
+                <p>Bonus de daño por crítico: <strong>+{{ dadBonusDamage }}</strong></p>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button @click="saveSettings" class="btn-save">Guardar</button>
+              <button @click="hideSettingsForm" class="btn-cancel">Cancelar</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, reactive, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, reactive, nextTick, computed } from 'vue';
+import { storeToRefs } from 'pinia';
 import Sortable from 'sortablejs';
 import { useAttackStore } from '../stores/useAttackStore';
 import { useCharacterStore } from '../stores/useCharacterStore';
-import { executeAttack, rollRerollDice, replaceDice } from '../utils/attackLogic';
+import { executeAttack, executeCriticalAttack, rollRerollDice, replaceDice } from '../utils/attackLogic';
 import { damageTypes, getColorForType } from '../utils/damageTypes';
+import { calculateDadBonus } from '../utils/damageCalculations';
 import Swal from 'sweetalert2';
 
 const emit = defineEmits(['close']);
 
 const attackStore = useAttackStore();
 const characterStore = useCharacterStore();
+const { criticalHit } = storeToRefs(attackStore);
 
 const isFormVisible = ref(false);
 const isEditing = ref(false);
+const isSettingsVisible = ref(false);
+
+const criticalHitConfig = reactive({
+  rule: 'default',
+  characterLevel: 1,
+});
+
+const dadBonusDamage = computed(() => {
+  if (criticalHitConfig.rule !== 'dad') {
+    return 0;
+  }
+  return calculateDadBonus(criticalHitConfig.characterLevel);
+});
 
 // Estructura del ataque reactiva
 const currentAttack = reactive({
@@ -262,6 +310,26 @@ const setupForm = (attack) => {
   currentAttack.rerollDice.splice(0, currentAttack.rerollDice.length, ...attackCopy.rerollDice);
 
   isFormVisible.value = true;
+};
+
+const showSettingsForm = () => {
+  // Cargar la configuración actual del store al abrir
+  criticalHitConfig.rule = attackStore.criticalHit.rule;
+  criticalHitConfig.characterLevel = attackStore.criticalHit.characterLevel;
+  isSettingsVisible.value = true;
+};
+
+const hideSettingsForm = () => {
+  isSettingsVisible.value = false;
+};
+
+const saveSettings = () => {
+  attackStore.updateCriticalHitConfig({
+    rule: criticalHitConfig.rule,
+    characterLevel: criticalHitConfig.characterLevel,
+  });
+  hideSettingsForm();
+  Swal.fire('Guardado', 'La configuración de daño crítico ha sido actualizada.', 'success');
 };
 
 const showAttackForm = () => {
@@ -376,8 +444,13 @@ const confirmDelete = (attackId) => {
   });
 };
 
-const executeAndShowAttack = (attack) => {
-  let attackResult = executeAttack(attack);
+const executeAndShowAttack = (attack, isCritical = false) => {
+  let attackResult;
+  if (isCritical) {
+    attackResult = executeCriticalAttack(attack, attackStore.criticalHit);
+  } else {
+    attackResult = executeAttack(attack);
+  }
 
   const getRollsHTML = (rolls) => {
     return rolls.map(r =>
@@ -707,9 +780,42 @@ const executeAndShowAttack = (attack) => {
 }
 
 .btn-execute { background-color: #43b581; }
+.btn-critical { background-color: #e67e22; }
 .btn-edit { background-color: #faa61a; }
 .btn-duplicate { background-color: #5865f2; }
 .btn-delete { background-color: #f04747; }
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.settings-btn {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.settings-select, .settings-input {
+  width: 100%;
+  padding: 10px;
+  background: #23272a;
+  border: 1px solid #99aab5;
+  border-radius: 5px;
+  color: #ffffff;
+}
+
+.dad-bonus-display {
+  margin-top: 10px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 5px;
+  color: #f39c12; /* Naranja para el bonus */
+}
 
 /* Área de nuevo ataque */
 .new-attack-area {
