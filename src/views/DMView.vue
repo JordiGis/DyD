@@ -62,14 +62,22 @@
             <i class="bi bi-dice-6"></i>
             Lanzar Dados
           </button>
+          <button @click="showDMAttackManager = true" class="btn btn-outline-warning">
+            <i class="bi bi-hammer"></i>
+            Gestor de Ataques
+          </button>
         </div>
       </div>
     </div>
     <DiceRoller 
-  v-if="showDiceRoller"
-  :characters="dmStore.characters"
-  @close="showDiceRoller = false"
-/>
+      v-if="showDiceRoller"
+      :characters="dmStore.characters"
+      @close="showDiceRoller = false"
+    />
+    <DMAttackManager
+      v-if="showDMAttackManager"
+      @close="showDMAttackManager = false"
+    />
 
     <!-- Estadísticas generales -->
     <div class="stats-overview">
@@ -1006,11 +1014,13 @@ import { useDMStore } from "../stores/useDMStore";
 import Swal from "sweetalert2";
 import DraggableList from "../components/DraggableList.vue";
 import DiceRoller from "../components/DiceRoller.vue";
+import DMAttackManager from "../components/DMAttackManager.vue";
 
 const dmStore = useDMStore();
 
 const showDraggableList = ref(false); // Declare the showDraggableList state
 const showDiceRoller = ref(false);
+const showDMAttackManager = ref(false);
 
 // Estado local
 const showCreateModal = ref(false);
