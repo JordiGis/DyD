@@ -184,3 +184,8 @@ button:focus-visible {
     animation: none;
   }
 }
+
+/* Z-index fix for SweetAlert2 modals */
+.swal2-container {
+  z-index: 1300 !important;
+}
