@@ -177,7 +177,10 @@ const deletePlayer = (playerId) => {
     confirmButtonColor: '#d33',
     cancelButtonColor: '#3085d6',
     confirmButtonText: 'Sí, ¡elimínalo!',
-    cancelButtonText: 'Cancelar'
+    cancelButtonText: 'Cancelar',
+    customClass: {
+      container: 'high-z-index'
+    }
   }).then((result) => {
     if (result.isConfirmed) {
       playerStore.deletePlayer(playerId);
@@ -216,11 +219,21 @@ const startNewSession = () => {
     icon: 'question',
     showCancelButton: true,
     confirmButtonText: 'Sí, iniciar',
-    cancelButtonText: 'Cancelar'
+    cancelButtonText: 'Cancelar',
+    customClass: {
+      container: 'high-z-index'
+    }
   }).then((result) => {
     if (result.isConfirmed) {
       playerStore.startNewSession();
-      Swal.fire('¡Nueva sesión iniciada!', 'La XP de la sesión ha sido reseteada.', 'success');
+      Swal.fire({
+        title: '¡Nueva sesión iniciada!',
+        text: 'La XP de la sesión ha sido reseteada.',
+        icon: 'success',
+        customClass: {
+          container: 'high-z-index'
+        }
+      });
     }
   });
 };
@@ -235,6 +248,11 @@ const toggleXpHistory = (playerId) => {
 </script>
 
 <style scoped>
+/* Clase para asegurar que SweetAlert2 esté por encima del modal */
+:global(.swal2-container.high-z-index) {
+  z-index: 1300 !important;
+}
+
 /* Estilo general del overlay y modal */
 .player-manager-overlay {
   position: fixed;

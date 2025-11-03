@@ -113,8 +113,7 @@ export const usePlayerStore = defineStore('player', {
     startNewSession() {
       this.players.forEach(player => {
         player.sessionXp = 0;
-        // Opcional: limpiar el historial también si se quiere
-        // player.xpHistory = [];
+        player.xpHistory = [];
       });
       this.saveToLocalStorage();
     },
