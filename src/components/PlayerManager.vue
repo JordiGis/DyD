@@ -137,7 +137,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { usePlayerStore } from '../stores/usePlayerStore';
 import Swal from 'sweetalert2';
@@ -155,10 +155,17 @@ const visibleHistories = ref(new Set());
 
 onMounted(() => {
   playerStore.loadFromLocalStorage();
+  // Bloquear el scroll del body
+  document.body.classList.add('modal-open');
   // Inicializar los inputs de XP para cada jugador
   players.value.forEach(p => {
     playerXpInputs.value[p.id] = null;
   });
+});
+
+onUnmounted(() => {
+  // Restaurar el scroll del body
+  document.body.classList.remove('modal-open');
 });
 
 const addPlayer = () => {
@@ -248,6 +255,11 @@ const toggleXpHistory = (playerId) => {
 </script>
 
 <style scoped>
+/* Clase para bloquear el scroll del body cuando el modal está abierto */
+:global(body.modal-open) {
+  overflow: hidden;
+}
+
 /* Clase para asegurar que SweetAlert2 esté por encima del modal */
 :global(.swal2-container.high-z-index) {
   z-index: 1300 !important;
