@@ -66,10 +66,14 @@
             <i class="bi bi-hammer"></i>
             Gestor de Ataques
           </button>
+          <button @click="showPlayerManager = true" class="btn btn-outline-info">
+            <i class="bi bi-person-badge"></i>
+            Gestión de Jugadores
+          </button>
         </div>
       </div>
     </div>
-    <DiceRoller 
+    <DiceRoller
       v-if="showDiceRoller"
       :characters="dmStore.characters"
       @close="showDiceRoller = false"
@@ -77,6 +81,10 @@
     <DMAttackManager
       v-if="showDMAttackManager"
       @close="showDMAttackManager = false"
+    />
+    <PlayerManager
+      v-if="showPlayerManager"
+      @close="showPlayerManager = false"
     />
 
     <!-- Estadísticas generales -->
@@ -1015,12 +1023,14 @@ import Swal from "sweetalert2";
 import DraggableList from "../components/DraggableList.vue";
 import DiceRoller from "../components/DiceRoller.vue";
 import DMAttackManager from "../components/DMAttackManager.vue";
+import PlayerManager from "../components/PlayerManager.vue"; // Importar el nuevo componente
 
 const dmStore = useDMStore();
 
-const showDraggableList = ref(false); // Declare the showDraggableList state
+const showDraggableList = ref(false);
 const showDiceRoller = ref(false);
 const showDMAttackManager = ref(false);
+const showPlayerManager = ref(false); // Estado para el nuevo modal
 
 // Estado local
 const showCreateModal = ref(false);
