@@ -165,13 +165,21 @@ export const useCharacterStore = defineStore('character', {
 
             // Aplicar daño pasivo
             const passiveDamageStore = usePassiveDamageStore();
-            passiveDamageStore.loadPassiveDamages(); // Asegurarse de tener los datos más recientes
+            passiveDamageStore.loadPassiveDamages();
             if (passiveDamageStore.passiveDamages.length > 0) {
-              passiveDamageStore.passiveDamages.forEach(damage => {
-                const damageAmount = rollDice(damage.dice);
-                if (damageAmount > 0) {
-                  this.takeDamage(damageAmount, false); // El daño pasivo no es necro por defecto
-                  this.addLog('Daño Pasivo', `-${damageAmount} HP por ${damage.name}`);
+              passiveDamageStore.passiveDamages.forEach(effect => {
+                let totalDamage = 0;
+                let damageDetails = [];
+
+                effect.damageRolls.forEach(roll => {
+                  const amount = rollDice(roll.dice);
+                  totalDamage += amount;
+                  damageDetails.push(`${amount} ${roll.type}`);
+                });
+
+                if (totalDamage > 0) {
+                  this.takeDamage(totalDamage, false);
+                  this.addLog('Daño Pasivo', `-${totalDamage} HP por ${effect.name} (${damageDetails.join(', ')})`);
                 }
               });
             }

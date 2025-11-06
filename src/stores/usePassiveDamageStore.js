@@ -8,30 +8,37 @@ export const usePassiveDamageStore = defineStore('passiveDamage', {
   }),
 
   actions: {
-    // Cargar daños pasivos desde localStorage
     loadPassiveDamages() {
       const data = localStorage.getItem('dnd-passive-damages-data');
       if (data) {
         try {
           const parsedDamages = JSON.parse(data);
-          // Asegurar que cada entrada tenga un ID
-          this.passiveDamages = parsedDamages.map(damage => ({
-            ...damage,
-            id: damage.id || uuidv4(),
-          }));
+          // Migración para asegurar que cada entrada tenga la nueva estructura
+          this.passiveDamages = parsedDamages.map(damage => {
+            if (!damage.damageRolls) {
+              // Es el formato antiguo, convertirlo
+              return {
+                id: damage.id || uuidv4(),
+                name: damage.name,
+                damageRolls: [{ dice: damage.dice, type: 'bludgeoning' }] // Asignar un tipo por defecto
+              };
+            }
+            return {
+              ...damage,
+              id: damage.id || uuidv4()
+            };
+          });
         } catch (error) {
-          console.error('Error loading passive damages from localStorage:', error);
+          console.error('Error loading or migrating passive damages from localStorage:', error);
           this.passiveDamages = [];
         }
       }
     },
 
-    // Guardar daños pasivos en localStorage
     savePassiveDamages() {
       localStorage.setItem('dnd-passive-damages-data', JSON.stringify(this.passiveDamages));
     },
 
-    // Crear un nuevo daño pasivo
     addPassiveDamage(damageData) {
       const newDamage = {
         ...damageData,
@@ -41,7 +48,6 @@ export const usePassiveDamageStore = defineStore('passiveDamage', {
       this.savePassiveDamages();
     },
 
-    // Actualizar un daño pasivo existente
     updatePassiveDamage(updatedDamage) {
       const index = this.passiveDamages.findIndex(d => d.id === updatedDamage.id);
       if (index !== -1) {
@@ -50,7 +56,20 @@ export const usePassiveDamageStore = defineStore('passiveDamage', {
       }
     },
 
-    // Eliminar un daño pasivo
+    duplicatePassiveDamage(damageId) {
+        const originalDamage = this.passiveDamages.find(d => d.id === damageId);
+        if (originalDamage) {
+            const duplicatedDamage = JSON.parse(JSON.stringify(originalDamage));
+            duplicatedDamage.id = uuidv4();
+            duplicatedDamage.name = `${originalDamage.name} (Copia)`;
+
+            const originalIndex = this.passiveDamages.findIndex(d => d.id === damageId);
+            this.passiveDamages.splice(originalIndex + 1, 0, duplicatedDamage);
+
+            this.savePassiveDamages();
+        }
+    },
+
     deletePassiveDamage(damageId) {
       this.passiveDamages = this.passiveDamages.filter(d => d.id !== damageId);
       this.savePassiveDamages();
