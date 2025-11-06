@@ -168,18 +168,20 @@ export const useCharacterStore = defineStore('character', {
             passiveDamageStore.loadPassiveDamages();
             if (passiveDamageStore.passiveDamages.length > 0) {
               passiveDamageStore.passiveDamages.forEach(effect => {
-                let totalDamage = 0;
-                let damageDetails = [];
+                if (effect.duration === 0 || effect.duration > 0) { // 0 es infinito
+                    let totalDamage = 0;
+                    let damageDetails = [];
 
-                effect.damageRolls.forEach(roll => {
-                  const amount = rollDice(roll.dice);
-                  totalDamage += amount;
-                  damageDetails.push(`${amount} ${roll.type}`);
-                });
+                    effect.damageRolls.forEach(roll => {
+                      const amount = rollDice(roll.numDice, roll.diceType, roll.bonus);
+                      totalDamage += amount;
+                      damageDetails.push(`${amount} ${roll.type}`);
+                    });
 
-                if (totalDamage > 0) {
-                  this.takeDamage(totalDamage, false);
-                  this.addLog('Daño Pasivo', `-${totalDamage} HP por ${effect.name} (${damageDetails.join(', ')})`);
+                    if (totalDamage > 0) {
+                      this.takeDamage(totalDamage, false);
+                      this.addLog('Daño Pasivo', `-${totalDamage} HP por ${effect.name} (${damageDetails.join(', ')})`);
+                    }
                 }
               });
             }
@@ -192,6 +194,10 @@ export const useCharacterStore = defineStore('character', {
         endTurn() {
             this.turn.isActive = false
             
+            // Decrementar duración de daños pasivos
+            const passiveDamageStore = usePassiveDamageStore();
+            passiveDamageStore.decrementDurations();
+
             // Agregar log de fin de turno
             this.addLog('Fin de Turno', `Turno ${this.turn.current} finalizado`, this.turn.current)
             
