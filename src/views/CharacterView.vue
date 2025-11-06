@@ -170,9 +170,14 @@
         <span class="btn-icon">⚔️</span>
         <span class="btn-text">Gestor de Ataques</span>
       </button>
+      <button @click="isPassiveDamageManagerVisible = true" class="action-btn btn-passive-damage-manager" :disabled="!characterStore.isAlive">
+        <span class="btn-icon">🩸</span>
+        <span class="btn-text">Daño Pasivo</span>
+      </button>
       </div>
 
     <AttackManager v-if="isAttackManagerVisible" @close="isAttackManagerVisible = false" />
+    <PassiveDamageManager v-if="isPassiveDamageManagerVisible" @close="isPassiveDamageManagerVisible = false" />
 
 
     <!-- Botones adicionales -->
@@ -278,6 +283,7 @@
 import CounterManager from '../components/CounterManager.vue';
 import StateManager from '../components/StateManager.vue';
 import AttackManager from '../components/AttackManager.vue';
+import PassiveDamageManager from '../components/PassiveDamageManager.vue';
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCharacterStore } from '../stores/useCharacterStore'
@@ -329,6 +335,7 @@ const nextState = () => {
 };
 
 const isAttackManagerVisible = ref(false);
+const isPassiveDamageManagerVisible = ref(false);
 
 // Estado de plegado para contadores y estados
 const countersFolded = ref(false)
@@ -1444,6 +1451,11 @@ const healNecroDamage = (amount) => {
 
 .btn-attack-manager {
   background: linear-gradient(135deg, #ff5252, #c62828);
+  color: white;
+}
+
+.btn-passive-damage-manager {
+  background: linear-gradient(135deg, #6a11cb, #2575fc);
   color: white;
 }
 
