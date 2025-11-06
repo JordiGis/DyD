@@ -200,6 +200,7 @@ const confirmDelete = (damageId) => {
 </script>
 
 <style scoped>
+/* Pequeños ajustes globales para mantener consistencia */
 .duration-tag {
   background-color: #3498db;
   color: white;
@@ -433,4 +434,89 @@ const confirmDelete = (damageId) => {
 }
 .btn-save { background-color: #43b581; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
 .btn-cancel { background-color: #99aab5; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+
+/* ====== Mobile specific improvements ====== */
+@media (max-width: 640px) {
+  .passive-damage-manager-container {
+    width: 100%;
+    max-width: 100%;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    justify-content: flex-start;
+  }
+  .header {
+    padding: 12px 16px;
+  }
+  .header h2 { font-size: 1.1rem; }
+  .close-btn { font-size: 1.6rem; }
+  .content { padding: 12px; }
+
+  /* Lista de daños: apilar info y acciones */
+  .damage-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .damage-actions {
+    flex-direction: column;
+    display: flex;
+  }
+  .action-btn {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 0.95rem;
+  }
+
+  /* Botón nuevo daño full-width */
+  .btn-new-damage {
+    width: 100%;
+    justify-content: center;
+    padding: 14px;
+  }
+
+  /* Formulario en móvil: ocupar gran parte de la pantalla y scroll interno */
+  .damage-form-overlay { padding: 0; }
+  .damage-form {
+    width: 100%;
+    height: calc(100vh - 56px);
+    max-width: 100%;
+    margin: 56px 0 0 0;
+    border-radius: 0;
+    padding: 16px;
+    overflow-y: auto;
+  }
+
+  /* Inputs de tirada: colapsar a 1 columna para legibilidad */
+  .damage-roll-inputs {
+    grid-template-columns: 1fr;
+  }
+  .damage-roll-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .btn-remove-roll {
+    align-self: flex-end;
+    margin-top: 6px;
+  }
+
+  /* Form actions: botones apilados, full width */
+  .form-actions {
+    flex-direction: column;
+    gap: 10px;
+    justify-content: stretch;
+  }
+  .btn-save, .btn-cancel {
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+  }
+
+  /* Ajustes en tags para evitar overflow */
+  .damage-tag {
+    white-space: normal;
+    font-size: 0.82rem;
+    padding: 4px 6px;
+  }
+}
 </style>
