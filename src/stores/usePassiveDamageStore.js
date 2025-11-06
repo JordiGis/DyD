@@ -95,16 +95,21 @@ export const usePassiveDamageStore = defineStore('passiveDamage', {
     },
 
     decrementDurations() {
-        let needsSave = false;
+        const initialCount = this.passiveDamages.length;
+
+        // Decrementar la duración de los efectos activos
         this.passiveDamages.forEach(effect => {
             if (effect.duration > 0) {
                 effect.duration--;
-                needsSave = true;
             }
         });
-        // Opcional: eliminar efectos con duración 0
-        // this.passiveDamages = this.passiveDamages.filter(effect => effect.duration !== 0);
-        if (needsSave) {
+
+        // Filtrar y eliminar los efectos que acaban de expirar (su duración llegó a 0)
+        // Se mantienen los que tienen duración > 0 y los que son infinitos (originalmente 0)
+        this.passiveDamages = this.passiveDamages.filter(effect => effect.duration !== 0);
+
+        // Guardar solo si hubo cambios (se decrementó una duración o se eliminó un efecto)
+        if (this.passiveDamages.length !== initialCount || this.passiveDamages.some(e => e.duration > 0)) {
             this.savePassiveDamages();
         }
     }
