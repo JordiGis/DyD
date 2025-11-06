@@ -1,5 +1,7 @@
 // src/stores/useCharacterStore.js
-import { defineStore } from 'pinia'
+import { defineStore } from 'pinia';
+import { usePassiveDamageStore } from './usePassiveDamageStore';
+import { rollDice } from '../utils/diceParser';
 
 export const useCharacterStore = defineStore('character', {
     state: () => ({
@@ -159,6 +161,19 @@ export const useCharacterStore = defineStore('character', {
                 if (logMessage) {
                     this.addLog('Regeneración Automática', logMessage)
                 }
+            }
+
+            // Aplicar daño pasivo
+            const passiveDamageStore = usePassiveDamageStore();
+            passiveDamageStore.loadPassiveDamages(); // Asegurarse de tener los datos más recientes
+            if (passiveDamageStore.passiveDamages.length > 0) {
+              passiveDamageStore.passiveDamages.forEach(damage => {
+                const damageAmount = rollDice(damage.dice);
+                if (damageAmount > 0) {
+                  this.takeDamage(damageAmount, false); // El daño pasivo no es necro por defecto
+                  this.addLog('Daño Pasivo', `-${damageAmount} HP por ${damage.name}`);
+                }
+              });
             }
             
             // Guardar en localStorage
