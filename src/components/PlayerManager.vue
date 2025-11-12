@@ -113,6 +113,12 @@
               >
                 <i class="bi bi-clock-history"></i> Ver Historial
               </button>
+              <button
+                @click="toggleNotes(player.id)"
+                class="btn btn-link btn-sm"
+              >
+                <i class="bi bi-journal-text"></i> Notas
+              </button>
               <div>
                 <button
                   @click="openEditModal(player)"
@@ -152,6 +158,16 @@
                   No hay entradas de XP en esta sesión.
                 </li>
               </ul>
+            </div>
+
+            <!-- Sección de Notas -->
+            <div v-if="visibleNotes.has(player.id)" class="notes-section">
+              <textarea
+                v-model="player.notes"
+                @blur="saveNotes(player)"
+                placeholder="Añade tus notas aquí..."
+                class="notes-textarea"
+              ></textarea>
             </div>
           </div>
         </div>
@@ -208,6 +224,7 @@ const newPlayerName = ref("");
 const xpToAll = ref(null);
 const playerXpInputs = ref({});
 const visibleHistories = ref(new Set());
+const visibleNotes = ref(new Set()); // Para controlar la visibilidad de las notas
 const showEditModal = ref(false);
 const editingPlayer = ref(null);
 
@@ -328,6 +345,18 @@ const savePlayerEdit = () => {
     showEditModal.value = false;
     editingPlayer.value = null;
   }
+};
+
+const toggleNotes = (playerId) => {
+  if (visibleNotes.value.has(playerId)) {
+    visibleNotes.value.delete(playerId);
+  } else {
+    visibleNotes.value.add(playerId);
+  }
+};
+
+const saveNotes = (player) => {
+  playerStore.editPlayer(player.id, { notes: player.notes });
 };
 </script>
 
@@ -591,5 +620,28 @@ input:focus {
   justify-content: flex-end;
   gap: 10px;
   margin-top: 20px;
+}
+
+/* Estilos para la sección de notas */
+.notes-section {
+  margin-top: 15px;
+}
+
+.notes-textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 10px;
+  background-color: #3a3f44;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #f0f0f0;
+  font-family: inherit;
+  font-size: 0.95rem;
+  resize: vertical;
+}
+
+.notes-textarea:focus {
+  outline: none;
+  border-color: #f39c12;
 }
 </style>
