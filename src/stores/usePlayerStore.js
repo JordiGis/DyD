@@ -62,6 +62,7 @@ export const usePlayerStore = defineStore('player', {
         name: name.trim(),
         sessionXp: 0,
         xpHistory: [], // [{ amount: 5, timestamp: '...' }, ...]
+        notes: '', // Añadir campo de notas
       };
 
       this.players.push(newPlayer);
