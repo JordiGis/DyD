@@ -84,6 +84,15 @@
                 >
                   <i class="bi bi-plus"></i>
                 </button>
+                <button
+                  @click="removeXpFromPlayer(player.id)"
+                  :disabled="
+                    !playerXpInputs[player.id] || playerXpInputs[player.id] <= 0
+                  "
+                  class="btn btn-danger btn-sm"
+                >
+                  <i class="bi bi-dash"></i>
+                </button>
               </div>
               <div class="quick-xp-buttons">
                 <button
@@ -104,12 +113,20 @@
               >
                 <i class="bi bi-clock-history"></i> Ver Historial
               </button>
-              <button
-                @click="deletePlayer(player.id)"
-                class="btn btn-danger btn-sm"
-              >
-                <i class="bi bi-trash"></i>
-              </button>
+              <div>
+                <button
+                  @click="openEditModal(player)"
+                  class="btn btn-secondary btn-sm"
+                >
+                  <i class="bi bi-pencil"></i> Editar
+                </button>
+                <button
+                  @click="deletePlayer(player.id)"
+                  class="btn btn-danger btn-sm"
+                >
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
             </div>
 
             <div
@@ -118,8 +135,15 @@
             >
               <h4>Historial de XP (Sesión)</h4>
               <ul>
-                <li v-for="(entry, index) in player.xpHistory" :key="index">
-                  +{{ entry.amount }} XP
+                <li
+                  v-for="(entry, index) in player.xpHistory"
+                  :key="index"
+                  :class="{
+                    'xp-gain': entry.amount > 0,
+                    'xp-loss': entry.amount < 0,
+                  }"
+                >
+                  {{ entry.amount > 0 ? "+" : "" }}{{ entry.amount }} XP
                   <span class="timestamp">{{
                     new Date(entry.timestamp).toLocaleTimeString()
                   }}</span>
@@ -133,14 +157,46 @@
         </div>
       </div>
     </div>
+    <!-- Modal de Edición -->
+    <div v-if="showEditModal" class="player-manager-overlay edit-modal">
+      <div class="player-manager-content">
+        <div class="player-manager-header">
+          <h2><i class="bi bi-pencil-square"></i> Editar Jugador</h2>
+          <button @click="showEditModal = false" class="btn-close">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="player-manager-body">
+          <div v-if="editingPlayer" class="edit-form">
+            <div class="form-group">
+              <label for="playerName">Nombre del Jugador</label>
+              <input
+                id="playerName"
+                type="text"
+                v-model="editingPlayer.name"
+                class="form-control"
+              />
+            </div>
+            <div class="modal-actions">
+              <button @click="showEditModal = false" class="btn btn-secondary">
+                Cancelar
+              </button>
+              <button @click="savePlayerEdit" class="btn btn-primary">
+                Guardar Cambios
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
-import { storeToRefs } from 'pinia';
-import { usePlayerStore } from '../stores/usePlayerStore';
-import Swal from 'sweetalert2';
+import { ref, onMounted, onUnmounted } from "vue";
+import { storeToRefs } from "pinia";
+import { usePlayerStore } from "../stores/usePlayerStore";
+import Swal from "sweetalert2";
 
 // No es necesario definir emits aquí con la nueva sintaxis
 // defineEmits(['close']);
@@ -148,54 +204,52 @@ import Swal from 'sweetalert2';
 const playerStore = usePlayerStore();
 const { players, mostUsedXpValues } = storeToRefs(playerStore);
 
-const newPlayerName = ref('');
+const newPlayerName = ref("");
 const xpToAll = ref(null);
 const playerXpInputs = ref({});
 const visibleHistories = ref(new Set());
+const showEditModal = ref(false);
+const editingPlayer = ref(null);
 
 onMounted(() => {
   playerStore.loadFromLocalStorage();
   // Bloquear el scroll del body
-  document.body.classList.add('modal-open');
+  document.body.classList.add("modal-open");
   // Inicializar los inputs de XP para cada jugador
-  players.value.forEach(p => {
+  players.value.forEach((p) => {
     playerXpInputs.value[p.id] = null;
   });
 });
 
 onUnmounted(() => {
   // Restaurar el scroll del body
-  document.body.classList.remove('modal-open');
+  document.body.classList.remove("modal-open");
 });
 
 const addPlayer = () => {
   if (newPlayerName.value.trim()) {
     playerStore.addPlayer(newPlayerName.value);
-    newPlayerName.value = '';
+    newPlayerName.value = "";
   }
 };
 
 const deletePlayer = (playerId) => {
   Swal.fire({
-    title: '¿Estás seguro?',
+    title: "¿Estás seguro?",
     text: "No podrás revertir esta acción.",
-    icon: 'warning',
+    icon: "warning",
     showCancelButton: true,
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#3085d6',
-    confirmButtonText: 'Sí, ¡elimínalo!',
-    cancelButtonText: 'Cancelar',
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    confirmButtonText: "Sí, ¡elimínalo!",
+    cancelButtonText: "Cancelar",
     customClass: {
-      container: 'high-z-index'
-    }
+      container: "high-z-index",
+    },
   }).then((result) => {
     if (result.isConfirmed) {
       playerStore.deletePlayer(playerId);
-      Swal.fire(
-        '¡Eliminado!',
-        'El jugador ha sido eliminado.',
-        'success'
-      )
+      Swal.fire("¡Eliminado!", "El jugador ha sido eliminado.", "success");
     }
   });
 };
@@ -204,6 +258,14 @@ const addXpToPlayer = (playerId) => {
   const amount = playerXpInputs.value[playerId];
   if (amount && amount > 0) {
     playerStore.addXpToPlayer(playerId, amount);
+    playerXpInputs.value[playerId] = null; // Reset input
+  }
+};
+
+const removeXpFromPlayer = (playerId) => {
+  const amount = playerXpInputs.value[playerId];
+  if (amount && amount > 0) {
+    playerStore.removeXpFromPlayer(playerId, amount);
     playerXpInputs.value[playerId] = null; // Reset input
   }
 };
@@ -221,25 +283,25 @@ const addXpToAll = () => {
 
 const startNewSession = () => {
   Swal.fire({
-    title: '¿Iniciar una nueva sesión?',
+    title: "¿Iniciar una nueva sesión?",
     text: "Esto reseteará la XP de la sesión actual de todos los jugadores a 0.",
-    icon: 'question',
+    icon: "question",
     showCancelButton: true,
-    confirmButtonText: 'Sí, iniciar',
-    cancelButtonText: 'Cancelar',
+    confirmButtonText: "Sí, iniciar",
+    cancelButtonText: "Cancelar",
     customClass: {
-      container: 'high-z-index'
-    }
+      container: "high-z-index",
+    },
   }).then((result) => {
     if (result.isConfirmed) {
       playerStore.startNewSession();
       Swal.fire({
-        title: '¡Nueva sesión iniciada!',
-        text: 'La XP de la sesión ha sido reseteada.',
-        icon: 'success',
+        title: "¡Nueva sesión iniciada!",
+        text: "La XP de la sesión ha sido reseteada.",
+        icon: "success",
         customClass: {
-          container: 'high-z-index'
-        }
+          container: "high-z-index",
+        },
       });
     }
   });
@@ -250,6 +312,21 @@ const toggleXpHistory = (playerId) => {
     visibleHistories.value.delete(playerId);
   } else {
     visibleHistories.value.add(playerId);
+  }
+};
+
+const openEditModal = (player) => {
+  editingPlayer.value = { ...player }; // Clonar para no modificar el original directamente
+  showEditModal.value = true;
+};
+
+const savePlayerEdit = () => {
+  if (editingPlayer.value) {
+    playerStore.editPlayer(editingPlayer.value.id, {
+      name: editingPlayer.value.name,
+    });
+    showEditModal.value = false;
+    editingPlayer.value = null;
   }
 };
 </script>
@@ -278,6 +355,10 @@ const toggleXpHistory = (playerId) => {
   align-items: center;
   justify-content: center;
   z-index: 1100; /* Asegurarse de que esté por encima de otros elementos */
+}
+
+.edit-modal {
+  z-index: 1200; /* Mayor que el principal para superponerse */
 }
 
 .player-manager-content {
@@ -482,5 +563,33 @@ input:focus {
   padding: 40px;
   color: #999;
   font-style: italic;
+}
+
+.xp-gain {
+  color: #2ecc71; /* Verde para ganancias */
+}
+
+.xp-loss {
+  color: #e74c3c; /* Rojo para pérdidas */
+}
+
+.player-footer div {
+  display: flex;
+  gap: 10px;
+}
+
+.edit-form .form-group {
+  margin-bottom: 20px;
+}
+
+.edit-form .form-control {
+  width: 100%;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
 }
 </style>

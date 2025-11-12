@@ -117,5 +117,37 @@ export const usePlayerStore = defineStore('player', {
       });
       this.saveToLocalStorage();
     },
+
+    /**
+     * Resta una cantidad de XP a un jugador específico.
+     * @param {string} playerId - El ID del jugador.
+     * @param {number} amount - La cantidad de XP a restar.
+     */
+    removeXpFromPlayer(playerId, amount) {
+      const player = this.players.find(p => p.id === playerId);
+      if (player && amount > 0) {
+        const xpAmount = parseInt(amount);
+        player.sessionXp -= xpAmount;
+        // Opcional: registrar la resta en el historial
+        player.xpHistory.push({
+          amount: -xpAmount,
+          timestamp: new Date().toISOString(),
+        });
+        this.saveToLocalStorage();
+      }
+    },
+
+    /**
+     * Edita los datos de un jugador.
+     * @param {string} playerId - El ID del jugador a editar.
+     * @param {object} updates - Un objeto con los campos a actualizar.
+     */
+    editPlayer(playerId, updates) {
+      const player = this.players.find(p => p.id === playerId);
+      if (player) {
+        Object.assign(player, updates);
+        this.saveToLocalStorage();
+      }
+    },
   },
 });
