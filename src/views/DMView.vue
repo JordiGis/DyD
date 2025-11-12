@@ -1008,9 +1008,10 @@
     </div>
 
     <!-- Lista flotante draggable -->
-    <DraggableList 
+    <DraggableList
       v-if="showDraggableList"
       :characters="dmStore.characters"
+      :players="players"
       @close="showDraggableList = false"
     />
   </div>
@@ -1019,6 +1020,8 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
 import { useDMStore } from "../stores/useDMStore";
+import { usePlayerStore } from "../stores/usePlayerStore";
+import { storeToRefs } from "pinia";
 import Swal from "sweetalert2";
 import DraggableList from "../components/DraggableList.vue";
 import DiceRoller from "../components/DiceRoller.vue";
@@ -1026,6 +1029,8 @@ import DMAttackManager from "../components/DMAttackManager.vue";
 import PlayerManager from "../components/PlayerManager.vue"; // Importar el nuevo componente
 
 const dmStore = useDMStore();
+const playerStore = usePlayerStore();
+const { players } = storeToRefs(playerStore);
 
 const showDraggableList = ref(false);
 const showDiceRoller = ref(false);

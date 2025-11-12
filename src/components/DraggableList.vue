@@ -5,52 +5,94 @@
       <button @click="toggleMinimize">{{ minimized ? '+' : '-' }}</button>
     </div>
     <div v-if="!minimized" class="content">
-      <ul>
-        <li v-for="(item, index) in items" :key="item.id">
-          <input type="radio" name="selected-item" :value="item.id" v-model="selectedItem" />
-          <span :draggable="true" @dragstart="startItemDrag(index)" @dragover.prevent @drop="dropItem(index)">{{ item.name }}</span>
-          <button @click="deleteItem(item.id)">x</button>
+      <ul v-if="initiativeOrder.length > 0">
+        <li
+          v-for="(item, index) in initiativeOrder"
+          :key="item.id"
+          :class="item.type"
+          :draggable="true"
+          @dragstart="startItemDrag(index)"
+          @dragover.prevent
+          @drop="dropItem(index)"
+        >
+          <i
+            class="bi"
+            :class="
+              item.type === 'player' ? 'bi-person-fill' : 'bi-shield-fill'
+            "
+          ></i>
+          <span class="item-name">{{ item.name }}</span>
+          <input
+            type="radio"
+            name="selected-item"
+            :value="item.id"
+            v-model="selectedItem"
+            class="turn-selector"
+          />
         </li>
       </ul>
-      <div class="add-item">
-        <input type="text" v-model="newItemName" placeholder="New item name" @keyup.enter="addItem" />
-        <button @click="addItem">Add</button>
+      <div v-else class="empty-list">
+        <p>No hay personajes ni jugadores</p>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch } from 'vue';
+import { ref, reactive, computed, watch } from "vue";
+
+const props = defineProps({
+  characters: {
+    type: Array,
+    required: true,
+  },
+  players: {
+    type: Array,
+    default: () => [],
+  },
+});
 
 const position = reactive({ x: 100, y: 100 });
 const minimized = ref(false);
-const items = ref([]);
+const initiativeOrder = ref([]);
 const selectedItem = ref(null);
-const newItemName = ref('');
 let dragging = false;
 let dragStartIndex = null;
 
-// LocalStorage key
-const STORAGE_KEY = 'draggableListItems';
-
-// Load items from localStorage on component mount
-onMounted(() => {
-  const storedItems = localStorage.getItem(STORAGE_KEY);
-  if (storedItems) {
-    try {
-      items.value = JSON.parse(storedItems);
-    } catch (error) {
-      console.error('Error parsing stored items:', error);
-      items.value = [];
-    }
-  }
+// Combinar personajes y jugadores en una sola lista
+const combinedList = computed(() => {
+  const chara = props.characters.map((c) => ({ ...c, type: "character" }));
+  const play = props.players.map((p) => ({ ...p, type: "player" }));
+  return [...chara, ...play];
 });
 
-// Save items to localStorage whenever they change
-watch(items, (newItems) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(newItems));
-}, { deep: true });
+// Sincronizar la lista de iniciativa con la lista combinada
+watch(
+  combinedList,
+  (newList) => {
+    // Mantener el orden existente si es posible, añadiendo nuevos y quitando los que ya no están
+    const newOrder = [];
+    const newListIds = new Set(newList.map((item) => item.id));
+
+    // Añadir primero los que ya estaban en el orden
+    initiativeOrder.value.forEach((item) => {
+      if (newListIds.has(item.id)) {
+        newOrder.push(item);
+      }
+    });
+
+    // Añadir los nuevos que no estaban en la lista
+    const currentOrderIds = new Set(newOrder.map((item) => item.id));
+    newList.forEach((item) => {
+      if (!currentOrderIds.has(item.id)) {
+        newOrder.push(item);
+      }
+    });
+
+    initiativeOrder.value = newOrder;
+  },
+  { immediate: true, deep: true }
+);
 
 const startDrag = (event) => {
   dragging = true;
@@ -66,12 +108,12 @@ const startDrag = (event) => {
 
   const stop = () => {
     dragging = false;
-    window.removeEventListener('mousemove', move);
-    window.removeEventListener('mouseup', stop);
+    window.removeEventListener("mousemove", move);
+    window.removeEventListener("mouseup", stop);
   };
 
-  window.addEventListener('mousemove', move);
-  window.addEventListener('mouseup', stop);
+  window.addEventListener("mousemove", move);
+  window.addEventListener("mouseup", stop);
 };
 
 const toggleMinimize = () => {
@@ -83,23 +125,10 @@ const startItemDrag = (index) => {
 };
 
 const dropItem = (dropIndex) => {
-  if (dragStartIndex === null) return;
-  const itemToMove = items.value.splice(dragStartIndex, 1)[0];
-  items.value.splice(dropIndex, 0, itemToMove);
+  if (dragStartIndex === null || dragStartIndex === dropIndex) return;
+  const itemToMove = initiativeOrder.value.splice(dragStartIndex, 1)[0];
+  initiativeOrder.value.splice(dropIndex, 0, itemToMove);
   dragStartIndex = null;
-};
-
-const deleteItem = (id) => {
-  items.value = items.value.filter(item => item.id !== id);
-};
-
-const addItem = () => {
-  if (newItemName.value.trim() === '') return;
-  items.value.push({
-    id: Date.now(),
-    name: newItemName.value,
-  });
-  newItemName.value = '';
 };
 </script>
 
@@ -213,83 +242,47 @@ li span {
   user-select: none;
 }
 
-li span:active {
+li .item-name {
+  flex-grow: 1;
+  cursor: grab;
+  color: #ecf0f1;
+  font-size: 0.95rem;
+  user-select: none;
+}
+
+li .item-name:active {
   cursor: grabbing;
 }
 
-li button {
-  background: rgba(231, 76, 60, 0.2);
-  border: 1px solid rgba(231, 76, 60, 0.3);
-  color: #e74c3c;
-  width: 25px;
-  height: 25px;
-  border-radius: 4px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  font-weight: bold;
-  transition: all 0.3s ease;
+/* Estilos específicos para jugadores y personajes */
+li.player {
+  background: rgba(52, 152, 219, 0.15);
+  border-color: rgba(52, 152, 219, 0.3);
 }
 
-li button:hover {
-  background: rgba(231, 76, 60, 0.3);
+li.player:hover {
+  background: rgba(52, 152, 219, 0.25);
+  border-color: rgba(52, 152, 219, 0.5);
+}
+
+li.character {
+  background: rgba(231, 76, 60, 0.15);
+  border-color: rgba(231, 76, 60, 0.3);
+}
+
+li.character:hover {
+  background: rgba(231, 76, 60, 0.25);
   border-color: rgba(231, 76, 60, 0.5);
-  color: #fff;
 }
 
-.add-item {
-  margin-top: 15px;
-  display: flex;
-  gap: 8px;
-}
-
-.add-item input {
-  flex-grow: 1;
-  padding: 10px 12px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
-  color: #ecf0f1;
-  font-size: 0.9rem;
-  transition: all 0.3s ease;
-}
-
-.add-item input:focus {
-  outline: none;
-  border-color: #f39c12;
-  box-shadow: 0 0 0 2px rgba(243, 156, 18, 0.2);
-}
-
-.add-item input::placeholder {
+.empty-list {
+  text-align: center;
+  padding: 20px;
   color: #7f8c8d;
 }
 
-.add-item button {
-  background: rgba(46, 204, 113, 0.2);
-  border: 1px solid rgba(46, 204, 113, 0.3);
-  color: #2ecc71;
-  padding: 10px 15px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-.add-item button:hover {
-  background: rgba(46, 204, 113, 0.3);
-  border-color: rgba(46, 204, 113, 0.5);
-  color: #fff;
-}
-
-.add-item button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 /* Drag and drop styling */
-li[draggable=true] {
+li[draggable="true"] {
   cursor: grab;
 }
 
