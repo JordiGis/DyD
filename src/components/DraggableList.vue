@@ -1,11 +1,12 @@
 <template>
-  <div class="draggable-list" :style="{ top: position.y + 'px', left: position.x + 'px' }">
-    <div class="header" @mousedown="startDrag">
-      <span>🎯 Orden de Iniciativa</span>
-      <button @click="toggleMinimize" class="minimize-btn">{{ minimized ? '📋' : '➖' }}</button>
-      <button @click="$emit('close')" class="close-btn">✖️</button>
-    </div>
-    <div v-if="!minimized" class="content">
+  <div class="draggable-list-overlay" @click.self="handleOverlayClick">
+    <div class="draggable-list" :style="desktopStyle">
+      <div class="header" @mousedown="startDrag">
+        <span>🎯 Orden de Iniciativa</span>
+        <button @click="toggleMinimize" class="minimize-btn">{{ minimized ? '📋' : '➖' }}</button>
+        <button @click="handleClose" class="close-btn">✖️</button>
+      </div>
+      <div v-if="!minimized" class="content">
       <!-- Controles de turno -->
       <div class="turn-controls">
         <button @click="nextTurn" class="btn-next-turn" :disabled="initiativeOrder.length === 0">
@@ -21,11 +22,14 @@
         <li
           v-for="(item, index) in initiativeOrder"
           :key="item.id"
-          :class="[item.type, { active: currentTurnIndex === index }]"
-          :draggable="true"
+          :class="[item.type, { active: currentTurnIndex === index, dragging: draggedIndex === index }]"
+          :draggable="isMobile ? false : true"
           @dragstart="startItemDrag(index)"
           @dragover.prevent
           @drop="dropItem(index)"
+          @touchstart="isMobile ? null : startItemDragTouch(index, $event)"
+          @touchmove="isMobile ? null : moveItemTouch($event)"
+          @touchend="isMobile ? null : endItemDragTouch"
           @click="selectTurn(index)"
         >
           <div class="turn-indicator">
@@ -38,6 +42,27 @@
             "
           ></i>
           <span class="item-name">{{ item.name }}</span>
+          
+          <!-- Botones de reordenamiento para móvil -->
+          <div v-if="isMobile && initiativeOrder.length > 1" class="mobile-reorder-buttons">
+            <button 
+              @click.stop="moveItemUp(index)" 
+              class="btn-reorder btn-up" 
+              :disabled="index === 0"
+              title="Mover arriba"
+            >
+              <i class="bi bi-chevron-up"></i>
+            </button>
+            <button 
+              @click.stop="moveItemDown(index)" 
+              class="btn-reorder btn-down" 
+              :disabled="index === initiativeOrder.length - 1"
+              title="Mover abajo"
+            >
+              <i class="bi bi-chevron-down"></i>
+            </button>
+          </div>
+          
           <button @click.stop="removeFromInitiative(index)" class="btn-remove" title="Quitar de iniciativa">
             <i class="bi bi-x"></i>
           </button>
@@ -62,11 +87,12 @@
         </button>
       </div>
     </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch } from "vue";
+import { ref, reactive, computed, watch, onMounted, onUnmounted } from "vue";
 import { v4 as uuidv4 } from "uuid";
 
 const props = defineProps({
@@ -87,8 +113,35 @@ const minimized = ref(false);
 const initiativeOrder = ref([]);
 const currentTurnIndex = ref(null);
 const newCharacterName = ref("");
+const draggedIndex = ref(null);
+const isMobile = ref(window.innerWidth <= 768);
 let dragging = false;
 let dragStartIndex = null;
+let touchDragData = null;
+
+// Computed para aplicar posición solo en desktop
+const desktopStyle = computed(() => {
+  // En móvil, el estilo se maneja con CSS
+  if (window.innerWidth <= 768) {
+    return {};
+  }
+  return {
+    top: position.y + 'px',
+    left: position.x + 'px'
+  };
+});
+
+// Métodos para cerrar
+const handleClose = () => {
+  emit('close');
+};
+
+const handleOverlayClick = () => {
+  // Solo cerrar en móvil cuando se hace click en el overlay
+  if (window.innerWidth <= 768) {
+    emit('close');
+  }
+};
 
 // Combinar personajes y jugadores en una sola lista
 const combinedList = computed(() => {
@@ -125,7 +178,22 @@ watch(
   { immediate: true, deep: true }
 );
 
+// Actualizar isMobile en resize
+onMounted(() => {
+  const updateMobile = () => {
+    isMobile.value = window.innerWidth <= 768;
+  };
+  window.addEventListener('resize', updateMobile);
+  
+  onUnmounted(() => {
+    window.removeEventListener('resize', updateMobile);
+  });
+});
+
 const startDrag = (event) => {
+  // Solo permitir drag en desktop
+  if (window.innerWidth <= 768) return;
+  
   dragging = true;
   const startX = event.clientX - position.x;
   const startY = event.clientY - position.y;
@@ -172,6 +240,116 @@ const dropItem = (dropIndex) => {
   }
   
   dragStartIndex = null;
+  draggedIndex.value = null;
+};
+
+// Touch events para drag and drop de items
+const startItemDragTouch = (index, event) => {
+  // No iniciar drag si se toca un botón
+  if (event.target.closest('button')) {
+    return;
+  }
+  
+  // Solo iniciar drag si se mantiene presionado por un momento
+  const touch = event.touches[0];
+  
+  touchDragData = {
+    startIndex: index,
+    startY: touch.clientY,
+    currentIndex: index,
+    moving: false
+  };
+  
+  draggedIndex.value = index;
+  
+  // Prevenir scroll mientras se arrastra
+  event.preventDefault();
+};
+
+const moveItemTouch = (event) => {
+  if (!touchDragData) return;
+  
+  const touch = event.touches[0];
+  const deltaY = touch.clientY - touchDragData.startY;
+  
+  // Solo activar movimiento si se ha movido más de 10px
+  if (Math.abs(deltaY) > 10) {
+    touchDragData.moving = true;
+  }
+  
+  if (!touchDragData.moving) return;
+  
+  // Encontrar el elemento sobre el que estamos
+  const elements = document.querySelectorAll('.initiative-list li');
+  let targetIndex = touchDragData.startIndex;
+  
+  elements.forEach((el, idx) => {
+    const rect = el.getBoundingClientRect();
+    const centerY = rect.top + rect.height / 2;
+    
+    if (touch.clientY > rect.top && touch.clientY < rect.bottom) {
+      targetIndex = idx;
+    }
+  });
+  
+  // Si cambió de posición, reordenar
+  if (targetIndex !== touchDragData.currentIndex) {
+    const item = initiativeOrder.value.splice(touchDragData.currentIndex, 1)[0];
+    initiativeOrder.value.splice(targetIndex, 0, item);
+    
+    // Actualizar el turno actual si es necesario
+    if (currentTurnIndex.value !== null) {
+      if (touchDragData.currentIndex === currentTurnIndex.value) {
+        currentTurnIndex.value = targetIndex;
+      } else if (touchDragData.currentIndex < currentTurnIndex.value && targetIndex >= currentTurnIndex.value) {
+        currentTurnIndex.value--;
+      } else if (touchDragData.currentIndex > currentTurnIndex.value && targetIndex <= currentTurnIndex.value) {
+        currentTurnIndex.value++;
+      }
+    }
+    
+    touchDragData.currentIndex = targetIndex;
+  }
+  
+  event.preventDefault();
+};
+
+const endItemDragTouch = () => {
+  touchDragData = null;
+  draggedIndex.value = null;
+};
+
+// Funciones para reordenar en móvil
+const moveItemUp = (index) => {
+  if (index === 0) return;
+  
+  const item = initiativeOrder.value.splice(index, 1)[0];
+  initiativeOrder.value.splice(index - 1, 0, item);
+  
+  // Ajustar el índice del turno actual
+  if (currentTurnIndex.value !== null) {
+    if (currentTurnIndex.value === index) {
+      currentTurnIndex.value = index - 1;
+    } else if (currentTurnIndex.value === index - 1) {
+      currentTurnIndex.value = index;
+    }
+  }
+};
+
+const moveItemDown = (index) => {
+  if (index === initiativeOrder.value.length - 1) return;
+  
+  const item = initiativeOrder.value.splice(index, 1)[0];
+  initiativeOrder.value.splice(index + 1, 0, item);
+  
+  // Ajustar el índice del turno actual
+  if (currentTurnIndex.value !== null) {
+    if (currentTurnIndex.value === index) {
+      currentTurnIndex.value = index + 1;
+    } else if (currentTurnIndex.value === index + 1) {
+      currentTurnIndex.value = index;
+    }
+  }
 };
 
 // Seleccionar un turno manualmente haciendo clic
@@ -234,6 +412,17 @@ const removeFromInitiative = (index) => {
 </script>
 
 <style scoped>
+.draggable-list-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent;
+  z-index: 100;
+  pointer-events: none;
+}
+
 .draggable-list {
   position: fixed;
   border: 2px solid rgba(243, 156, 18, 0.4);
@@ -243,6 +432,7 @@ const removeFromInitiative = (index) => {
   border-radius: 16px;
   z-index: 100;
   backdrop-filter: blur(12px);
+  pointer-events: auto;
 }
 
 .header {
@@ -458,6 +648,42 @@ const removeFromInitiative = (index) => {
   cursor: grabbing;
 }
 
+.mobile-reorder-buttons {
+  display: flex;
+  gap: 4px;
+  margin-right: 8px;
+}
+
+.btn-reorder {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: rgba(52, 152, 219, 0.3);
+  border: 1px solid rgba(52, 152, 219, 0.5);
+  color: #3498db;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.btn-reorder:hover:not(:disabled) {
+  background: rgba(52, 152, 219, 0.5);
+  border-color: rgba(52, 152, 219, 0.8);
+  transform: scale(1.1);
+}
+
+.btn-reorder:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.btn-reorder i {
+  font-size: 0.9rem;
+}
+
 .btn-remove {
   width: 28px;
   height: 28px;
@@ -598,10 +824,189 @@ const removeFromInitiative = (index) => {
 /* Drag and drop styling */
 .initiative-list li[draggable="true"] {
   cursor: grab;
+  touch-action: none;
+  user-select: none;
 }
 
 .initiative-list li[draggable="true"]:active {
   cursor: grabbing;
   opacity: 0.7;
+}
+
+.initiative-list li.dragging {
+  opacity: 0.5;
+  transform: scale(1.05);
+  z-index: 1000;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .draggable-list-overlay {
+    background: rgba(0, 0, 0, 0.7);
+    pointer-events: auto;
+    z-index: 1000;
+  }
+
+  .draggable-list {
+    position: fixed;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    border-radius: 0;
+    border: none;
+    margin: 0;
+  }
+
+  .header {
+    padding: 16px 20px;
+    cursor: default;
+    border-radius: 0;
+  }
+
+  .header span {
+    font-size: 1.1rem;
+  }
+
+  .minimize-btn {
+    display: none;
+  }
+
+  .content {
+    padding: 20px;
+    max-height: calc(100vh - 80px);
+    height: calc(100vh - 80px);
+  }
+
+  .turn-controls {
+    flex-direction: column;
+  }
+
+  .btn-next-turn,
+  .btn-reset-turn {
+    width: 100%;
+    padding: 12px;
+    font-size: 0.95rem;
+  }
+
+  .initiative-list li {
+    padding: 14px 12px;
+    font-size: 0.95rem;
+  }
+  
+  /* Desactivar cursor grab en móvil */
+  .item-name {
+    cursor: default;
+  }
+  
+  .initiative-list li:active .item-name {
+    cursor: default;
+  }
+
+  .turn-indicator {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+  }
+
+  .item-icon {
+    font-size: 1.2rem;
+  }
+
+  .item-name {
+    font-size: 1rem;
+  }
+
+  .btn-remove {
+    width: 36px;
+    height: 36px;
+  }
+
+  .add-character-section {
+    flex-direction: row;
+    padding-top: 16px;
+  }
+
+  .input-add-character {
+    width: 100%;
+    font-size: 1rem;
+    padding: 12px 15px;
+  }
+
+  .btn-add-character {
+    width: 50px;
+    height: 50px;
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    padding: 14px 16px;
+  }
+
+  .header span {
+    font-size: 1rem;
+  }
+
+  .close-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  .content {
+    padding: 16px;
+  }
+
+  .btn-next-turn,
+  .btn-reset-turn {
+    padding: 10px;
+    font-size: 0.9rem;
+  }
+
+  .initiative-list li {
+    padding: 12px 10px;
+  }
+
+  .turn-indicator {
+    width: 28px;
+    height: 28px;
+    font-size: 0.85rem;
+  }
+
+  .item-name {
+    font-size: 0.95rem;
+  }
+
+  .btn-remove {
+    width: 32px;
+    height: 32px;
+  }
+
+  .empty-list {
+    padding: 20px 10px;
+  }
+
+  .empty-list p {
+    font-size: 0.9rem;
+  }
+
+  .empty-list small {
+    font-size: 0.8rem;
+  }
+
+  .input-add-character {
+    font-size: 0.95rem;
+    padding: 10px 12px;
+  }
+
+  .btn-add-character {
+    width: 46px;
+    height: 46px;
+  }
 }
 </style>

@@ -1,11 +1,16 @@
 <template>
   <div class="dm-view">
     <div class="dm-header">
-      <h1 class="dm-title">
-        <i class="bi bi-shield-fill"></i>
-        Panel del Dungeon Master
-      </h1>
-      <div class="dm-controls">
+      <div class="dm-header-top">
+        <h1 class="dm-title">
+          <i class="bi bi-shield-fill"></i>
+          Panel del Dungeon Master
+        </h1>
+        <button @click="toggleMobileMenu" class="mobile-menu-toggle">
+          <i class="bi" :class="showMobileMenu ? 'bi-x-lg' : 'bi-list'"></i>
+        </button>
+      </div>
+      <div class="dm-controls" :class="{ 'mobile-open': showMobileMenu }">
         <div class="turn-controls">
           <span class="turn-label">Turno: {{ dmStore.currentTurn }}</span>
           <button
@@ -14,7 +19,7 @@
             :disabled="dmStore.isTurnActive"
           >
             <i class="bi bi-play-fill"></i>
-            Iniciar Turno
+            <span class="btn-text">Iniciar Turno</span>
           </button>
           <button
             @click="dmStore.endTurn()"
@@ -22,53 +27,53 @@
             :disabled="!dmStore.isTurnActive"
           >
             <i class="bi bi-stop-fill"></i>
-            Finalizar Turno
+            <span class="btn-text">Finalizar Turno</span>
           </button>
           <button @click="dmStore.resetAllTurns()" class="btn btn-secondary">
             <i class="bi bi-arrow-clockwise"></i>
-            Reset Turnos
+            <span class="btn-text">Reset Turnos</span>
           </button>
         </div>
         <div class="global-controls">
           <button @click="dmStore.resetAllCharacters()" class="btn btn-info">
             <i class="bi bi-heart-fill"></i>
-            Reset Todos
+            <span class="btn-text">Reset Todos</span>
           </button>
           <button @click="clearAllLogs" class="btn btn-warning">
             <i class="bi bi-trash"></i>
-            Limpiar Logs
+            <span class="btn-text">Limpiar Logs</span>
           </button>
           <button @click="viewAllLogs" class="btn btn-outline-info">
             <i class="bi bi-journal-text"></i>
-            Ver Logs
+            <span class="btn-text">Ver Logs</span>
           </button>
           <button @click="triggerFileImport" class="btn btn-outline-primary">
             <i class="bi bi-upload"></i>
-            Importar
+            <span class="btn-text">Importar</span>
           </button>
           <button @click="exportData" class="btn btn-outline-success">
             <i class="bi bi-download"></i>
-            Exportar
+            <span class="btn-text">Exportar</span>
           </button>
           <button @click="toggleDraggableList" class="btn btn-outline-secondary">
             <i class="bi bi-list"></i>
-            Lista Iniciativa
+            <span class="btn-text">Lista Iniciativa</span>
           </button>
           <button @click="showTodoModal = true" class="btn btn-outline-primary">
             <i class="bi bi-check-circle"></i>
-            Todo List
+            <span class="btn-text">Todo List</span>
           </button>
           <button @click="showDiceRoller = true" class="btn btn-outline-info">
             <i class="bi bi-dice-6"></i>
-            Lanzar Dados
+            <span class="btn-text">Lanzar Dados</span>
           </button>
           <button @click="showDMAttackManager = true" class="btn btn-outline-warning">
             <i class="bi bi-hammer"></i>
-            Gestor de Ataques
+            <span class="btn-text">Gestor de Ataques</span>
           </button>
           <button @click="showPlayerManager = true" class="btn btn-outline-info">
             <i class="bi bi-person-badge"></i>
-            Gestión de Jugadores
+            <span class="btn-text">Gestión de Jugadores</span>
           </button>
         </div>
       </div>
@@ -1036,6 +1041,7 @@ const showDraggableList = ref(false);
 const showDiceRoller = ref(false);
 const showDMAttackManager = ref(false);
 const showPlayerManager = ref(false); // Estado para el nuevo modal
+const showMobileMenu = ref(false); // Estado para el menú móvil
 
 // Estado local
 const showCreateModal = ref(false);
@@ -1482,6 +1488,10 @@ const importCharacters = () => {
   }
 };
 
+const toggleMobileMenu = () => {
+  showMobileMenu.value = !showMobileMenu.value;
+};
+
 const clearAllLogs = () => {
   Swal.fire({
     title: "¿Limpiar todos los logs?",
@@ -1693,12 +1703,38 @@ onMounted(() => {
   gap: 15px;
 }
 
+.dm-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.mobile-menu-toggle {
+  display: none;
+  background: rgba(243, 156, 18, 0.2);
+  border: 1px solid rgba(243, 156, 18, 0.4);
+  color: #f39c12;
+  padding: 10px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.3rem;
+  transition: all 0.3s ease;
+}
+
+.mobile-menu-toggle:hover {
+  background: rgba(243, 156, 18, 0.3);
+  transform: scale(1.05);
+}
+
 .dm-controls {
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
   gap: 20px;
+  width: 100%;
 }
 
 .turn-controls,
@@ -1706,6 +1742,7 @@ onMounted(() => {
   display: flex;
   gap: 10px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .turn-label {
@@ -2395,79 +2432,236 @@ textarea.form-control {
   text-decoration: line-through;
 }
 /* Responsive */
-@media (max-width: 768px) {  .dm-view {
-    padding: 15px;
+@media (max-width: 768px) {
+  .dm-view {
+    padding: 10px;
   }
 
   .dm-header {
-    padding: 20px;
+    padding: 15px;
+  }
+
+  .dm-header-top {
+    margin-bottom: 10px;
+  }
+
+  .mobile-menu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .dm-title {
-    font-size: 2rem;
+    font-size: 1.5rem;
   }
 
   .dm-controls {
+    display: none;
     flex-direction: column;
     align-items: stretch;
+    gap: 12px;
+    width: 100%;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+    opacity: 0;
+  }
+
+  .dm-controls.mobile-open {
+    display: flex;
+    max-height: 2000px;
+    opacity: 1;
+    margin-top: 15px;
   }
 
   .turn-controls,
   .global-controls {
+    width: 100%;
     justify-content: center;
     flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .turn-controls button,
+  .global-controls button {
+    padding: 10px 12px;
+    font-size: 0.85rem;
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .btn-text {
+    display: none;
+  }
+
+  .turn-label {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 8px;
+    font-size: 1rem;
   }
 
   .stats-overview {
     grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .stat-card {
+    padding: 12px;
+  }
+
+  .stat-icon {
+    font-size: 2rem;
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+  }
+
+  .create-character-section {
+    margin: 20px 0 15px;
+  }
+
+  .create-character-section .btn {
+    width: 100%;
+    font-size: 0.95rem;
   }
 
   .characters-grid {
     grid-template-columns: 1fr;
+    gap: 15px;
   }
 
   .section-header {
     flex-direction: column;
     align-items: stretch;
+    gap: 10px;
+  }
+
+  .section-header h2 {
+    font-size: 1.3rem;
+    text-align: center;
   }
 
   .sort-controls {
     min-width: auto;
   }
 
-  .modal-content {
-    margin: 20px;
-    max-height: calc(100vh - 40px);
-  }
-
-  .import-options {
-    gap: 20px;
-  }
-
-  .import-option {
-    padding: 15px;
-  }
-}
-
-@media (max-width: 480px) {
-  .stats-overview {
-    grid-template-columns: 1fr;
+  .sort-controls .form-select {
+    width: 100%;
+    font-size: 0.9rem;
   }
 
   .character-card {
     padding: 15px;
   }
 
-  .character-actions-panel {
-    gap: 12px;
+  .character-header {
+    flex-wrap: wrap;
+    gap: 10px;
   }
 
-  .action-inputs {
+  .character-name {
+    font-size: 1.2rem;
+    width: 100%;
+  }
+
+  .character-actions {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .character-actions button {
+    flex: 1;
+  }
+
+  .hp-text {
+    font-size: 1rem;
+  }
+
+  .detail-item {
+    font-size: 0.85rem;
+  }
+
+  .attributes-display {
+    font-size: 0.85rem;
+  }
+
+  .attributes-list {
+    gap: 8px;
+  }
+
+  .toggle-actions-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .reset-buttons {
     flex-direction: column;
   }
 
+  .reset-buttons .btn {
+    width: 100% !important;
+  }
+
+  .modal-overlay {
+    padding: 0;
+  }
+
+  .modal-content {
+    margin: 0;
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .modal-header {
+    padding: 15px 20px;
+  }
+
+  .modal-header h3 {
+    font-size: 1.1rem;
+  }
+
+  .modal-body {
+    padding: 20px;
+    max-height: calc(100vh - 80px);
+  }
+
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  .attributes-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .modal-actions {
+    flex-direction: column-reverse;
+    gap: 10px;
+  }
+
+  .modal-actions button {
+    width: 100%;
+  }
+
+  .import-options {
+    gap: 15px;
+  }
+
   .import-option {
-    padding: 12px;
+    padding: 15px;
   }
 
   .import-option h4 {
@@ -2476,6 +2670,147 @@ textarea.form-control {
 
   .import-option p {
     font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .dm-view {
+    padding: 8px;
+  }
+
+  .dm-header {
+    padding: 12px;
+  }
+
+  .dm-title {
+    font-size: 1.2rem;
+  }
+
+  .dm-title i {
+    font-size: 1rem;
+  }
+
+  .mobile-menu-toggle {
+    padding: 8px 12px;
+    font-size: 1.2rem;
+  }
+
+  .turn-controls button,
+  .global-controls button {
+    padding: 10px 8px;
+    font-size: 0.9rem;
+    flex: 1 1 100%;
+  }
+
+  .turn-controls button i,
+  .global-controls button i {
+    font-size: 1rem;
+  }
+
+  .btn-text {
+    display: inline;
+  }
+
+  .stats-overview {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .stat-card {
+    padding: 10px;
+  }
+
+  .character-card {
+    padding: 12px;
+  }
+
+  .character-name {
+    font-size: 1.1rem;
+  }
+
+  .character-actions-panel {
+    gap: 10px;
+  }
+
+  .action-inputs {
+    flex-direction: row;
+  }
+
+  .action-inputs input {
+    font-size: 0.9rem;
+  }
+
+  .action-inputs button {
+    min-width: 44px;
+  }
+
+  .necro-text {
+    font-size: 0.75rem;
+  }
+
+  .import-option {
+    padding: 12px;
+  }
+
+  .modal-header {
+    padding: 12px 15px;
+  }
+
+  .modal-body {
+    padding: 15px;
+  }
+
+  .form-control {
+    font-size: 0.9rem;
+    padding: 10px 12px;
+  }
+
+  /* Mejorar usabilidad de inputs en móvil */
+  input[type="number"],
+  input[type="text"],
+  textarea {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  /* Asegurar que los botones sean táctiles */
+  button,
+  .btn {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  .btn-sm {
+    min-height: 36px;
+  }
+
+  /* Todo list mobile improvements */
+  #todo-list .modal-content {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+
+  #todo-list .modal-body {
+    max-height: calc(100vh - 100px);
+  }
+
+  #todo-list .add-todo {
+    flex-direction: column;
+  }
+
+  #todo-list .todo-list li {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  #todo-list .form-control {
+    padding: 10px 12px;
+  }
+
+  #todo-list .btn-danger {
+    padding: 8px 12px;
+    font-size: 0.75rem;
   }
 }
 

@@ -1,12 +1,13 @@
 <template>
-  <div class="dice-roller" :style="{ top: position.y + 'px', left: position.x + 'px' }">
-    <div class="header" @mousedown="startDrag">
-      <span><i class="bi bi-dice-6"></i> Lanzar Dados</span>
-      <div class="header-actions">
-        <button @click="toggleMinimize" class="minimize-btn">{{ minimized ? '+' : '-' }}</button>
-        <button @click="$emit('close')" class="close-btn">✕</button>
+  <div class="dice-roller-overlay" @click.self="handleOverlayClick">
+    <div class="dice-roller" :style="desktopStyle">
+      <div class="header" @mousedown="startDrag">
+        <span><i class="bi bi-dice-6"></i> Lanzar Dados</span>
+        <div class="header-actions">
+          <button @click="toggleMinimize" class="minimize-btn">{{ minimized ? '+' : '-' }}</button>
+          <button @click="handleClose" class="close-btn">✕</button>
+        </div>
       </div>
-    </div>
     
     <div v-if="!minimized" class="content">
       <!-- Configuración de dados -->
@@ -101,11 +102,12 @@
         </div>
       </div>
     </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch } from 'vue';
+import { ref, reactive, computed, onMounted, watch } from 'vue';
 
 // Props
 const props = defineProps({
@@ -115,7 +117,7 @@ const props = defineProps({
   }
 });
 
-defineEmits(['close']);
+const emit = defineEmits(['close']);
 
 const position = reactive({ x: 200, y: 150 });
 const minimized = ref(false);
@@ -129,6 +131,30 @@ const isRolling = ref(false);
 let dragging = false;
 const STORAGE_KEY = 'diceRollerHistory';
 
+// Computed para aplicar posición solo en desktop
+const desktopStyle = computed(() => {
+  // En móvil, el estilo se maneja con CSS
+  if (window.innerWidth <= 768) {
+    return {};
+  }
+  return {
+    top: position.y + 'px',
+    left: position.x + 'px'
+  };
+});
+
+// Métodos para cerrar
+const handleClose = () => {
+  emit('close');
+};
+
+const handleOverlayClick = () => {
+  // Solo cerrar en móvil cuando se hace click en el overlay
+  if (window.innerWidth <= 768) {
+    emit('close');
+  }
+};
+
 // Cargar historial desde localStorage
 onMounted(() => {
   const stored = localStorage.getItem(STORAGE_KEY);
@@ -141,9 +167,11 @@ onMounted(() => {
     }
   }
   
-  // Posición inicial aleatoria para que no se superponga
-  position.x = Math.random() * 300 + 200;
-  position.y = Math.random() * 200 + 100;
+  // Posición inicial aleatoria para que no se superponga (solo desktop)
+  if (window.innerWidth > 768) {
+    position.x = Math.random() * 300 + 200;
+    position.y = Math.random() * 200 + 100;
+  }
 });
 
 // Guardar historial cuando cambie
@@ -152,6 +180,9 @@ watch(rollHistory, (newHistory) => {
 }, { deep: true });
 
 const startDrag = (event) => {
+  // Solo permitir drag en desktop
+  if (window.innerWidth <= 768) return;
+  
   dragging = true;
   const startX = event.clientX - position.x;
   const startY = event.clientY - position.y;
@@ -236,6 +267,17 @@ const clearHistory = () => {
 </script>
 
 <style scoped>
+.dice-roller-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent;
+  z-index: 1000;
+  pointer-events: none;
+}
+
 .dice-roller {
   position: fixed;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -246,6 +288,7 @@ const clearHistory = () => {
   z-index: 1000;
   backdrop-filter: blur(10px);
   user-select: none;
+  pointer-events: auto;
 }
 
 .header {
@@ -580,5 +623,144 @@ const clearHistory = () => {
   color: #7f8c8d;
   font-style: italic;
   padding: 20px 10px;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .dice-roller-overlay {
+    background: rgba(0, 0, 0, 0.7);
+    pointer-events: auto;
+    z-index: 1500;
+  }
+
+  .dice-roller {
+    position: fixed;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    border-radius: 0;
+    border: none;
+    margin: 0;
+  }
+
+  .header {
+    padding: 16px 20px;
+    cursor: default;
+    border-radius: 0;
+  }
+
+  .header span {
+    font-size: 1.2rem;
+  }
+
+  .minimize-btn {
+    display: none;
+  }
+
+  .close-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 18px;
+  }
+
+  .content {
+    padding: 20px;
+    max-height: calc(100vh - 70px);
+    overflow-y: auto;
+  }
+
+  .dice-config {
+    gap: 15px;
+  }
+
+  .config-row {
+    font-size: 1rem;
+  }
+
+  .config-row label {
+    font-size: 1rem;
+  }
+
+  .config-row input,
+  .config-row select {
+    padding: 10px 12px;
+    font-size: 1rem;
+  }
+
+  .roll-button {
+    padding: 14px;
+    font-size: 1.1rem;
+  }
+
+  .result-section {
+    padding: 20px;
+  }
+
+  .result-total {
+    font-size: 3rem;
+  }
+
+  .dice-value {
+    width: 45px;
+    height: 45px;
+    font-size: 1.2rem;
+  }
+
+  .history-section {
+    max-height: calc(100vh - 550px);
+  }
+
+  .history-item {
+    padding: 12px;
+  }
+
+  .history-formula {
+    font-size: 0.95rem;
+  }
+
+  .history-result {
+    font-size: 1.1rem;
+  }
+
+  .history-time {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    padding: 14px 16px;
+  }
+
+  .header span {
+    font-size: 1.1rem;
+  }
+
+  .content {
+    padding: 16px;
+  }
+
+  .dice-config {
+    gap: 12px;
+  }
+
+  .roll-button {
+    padding: 12px;
+    font-size: 1rem;
+  }
+
+  .result-total {
+    font-size: 2.5rem;
+  }
+
+  .dice-value {
+    width: 40px;
+    height: 40px;
+    font-size: 1.1rem;
+  }
 }
 </style>
