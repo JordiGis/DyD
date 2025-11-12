@@ -1664,6 +1664,7 @@ onMounted(() => {
   loadTodoItems();
 
   dmStore.loadFromLocalStorage();
+  playerStore.loadFromLocalStorage(); // Cargar jugadores
   initializeCharacterInputs();
 });
 </script>
