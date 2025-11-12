@@ -390,7 +390,43 @@ onMounted(async () => {
 })
 
 const startTurn = () => {
-  characterStore.startTurn()
+  const passiveDamageResult = characterStore.startTurn()
+
+  if (passiveDamageResult) {
+    const { totalDamage, damageDetails } = passiveDamageResult;
+
+    const damageListHtml = damageDetails.map(d =>
+      `<li style="margin-bottom: 8px; color: #ecf0f1; font-size: 1rem;">
+        <strong style="color: #f39c12;">${d.name}:</strong> ${d.damage} de daño (${d.details})
+      </li>`
+    ).join('');
+
+    Swal.fire({
+      title: `<span style="color: #e74c3c;">Daño Pasivo Recibido</span>`,
+      html: `
+        <div style="text-align: left; padding: 10px;">
+          <p style="font-size: 1.2rem; margin-bottom: 15px; color: #ecf0f1;">
+            Daño total: <strong style="color: #e74c3c; font-size: 1.5rem;">${totalDamage}</strong>
+          </p>
+          <ul style="list-style-type: none; padding-left: 0;">
+            ${damageListHtml}
+          </ul>
+        </div>
+      `,
+      icon: 'warning',
+      confirmButtonText: 'Aceptar',
+      customClass: {
+        popup: 'dnd-modal-popup',
+        title: 'dnd-modal-title',
+        htmlContainer: 'dnd-modal-content',
+        confirmButton: 'dnd-confirm-btn',
+      },
+      background: '#1a1a1a',
+      color: '#ffffff',
+    }).then(() => {
+      characterStore.applyPassiveDamage(totalDamage, damageDetails);
+    });
+  }
 }
 
 const endTurn = () => {
