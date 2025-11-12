@@ -39,28 +39,40 @@
 
         <div v-if="isFormVisible" class="damage-form-overlay" @click.self="hideDamageForm">
           <div class="damage-form">
-            <h3>{{ isEditing ? 'Editar Daño Pasivo' : 'Nuevo Daño Pasivo' }}</h3>
+            <div class="damage-form-header">
+              <h3>{{ isEditing ? 'Editar Daño Pasivo' : 'Nuevo Daño Pasivo' }}</h3>
+              <button @click="hideDamageForm" class="form-close-btn" title="Cerrar">✕</button>
+            </div>
 
             <div class="form-group">
-              <label>Nombre</label>
+              <label class="form-label">
+                <i class="bi bi-tag-fill"></i> Nombre
+              </label>
               <input type="text" v-model="currentDamage.name" placeholder="Ej: Aura venenosa">
             </div>
 
             <div class="form-group">
-              <label>Duración en Turnos (0 para infinito)</label>
-              <input type="number" v-model.number="currentDamage.duration" min="0">
+              <label class="form-label">
+                <i class="bi bi-hourglass-split"></i> Duración en Turnos
+                <span class="label-hint">(0 para infinito)</span>
+              </label>
+              <input type="number" v-model.number="currentDamage.duration" min="0" placeholder="0">
             </div>
 
             <div class="damage-rolls-section">
-              <h4>Tiradas de Daño</h4>
+              <h4><i class="bi bi-dice-5-fill"></i> Tiradas de Daño</h4>
               <div v-for="(roll, index) in currentDamage.damageRolls" :key="index" class="damage-roll-item">
                 <div class="damage-roll-inputs">
                   <div class="form-group-inline">
-                    <label>Cantidad</label>
-                    <input type="number" v-model.number="roll.numDice" min="1" class="input-narrow">
+                    <label class="form-label-inline">
+                      <i class="bi bi-hash"></i> Cantidad
+                    </label>
+                    <input type="number" v-model.number="roll.numDice" min="1" class="input-narrow" placeholder="1">
                   </div>
                   <div class="form-group-inline">
-                    <label>Tipo de Dado</label>
+                    <label class="form-label-inline">
+                      <i class="bi bi-dice-6"></i> Dado
+                    </label>
                     <select v-model.number="roll.diceType">
                       <option value="4">d4</option>
                       <option value="6">d6</option>
@@ -72,11 +84,15 @@
                     </select>
                   </div>
                   <div class="form-group-inline">
-                    <label>Bonus</label>
-                    <input type="number" v-model.number="roll.bonus" placeholder="+0">
+                    <label class="form-label-inline">
+                      <i class="bi bi-plus-slash-minus"></i> Bonus
+                    </label>
+                    <input type="number" v-model.number="roll.bonus" placeholder="0">
                   </div>
                   <div class="form-group-inline">
-                    <label>Tipo de Daño</label>
+                    <label class="form-label-inline">
+                      <i class="bi bi-fire"></i> Tipo
+                    </label>
                     <select v-model="roll.type">
                       <option v-for="dType in damageTypes" :key="dType.id" :value="dType.id">
                         {{ dType.name }}
@@ -84,16 +100,22 @@
                     </select>
                   </div>
                 </div>
-                <button @click="removeDamageRoll(index)" class="btn-remove-roll">✕</button>
+                <button @click="removeDamageRoll(index)" class="btn-remove-roll" :title="'Eliminar tirada ' + (index + 1)">
+                  <i class="bi bi-trash-fill"></i>
+                </button>
               </div>
               <button @click="addDamageRoll" class="btn-add-roll">
-                <i class="bi bi-plus"></i> Añadir tipo de daño
+                <i class="bi bi-plus-circle"></i> Añadir tipo de daño
               </button>
             </div>
 
             <div class="form-actions">
-              <button @click="saveDamage" class="btn-save">{{ isEditing ? 'Guardar Cambios' : 'Crear' }}</button>
-              <button @click="hideDamageForm" class="btn-cancel">Cancelar</button>
+              <button @click="saveDamage" class="btn-save">
+                <i class="bi bi-check-circle-fill"></i> {{ isEditing ? 'Guardar Cambios' : 'Crear' }}
+              </button>
+              <button @click="hideDamageForm" class="btn-cancel">
+                <i class="bi bi-x-circle-fill"></i> Cancelar
+              </button>
             </div>
           </div>
         </div>
@@ -347,16 +369,57 @@ const confirmDelete = (damageId) => {
 }
 .damage-form {
   background: #2c2f33;
-  padding: 25px;
+  padding: 0;
   border-radius: 10px;
   width: 90%;
   max-width: 600px;
   margin: 0 auto;
 }
+.damage-form-header {
+  padding: 20px 25px;
+  background: #23272a;
+  border-radius: 10px 10px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #99aab5;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
 .damage-form h3 {
   color: #ffffff;
-  text-align: center;
-  margin-bottom: 20px;
+  margin: 0;
+  font-size: 1.3rem;
+}
+.form-close-btn {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 1.8rem;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+  flex-shrink: 0;
+}
+.form-close-btn:hover {
+  color: #f04747;
+}
+.damage-form > .form-group,
+.damage-form > .damage-rolls-section,
+.damage-form > .form-actions {
+  padding: 0 25px;
+}
+.damage-form > .form-group:first-of-type {
+  padding-top: 20px;
+}
+.damage-form > .form-actions {
+  padding-bottom: 25px;
 }
 .form-group, .damage-rolls-section {
   margin-bottom: 15px;
@@ -366,6 +429,39 @@ const confirmDelete = (damageId) => {
   display: block;
   margin-bottom: 10px;
 }
+.form-label {
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.label-hint {
+  color: #99aab5;
+  font-size: 0.85rem;
+  font-weight: normal;
+  font-style: italic;
+  margin-left: 4px;
+}
+.form-label-inline {
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 5px;
+}
+.damage-rolls-section h4 {
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 .form-group input {
   width: 100%;
   padding: 10px;
@@ -373,6 +469,14 @@ const confirmDelete = (damageId) => {
   border: 1px solid #99aab5;
   border-radius: 5px;
   color: #ffffff;
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
+}
+.form-group input:focus,
+.form-group-inline input:focus,
+.form-group-inline select:focus {
+  outline: none;
+  border-color: #5865f2;
 }
 .damage-roll-item {
   background: rgba(0,0,0,0.2);
@@ -404,6 +508,7 @@ const confirmDelete = (damageId) => {
   border-radius: 5px;
   color: #ffffff;
   width: 100%;
+  font-size: 0.9rem;
 }
 .btn-remove-roll {
   background: #f04747;
@@ -414,17 +519,29 @@ const confirmDelete = (damageId) => {
   height: 36px;
   cursor: pointer;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.btn-remove-roll:hover {
+  background: #d63939;
 }
 .btn-add-roll {
   background: #43b581;
   color: white;
   border: none;
-  padding: 8px 12px;
+  padding: 10px 16px;
   border-radius: 5px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
+  font-size: 0.95rem;
+  transition: background 0.2s;
+}
+.btn-add-roll:hover {
+  background: #3a9d6f;
 }
 .form-actions {
   margin-top: 25px;
@@ -432,11 +549,44 @@ const confirmDelete = (damageId) => {
   justify-content: flex-end;
   gap: 10px;
 }
-.btn-save { background-color: #43b581; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
-.btn-cancel { background-color: #99aab5; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+.btn-save {
+  background-color: #43b581;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+.btn-save:hover {
+  background-color: #3a9d6f;
+}
+.btn-cancel {
+  background-color: #747f8d;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+.btn-cancel:hover {
+  background-color: #5c6672;
+}
 
 /* ====== Mobile specific improvements ====== */
 @media (max-width: 640px) {
+  .passive-damage-manager-overlay {
+    padding: 0;
+  }
   .passive-damage-manager-container {
     width: 100%;
     max-width: 100%;
@@ -447,25 +597,51 @@ const confirmDelete = (damageId) => {
   }
   .header {
     padding: 12px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
   }
-  .header h2 { font-size: 1.1rem; }
+  .header h2 {
+    font-size: 1rem;
+    gap: 6px;
+  }
+  .header h2 i {
+    font-size: 1rem;
+  }
   .close-btn { font-size: 1.6rem; }
-  .content { padding: 12px; }
+  .content {
+    padding: 12px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 
   /* Lista de daños: apilar info y acciones */
   .damage-item {
     flex-direction: column;
     align-items: stretch;
     gap: 10px;
+    padding: 12px;
+  }
+  .damage-name {
+    font-size: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .duration-tag {
+    margin-left: 0;
+    display: inline-block;
+    width: fit-content;
   }
   .damage-actions {
-    flex-direction: column;
+    flex-direction: row;
     display: flex;
+    gap: 8px;
   }
   .action-btn {
-    width: 100%;
-    padding: 10px 12px;
-    font-size: 0.95rem;
+    flex: 1;
+    padding: 10px 8px;
+    font-size: 0.85rem;
   }
 
   /* Botón nuevo daño full-width */
@@ -473,50 +649,138 @@ const confirmDelete = (damageId) => {
     width: 100%;
     justify-content: center;
     padding: 14px;
+    font-size: 1rem;
   }
 
-  /* Formulario en móvil: ocupar gran parte de la pantalla y scroll interno */
-  .damage-form-overlay { padding: 0; }
+  /* Formulario en móvil: ocupar toda la pantalla */
+  .damage-form-overlay {
+    padding: 0;
+    display: flex;
+    align-items: stretch;
+  }
   .damage-form {
     width: 100%;
-    height: calc(100vh - 56px);
+    height: 100vh;
     max-width: 100%;
-    margin: 56px 0 0 0;
+    margin: 0;
     border-radius: 0;
-    padding: 16px;
+    padding: 0;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+  }
+  .damage-form-header {
+    padding: 16px;
+    border-radius: 0;
+  }
+  .damage-form h3 {
+    font-size: 1.1rem;
+  }
+  .form-close-btn {
+    font-size: 1.6rem;
+  }
+  .damage-form > .form-group,
+  .damage-form > .damage-rolls-section,
+  .damage-form > .form-actions {
+    padding: 0 16px;
+  }
+  .damage-form > .form-group:first-of-type {
+    padding-top: 16px;
+  }
+  .damage-form > .form-actions {
+    padding-bottom: 16px;
   }
 
-  /* Inputs de tirada: colapsar a 1 columna para legibilidad */
+  /* Mejorar legibilidad de labels en móvil */
+  .form-label {
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+  }
+  .form-label i {
+    font-size: 0.9rem;
+  }
+  .label-hint {
+    font-size: 0.8rem;
+  }
+
+  /* Inputs de tirada: mantener 2 columnas en móvil de forma equilibrada */
   .damage-roll-inputs {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .form-label-inline {
+    font-size: 0.8rem;
+    gap: 4px;
+  }
+  .form-label-inline i {
+    font-size: 0.75rem;
+  }
+  .form-group-inline input,
+  .form-group-inline select {
+    padding: 10px 8px;
+    font-size: 0.9rem;
   }
   .damage-roll-item {
     flex-direction: column;
     align-items: stretch;
+    padding: 12px;
+    gap: 10px;
   }
   .btn-remove-roll {
-    align-self: flex-end;
-    margin-top: 6px;
+    align-self: stretch;
+    width: 100%;
+    height: 40px;
+    margin-top: 4px;
+  }
+  .btn-add-roll {
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
   }
 
   /* Form actions: botones apilados, full width */
   .form-actions {
-    flex-direction: column;
+    flex-direction: column-reverse;
     gap: 10px;
     justify-content: stretch;
+    margin-top: 20px;
+    padding-top: 10px;
   }
   .btn-save, .btn-cancel {
     width: 100%;
-    padding: 12px;
+    padding: 14px;
     font-size: 1rem;
+    justify-content: center;
   }
 
   /* Ajustes en tags para evitar overflow */
   .damage-tag {
     white-space: normal;
-    font-size: 0.82rem;
+    font-size: 0.75rem;
     padding: 4px 6px;
+  }
+  .damage-summary {
+    gap: 6px;
+  }
+}
+
+/* Tablet improvements */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .passive-damage-manager-container {
+    max-width: 90%;
+  }
+  .damage-roll-inputs {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .form-group-inline:nth-child(1),
+  .form-group-inline:nth-child(2) {
+    grid-column: span 1;
+  }
+  .form-group-inline:nth-child(3),
+  .form-group-inline:nth-child(4) {
+    grid-column: span 1;
   }
 }
 </style>
