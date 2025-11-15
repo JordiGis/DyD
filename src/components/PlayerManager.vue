@@ -257,6 +257,13 @@
 
           <!-- Lista de contadores para gestionar -->
           <div class="counter-manage-list">
+            <div class="counter-manage-header-labels">
+              <span>Nombre</span>
+              <span>Valor</span>
+              <span>Paso</span>
+              <span>Visible</span>
+              <span>Acciones</span>
+            </div>
             <div v-for="counter in editingPlayerCounters" :key="counter.id" class="counter-manage-item">
               <input type="text" v-model="counter.name" @change="updateCounter(counter, 'name')">
               <input type="number" v-model.number="counter.value" @change="updateCounter(counter, 'value')">
@@ -1025,6 +1032,18 @@ input:focus {
   overflow-y: auto;
 }
 
+.counter-manage-header-labels {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr auto auto;
+  gap: 10px;
+  padding: 8px 12px;
+  font-weight: 600;
+  color: #f39c12;
+  background: rgba(243, 156, 18, 0.1);
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
 .counter-manage-item {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr auto auto;
@@ -1326,8 +1345,12 @@ input:checked + .slider:before {
     font-size: 0.9rem;
   }
 
-  .add-counter-form, .counter-manage-item {
+  .add-counter-form, .counter-manage-item, .counter-manage-header-labels {
     grid-template-columns: 1fr;
+  }
+
+  .counter-manage-header-labels {
+    display: none;
   }
 }
 
