@@ -115,6 +115,12 @@
               >
                 <i class="bi bi-clock-history"></i> Ver Historial
               </button>
+               <button
+                @click="toggleCounters(player.id)"
+                class="btn btn-link btn-sm"
+              >
+                <i class="bi bi-plus-slash-minus"></i> Contadores
+              </button>
               <button
                 @click="toggleNotes(player.id)"
                 class="btn btn-link btn-sm"
@@ -162,11 +168,34 @@
               </ul>
             </div>
 
+            <!-- Sección de Contadores -->
+            <div v-if="visibleCounters.has(player.id)" class="counters-section">
+              <div class="counters-header">
+                <h4>Contadores</h4>
+                <button @click="openCounterEditModal(player.id)" class="btn btn-secondary btn-sm">
+                  <i class="bi bi-gear"></i> Gestionar
+                </button>
+              </div>
+              <div class="counters-grid">
+                <div v-for="counter in player.counters.filter(c => c.isVisible)" :key="counter.id" class="counter-item">
+                  <span class="counter-name">{{ counter.name }}</span>
+                  <div class="counter-controls">
+                    <button @click="playerStore.updateCounterValue(player.id, counter.id, -counter.step)" class="btn btn-danger btn-sm">-</button>
+                    <span class="counter-value">{{ counter.value }}</span>
+                    <button @click="playerStore.updateCounterValue(player.id, counter.id, counter.step)" class="btn btn-success btn-sm">+</button>
+                  </div>
+                </div>
+                 <div v-if="player.counters.filter(c => c.isVisible).length === 0" class="empty-state-small">
+                  No hay contadores visibles.
+                </div>
+              </div>
+            </div>
+
             <!-- Sección de Notas -->
             <div v-if="visibleNotes.has(player.id)" class="notes-section">
               <textarea
                 v-model="player.notes"
-                @blur="saveNotes(player)"
+                @input="saveNotes(player)"
                 placeholder="Añade tus notas aquí..."
                 class="notes-textarea"
               ></textarea>
@@ -175,7 +204,7 @@
         </div>
       </div>
     </div>
-    <!-- Modal de Edición -->
+    <!-- Modal de Edición de Jugador -->
     <div v-if="showEditModal" class="player-manager-overlay edit-modal" @click.self="showEditModal = false">
       <div class="player-manager-content">
         <div class="player-manager-header">
@@ -207,6 +236,42 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal de Gestión de Contadores -->
+    <div v-if="showCounterEditModal" class="player-manager-overlay edit-modal" @click.self="closeCounterEditModal">
+      <div class="player-manager-content">
+        <div class="player-manager-header">
+          <h2><i class="bi bi-gear"></i> Gestionar Contadores</h2>
+           <button @click="closeCounterEditModal" class="btn-close">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="player-manager-body">
+          <!-- Añadir nuevo contador -->
+          <div class="add-counter-form">
+            <input type="text" v-model="newCounter.name" placeholder="Nombre">
+            <input type="number" v-model.number="newCounter.value" placeholder="Valor inicial">
+            <input type="number" v-model.number="newCounter.step" placeholder="Paso (+/-)">
+            <button @click="addCounter" class="btn btn-primary">Añadir</button>
+          </div>
+
+          <!-- Lista de contadores para gestionar -->
+          <div class="counter-manage-list">
+            <div v-for="counter in editingPlayerCounters" :key="counter.id" class="counter-manage-item">
+              <input type="text" v-model="counter.name" @change="updateCounter(counter, 'name')">
+              <input type="number" v-model.number="counter.value" @change="updateCounter(counter, 'value')">
+              <input type="number" v-model.number="counter.step" @change="updateCounter(counter, 'step')">
+              <label class="visibility-toggle">
+                <input type="checkbox" :checked="counter.isVisible" @change="toggleCounterVisibility(counter)">
+                <span class="slider"></span>
+              </label>
+              <button @click="deleteCounter(counter.id)" class="btn btn-danger btn-sm"><i class="bi bi-trash"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -226,14 +291,24 @@ const newPlayerName = ref("");
 const xpToAll = ref(null);
 const playerXpInputs = ref({});
 const visibleHistories = ref(new Set());
-const visibleNotes = ref(new Set()); // Para controlar la visibilidad de las notas
+const visibleNotes = ref(new Set());
+const visibleCounters = ref(new Set());
 const showEditModal = ref(false);
 const editingPlayer = ref(null);
+
+// Nuevas refs para el modal de contadores
+const showCounterEditModal = ref(false);
+const editingPlayerId = ref(null);
+const editingPlayerCounters = ref([]);
+const newCounter = ref({ name: '', value: 0, step: 1 });
+
 
 // Manejar tecla Escape
 const handleEscape = (event) => {
   if (event.key === 'Escape') {
-    if (showEditModal.value) {
+    if (showCounterEditModal.value) {
+      closeCounterEditModal();
+    } else if (showEditModal.value) {
       showEditModal.value = false;
     } else {
       emit('close');
@@ -243,20 +318,15 @@ const handleEscape = (event) => {
 
 onMounted(() => {
   playerStore.loadFromLocalStorage();
-  // Bloquear el scroll del body
   document.body.classList.add("modal-open");
-  // Inicializar los inputs de XP para cada jugador
   players.value.forEach((p) => {
     playerXpInputs.value[p.id] = null;
   });
-  // Agregar listener para Escape
   document.addEventListener('keydown', handleEscape);
 });
 
 onUnmounted(() => {
-  // Restaurar el scroll del body
   document.body.classList.remove("modal-open");
-  // Remover listener para Escape
   document.removeEventListener('keydown', handleEscape);
 });
 
@@ -277,9 +347,7 @@ const deletePlayer = (playerId) => {
     cancelButtonColor: "#3085d6",
     confirmButtonText: "Sí, ¡elimínalo!",
     cancelButtonText: "Cancelar",
-    customClass: {
-      container: "high-z-index",
-    },
+    customClass: { container: "high-z-index" },
   }).then((result) => {
     if (result.isConfirmed) {
       playerStore.deletePlayer(playerId);
@@ -292,7 +360,7 @@ const addXpToPlayer = (playerId) => {
   const amount = playerXpInputs.value[playerId];
   if (amount && amount > 0) {
     playerStore.addXpToPlayer(playerId, amount);
-    playerXpInputs.value[playerId] = null; // Reset input
+    playerXpInputs.value[playerId] = null;
   }
 };
 
@@ -300,7 +368,7 @@ const removeXpFromPlayer = (playerId) => {
   const amount = playerXpInputs.value[playerId];
   if (amount && amount > 0) {
     playerStore.removeXpFromPlayer(playerId, amount);
-    playerXpInputs.value[playerId] = null; // Reset input
+    playerXpInputs.value[playerId] = null;
   }
 };
 
@@ -311,7 +379,7 @@ const addQuickXp = (playerId, amount) => {
 const addXpToAll = () => {
   if (xpToAll.value && xpToAll.value > 0) {
     playerStore.addXpToAllPlayers(xpToAll.value);
-    xpToAll.value = null; // Reset input
+    xpToAll.value = null;
   }
 };
 
@@ -323,9 +391,7 @@ const startNewSession = () => {
     showCancelButton: true,
     confirmButtonText: "Sí, iniciar",
     cancelButtonText: "Cancelar",
-    customClass: {
-      container: "high-z-index",
-    },
+    customClass: { container: "high-z-index" },
   }).then((result) => {
     if (result.isConfirmed) {
       playerStore.startNewSession();
@@ -333,9 +399,7 @@ const startNewSession = () => {
         title: "¡Nueva sesión iniciada!",
         text: "La XP de la sesión ha sido reseteada.",
         icon: "success",
-        customClass: {
-          container: "high-z-index",
-        },
+        customClass: { container: "high-z-index" },
       });
     }
   });
@@ -350,7 +414,7 @@ const toggleXpHistory = (playerId) => {
 };
 
 const openEditModal = (player) => {
-  editingPlayer.value = { ...player }; // Clonar para no modificar el original directamente
+  editingPlayer.value = { ...player };
   showEditModal.value = true;
 };
 
@@ -375,6 +439,78 @@ const toggleNotes = (playerId) => {
 const saveNotes = (player) => {
   playerStore.editPlayer(player.id, { notes: player.notes });
 };
+
+// --- Métodos para Contadores ---
+
+const toggleCounters = (playerId) => {
+  if (visibleCounters.value.has(playerId)) {
+    visibleCounters.value.delete(playerId);
+  } else {
+    visibleCounters.value.add(playerId);
+  }
+};
+
+const openCounterEditModal = (playerId) => {
+  editingPlayerId.value = playerId;
+  const player = players.value.find(p => p.id === playerId);
+  if (player) {
+    // Clonación profunda para evitar modificar el estado original directamente
+    editingPlayerCounters.value = JSON.parse(JSON.stringify(player.counters));
+  }
+  showCounterEditModal.value = true;
+};
+
+const closeCounterEditModal = () => {
+  showCounterEditModal.value = false;
+  editingPlayerId.value = null;
+  editingPlayerCounters.value = [];
+};
+
+const addCounter = () => {
+  if (editingPlayerId.value && newCounter.value.name.trim()) {
+    playerStore.addCounter(editingPlayerId.value, { ...newCounter.value });
+    // Actualizar la lista local después de añadir
+    const player = players.value.find(p => p.id === editingPlayerId.value);
+    if (player) {
+      editingPlayerCounters.value = JSON.parse(JSON.stringify(player.counters));
+    }
+    // Resetear formulario
+    newCounter.value = { name: '', value: 0, step: 1 };
+  }
+};
+
+const updateCounter = (counter, field) => {
+  playerStore.editCounter(editingPlayerId.value, counter.id, { [field]: counter[field] });
+};
+
+const toggleCounterVisibility = (counter) => {
+  playerStore.editCounter(editingPlayerId.value, counter.id, { isVisible: !counter.isVisible });
+  // Actualizar el estado local del checkbox
+  const localCounter = editingPlayerCounters.value.find(c => c.id === counter.id);
+  if (localCounter) {
+    localCounter.isVisible = !localCounter.isVisible;
+  }
+};
+
+const deleteCounter = (counterId) => {
+   Swal.fire({
+    title: "¿Eliminar este contador?",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    confirmButtonText: "Sí, eliminar",
+    cancelButtonText: "Cancelar",
+    customClass: { container: "high-z-index-2" }, // z-index más alto aún
+  }).then((result) => {
+    if (result.isConfirmed) {
+      playerStore.deleteCounter(editingPlayerId.value, counterId);
+      // Actualizar la lista local
+      editingPlayerCounters.value = editingPlayerCounters.value.filter(c => c.id !== counterId);
+    }
+  });
+};
+
 </script>
 
 <style scoped>
@@ -383,10 +519,14 @@ const saveNotes = (player) => {
   overflow: hidden;
 }
 
-/* Clase para asegurar que SweetAlert2 esté por encima del modal */
+/* Clases para asegurar que SweetAlert2 esté por encima del modal */
 :global(.swal2-container.high-z-index) {
   z-index: 1300 !important;
 }
+:global(.swal2-container.high-z-index-2) {
+  z-index: 1400 !important;
+}
+
 
 /* Estilo general del overlay y modal */
 .player-manager-overlay {
@@ -765,7 +905,7 @@ input:focus {
 }
 
 /* Estilos para la sección de notas */
-.notes-section {
+.notes-section, .counters-section {
   margin-top: 12px;
   animation: slideDown 0.3s ease-out;
 }
@@ -801,6 +941,143 @@ input:focus {
   background: rgba(255, 255, 255, 0.12);
   box-shadow: 0 0 0 3px rgba(243, 156, 18, 0.2);
 }
+
+/* --- Estilos para Contadores --- */
+
+.counters-section {
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.2));
+  border-radius: 10px;
+  border: 1px solid rgba(243, 156, 18, 0.3);
+}
+
+.counters-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.counters-header h4 {
+  margin: 0;
+  color: #f39c12;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.counters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.counter-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.counter-name {
+  font-weight: 500;
+  color: #e0e0e0;
+}
+
+.counter-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.counter-value {
+  font-weight: bold;
+  font-size: 1.1rem;
+  min-width: 25px;
+  text-align: center;
+}
+
+.empty-state-small {
+  font-style: italic;
+  color: #999;
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 10px;
+}
+
+
+/* Modal de gestión de contadores */
+.add-counter-form {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr auto;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.counter-manage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.counter-manage-item {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+}
+
+/* Estilo para el toggle de visibilidad */
+.visibility-toggle {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+}
+
+.visibility-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #444;
+  transition: .4s;
+  border-radius: 22px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #2ecc71;
+}
+
+input:checked + .slider:before {
+  transform: translateX(18px);
+}
+
 
 /* Estilos mejorados para botones */
 .btn {
@@ -1048,6 +1325,10 @@ input:focus {
     min-height: 80px;
     font-size: 0.9rem;
   }
+
+  .add-counter-form, .counter-manage-item {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1146,6 +1427,10 @@ input:focus {
   
   .empty-state p {
     font-size: 1rem;
+  }
+
+  .counters-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>
