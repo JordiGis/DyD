@@ -1,11 +1,16 @@
 // src/stores/useDMStore.js
 import { defineStore } from 'pinia'
+import { v4 as uuidv4 } from 'uuid';
 
 export const useDMStore = defineStore('dm', {
     state: () => ({
         characters: [],
         currentTurn: 0,
-        isTurnActive: false
+        isTurnActive: false,
+        criticalHit: {
+            rule: 'default', // 'default' o 'dad'
+            characterLevel: 1,
+        },
     }),
     
     getters: {
@@ -63,7 +68,8 @@ export const useDMStore = defineStore('dm', {
                 isConfigured: true,
                 createdAt: new Date().toISOString(),
                 logs: [],
-                defeatedBy: null // Nombre del héroe que lo derrotó
+                defeatedBy: null, // Nombre del héroe que lo derrotó
+                attacks: [] // Array para almacenar los ataques del personaje
             }
             
             this.characters.push(character)
@@ -466,6 +472,7 @@ export const useDMStore = defineStore('dm', {
         
         // Cargar desde localStorage
         loadFromLocalStorage() {
+            this.loadCriticalHitConfig();
             const data = localStorage.getItem('dnd-dm-data')
             if (data) {
                 try {
@@ -473,18 +480,138 @@ export const useDMStore = defineStore('dm', {
                     this.characters = parsed.characters || []
                     this.currentTurn = parsed.currentTurn || 0
                     this.isTurnActive = parsed.isTurnActive || false
+
+                    // Migración para asegurar que cada personaje tenga un array de ataques
+                    this.characters.forEach(character => {
+                        if (!character.attacks) {
+                            character.attacks = [];
+                        }
+                    });
+
                 } catch (error) {
                     console.error('Error loading DM data from localStorage:', error)
                 }
             }
         },
         
+        duplicateCharacter(characterId) {
+            const originalCharacter = this.getCharacterById(characterId);
+            if (originalCharacter) {
+                const duplicatedCharacter = JSON.parse(JSON.stringify(originalCharacter));
+
+                duplicatedCharacter.id = uuidv4();
+                duplicatedCharacter.createdAt = new Date().toISOString();
+
+                let duplicatedName = `${originalCharacter.name} (Copia)`;
+                let finalName = duplicatedName;
+                let counter = 1;
+                while (this.getCharacterByName(finalName)) {
+                    finalName = `${originalCharacter.name} (Copia ${counter})`;
+                    counter++;
+                }
+                duplicatedCharacter.name = finalName;
+
+                this.characters.push(duplicatedCharacter);
+                this.saveToLocalStorage();
+
+                this.addLogToCharacter(duplicatedCharacter.id, 'Clonación', `Personaje clonado de ${originalCharacter.name}`);
+            }
+        },
+
         // Limpiar todos los datos
         clearAllData() {
             this.characters = []
             this.currentTurn = 0
             this.isTurnActive = false
             localStorage.removeItem('dnd-dm-data')
+        },
+
+        // --- Gestión de Configuración de Críticos ---
+
+        loadCriticalHitConfig() {
+            const data = localStorage.getItem('dnd-dm-critical-hit-config');
+            if (data) {
+                try {
+                    const config = JSON.parse(data);
+                    if (config && typeof config === 'object') {
+                        this.criticalHit.rule = config.rule || 'default';
+                        this.criticalHit.characterLevel = config.characterLevel || 1;
+                    }
+                } catch (error) {
+                    console.error('Error loading critical hit config from localStorage:', error);
+                }
+            }
+        },
+
+        saveCriticalHitConfig() {
+            localStorage.setItem('dnd-dm-critical-hit-config', JSON.stringify(this.criticalHit));
+        },
+
+        updateCriticalHitConfig(config) {
+            this.criticalHit = { ...this.criticalHit, ...config };
+            this.saveCriticalHitConfig();
+        },
+
+        // --- Gestión de Ataques por Personaje ---
+
+        addAttackToCharacter(characterId, attackData) {
+            const character = this.getCharacterById(characterId);
+            if (character) {
+                const newAttack = {
+                    ...attackData,
+                    id: uuidv4(),
+                };
+                character.attacks.push(newAttack);
+                this.saveToLocalStorage();
+            }
+        },
+
+        updateAttackInCharacter(characterId, updatedAttack) {
+            const character = this.getCharacterById(characterId);
+            if (character) {
+                const index = character.attacks.findIndex(a => a.id === updatedAttack.id);
+                if (index !== -1) {
+                    character.attacks[index] = updatedAttack;
+                    this.saveToLocalStorage();
+                }
+            }
+        },
+
+        deleteAttackFromCharacter(characterId, attackId) {
+            const character = this.getCharacterById(characterId);
+            if (character) {
+                const index = character.attacks.findIndex(a => a.id === attackId);
+                if (index !== -1) {
+                    character.attacks.splice(index, 1);
+                    this.saveToLocalStorage();
+                }
+            }
+        },
+
+        duplicateAttackInCharacter(characterId, attackId) {
+            const character = this.getCharacterById(characterId);
+            if (character) {
+                const originalAttack = character.attacks.find(a => a.id === attackId);
+                if (originalAttack) {
+                    const duplicatedAttack = JSON.parse(JSON.stringify(originalAttack));
+                    duplicatedAttack.id = uuidv4();
+                    duplicatedAttack.name = `${originalAttack.name} (Copia)`;
+
+                    const originalIndex = character.attacks.findIndex(a => a.id === attackId);
+                    character.attacks.splice(originalIndex + 1, 0, duplicatedAttack);
+
+                    this.saveToLocalStorage();
+                }
+            }
+        },
+
+        updateCharacterAttackOrder(characterId, newOrder) {
+            const character = this.getCharacterById(characterId);
+            if (character) {
+                const orderedAttacks = newOrder.map(id => character.attacks.find(a => a.id === id));
+                character.attacks = orderedAttacks.filter(a => a);
+                this.saveToLocalStorage();
+            }
         }
     }
 })
