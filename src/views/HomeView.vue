@@ -44,9 +44,15 @@
             <span class="btn-icon">🛡️</span>
             <span class="btn-text">Panel del DM</span>
           </button>
+
+          <button @click="showAccountManager = true" class="btn btn-info">
+            <span class="btn-icon">👤</span>
+            <span class="btn-text">Gestionar Cuenta</span>
+          </button>
         </div>
       </div>
     </div>
+    <AccountManager v-if="showAccountManager" :onClose="() => showAccountManager = false" />
   </div>
 </template>
 
@@ -54,16 +60,18 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCharacterStore } from '../stores/useCharacterStore'
+import AccountManager from '../components/AccountManager.vue'
 
 const router = useRouter()
 const characterStore = useCharacterStore()
 
 const isLoading = ref(true)
 const hasExistingCharacter = ref(false)
+const showAccountManager = ref(false)
 
 onMounted(async () => {
-  // Cargar datos del localStorage
-  characterStore.loadFromLocalStorage()
+  // Cargar datos
+  characterStore.loadData()
   
   // Verificar si hay un personaje configurado
   hasExistingCharacter.value = characterStore.character.isConfigured

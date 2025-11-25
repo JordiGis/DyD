@@ -1,6 +1,7 @@
 // src/stores/usePlayerStore.js
 import { defineStore } from 'pinia';
 import { v4 as uuidv4 } from 'uuid';
+import { useAccountStore } from './useAccountStore'; // Importar el store de la cuenta
 
 // Lista de contadores por defecto
 const defaultCountersList = [
@@ -10,13 +11,12 @@ const defaultCountersList = [
   "Religión", "Sigilo", "Supervivencia", "Trato con Animales"
 ];
 
-// Función para generar la estructura completa de contadores por defecto
 const createDefaultCounters = () => {
   return defaultCountersList.map(name => ({
     id: uuidv4(),
     name: name,
     value: 0,
-    step: 1, // Valor por defecto para sumar/restar
+    step: 1,
     isVisible: true,
   }));
 };
@@ -43,27 +43,21 @@ export const usePlayerStore = defineStore('player', {
   },
 
   actions: {
-    loadFromLocalStorage() {
-      const savedData = localStorage.getItem('dnd-player-data');
+    loadData() {
+      const accountStore = useAccountStore();
+      const savedData = accountStore.getSection('players');
       if (savedData) {
-        try {
-          const loadedPlayers = JSON.parse(savedData);
-          // Migración: asegurar que los jugadores viejos tengan el sistema de contadores
-          this.players = loadedPlayers.map(player => {
-            if (!player.counters) {
-              player.counters = createDefaultCounters();
-            }
-            return player;
-          });
-        } catch (e) {
-          console.error("Error loading player data from localStorage:", e);
-          this.players = [];
-        }
+        // Migración: asegurar que los jugadores viejos tengan el sistema de contadores
+        this.players = savedData.map(player => ({
+          ...player,
+          counters: player.counters || createDefaultCounters(),
+        }));
       }
     },
 
-    saveToLocalStorage() {
-      localStorage.setItem('dnd-player-data', JSON.stringify(this.players));
+    saveData() {
+      const accountStore = useAccountStore();
+      accountStore.updateSection('players', this.players);
     },
 
     addPlayer(name) {
@@ -75,36 +69,34 @@ export const usePlayerStore = defineStore('player', {
         sessionXp: 0,
         xpHistory: [],
         notes: '',
-        counters: createDefaultCounters(), // Añadir contadores por defecto
+        counters: createDefaultCounters(),
       };
 
       this.players.push(newPlayer);
-      this.saveToLocalStorage();
+      this.saveData();
     },
 
     deletePlayer(playerId) {
       this.players = this.players.filter(p => p.id !== playerId);
-      this.saveToLocalStorage();
+      this.saveData();
     },
 
     addXpToPlayer(playerId, amount) {
       const player = this.players.find(p => p.id === playerId);
       if (player && amount > 0) {
-        const xpAmount = parseInt(amount);
-        player.sessionXp += xpAmount;
+        player.sessionXp = (player.sessionXp || 0) + parseInt(amount);
+        if (!player.xpHistory) player.xpHistory = [];
         player.xpHistory.push({
-          amount: xpAmount,
+          amount: parseInt(amount),
           timestamp: new Date().toISOString(),
         });
-        this.saveToLocalStorage();
+        this.saveData();
       }
     },
 
     addXpToAllPlayers(amount) {
       if (amount > 0) {
-        this.players.forEach(player => {
-          this.addXpToPlayer(player.id, amount);
-        });
+        this.players.forEach(player => this.addXpToPlayer(player.id, amount));
       }
     },
 
@@ -113,19 +105,18 @@ export const usePlayerStore = defineStore('player', {
         player.sessionXp = 0;
         player.xpHistory = [];
       });
-      this.saveToLocalStorage();
+      this.saveData();
     },
 
     removeXpFromPlayer(playerId, amount) {
       const player = this.players.find(p => p.id === playerId);
       if (player && amount > 0) {
-        const xpAmount = parseInt(amount);
-        player.sessionXp -= xpAmount;
+        player.sessionXp -= parseInt(amount);
         player.xpHistory.push({
-          amount: -xpAmount,
+          amount: -parseInt(amount),
           timestamp: new Date().toISOString(),
         });
-        this.saveToLocalStorage();
+        this.saveData();
       }
     },
 
@@ -133,54 +124,53 @@ export const usePlayerStore = defineStore('player', {
       const player = this.players.find(p => p.id === playerId);
       if (player) {
         Object.assign(player, updates);
-        this.saveToLocalStorage();
+        this.saveData();
       }
     },
 
     // --- Acciones para Contadores ---
 
+    _getPlayer(playerId) {
+      return this.players.find(p => p.id === playerId);
+    },
+
     addCounter(playerId, counterData) {
-      const player = this.players.find(p => p.id === playerId);
+      const player = this._getPlayer(playerId);
       if (player) {
-        const newCounter = {
+        player.counters.push({
           id: uuidv4(),
           name: counterData.name || 'Nuevo Contador',
           value: counterData.value || 0,
           step: counterData.step || 1,
           isVisible: true,
-        };
-        player.counters.push(newCounter);
-        this.saveToLocalStorage();
+        });
+        this.saveData();
       }
     },
 
     editCounter(playerId, counterId, updates) {
-      const player = this.players.find(p => p.id === playerId);
-      if (player) {
-        const counter = player.counters.find(c => c.id === counterId);
-        if (counter) {
-          Object.assign(counter, updates);
-          this.saveToLocalStorage();
-        }
+      const player = this._getPlayer(playerId);
+      const counter = player?.counters.find(c => c.id === counterId);
+      if (counter) {
+        Object.assign(counter, updates);
+        this.saveData();
       }
     },
 
     deleteCounter(playerId, counterId) {
-      const player = this.players.find(p => p.id === playerId);
+      const player = this._getPlayer(playerId);
       if (player) {
         player.counters = player.counters.filter(c => c.id !== counterId);
-        this.saveToLocalStorage();
+        this.saveData();
       }
     },
 
     updateCounterValue(playerId, counterId, change) {
-      const player = this.players.find(p => p.id === playerId);
-      if (player) {
-        const counter = player.counters.find(c => c.id === counterId);
-        if (counter) {
-          counter.value += change;
-          this.saveToLocalStorage();
-        }
+      const player = this._getPlayer(playerId);
+      const counter = player?.counters.find(c => c.id === counterId);
+      if (counter) {
+        counter.value += change;
+        this.saveData();
       }
     },
   },

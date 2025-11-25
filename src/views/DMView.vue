@@ -1750,8 +1750,8 @@ onMounted(() => {
   // Load todo items
   loadTodoItems();
 
-  dmStore.loadFromLocalStorage();
-  playerStore.loadFromLocalStorage(); // Cargar jugadores
+  dmStore.loadData();
+  playerStore.loadData(); // Cargar jugadores
   initializeCharacterInputs();
 });
 </script>

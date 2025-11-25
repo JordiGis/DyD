@@ -379,8 +379,9 @@ function toggleStateSelector() {
 }
 
 onMounted(async () => {
-  // Cargar datos del localStorage
-  characterStore.loadFromLocalStorage()
+  // Cargar datos
+  characterStore.loadData()
+  counterStore.loadData()
   await stateStore.loadStates();
   loadFoldState()
   // Si no hay personaje configurado, redirigir a configuración
