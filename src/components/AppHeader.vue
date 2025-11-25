@@ -29,35 +29,42 @@
       </button>
       
       <div class="navbar-nav" :class="{ 'mobile-open': isMobileMenuOpen }">
+        <!-- Home Link -->
         <router-link to="/" class="nav-link" active-class="active" @click="closeMobileMenu">
           <div class="nav-icon-container">
             <i class="bi bi-house-door"></i>
           </div>
           <span>Inicio</span>
         </router-link>
-        <router-link to="/config" class="nav-link" active-class="active" @click="closeMobileMenu">
-          <div class="nav-icon-container">
-            <i class="bi bi-gear"></i>
-          </div>
-          <span>Configuración</span>
-        </router-link>
+
+        <!-- Character Link (or Create Character) -->
         <router-link v-if="hasCharacter" to="/character" class="nav-link" active-class="active" @click="closeMobileMenu">
           <div class="nav-icon-container">
             <i class="bi bi-person"></i>
           </div>
           <span>Personaje</span>
         </router-link>
-        <router-link v-if="hasCharacter" to="/logs" class="nav-link" active-class="active" @click="closeMobileMenu">
+        <router-link v-else to="/config" class="nav-link" active-class="active" @click="closeMobileMenu">
           <div class="nav-icon-container">
-            <i class="bi bi-journal-text"></i>
+            <i class="bi bi-plus-circle"></i>
           </div>
-          <span>Historial</span>
+          <span>Crear Personaje</span>
         </router-link>
+
+        <!-- DM Link -->
         <router-link to="/dm" class="nav-link" active-class="active" @click="closeMobileMenu">
           <div class="nav-icon-container">
             <i class="bi bi-shield-fill"></i>
           </div>
           <span>DM</span>
+        </router-link>
+
+        <!-- Account Link -->
+        <router-link to="/account" class="nav-link" active-class="active" @click="closeMobileMenu">
+          <div class="nav-icon-container">
+            <i class="bi bi-person-badge"></i>
+          </div>
+          <span>Cuenta</span>
         </router-link>
       </div>
     </nav>
@@ -245,6 +252,10 @@ const closeMobileMenu = () => {
   position: relative;
   overflow: hidden;
   border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 1rem;
 }
 
 .nav-link::before {

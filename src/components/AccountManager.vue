@@ -12,33 +12,46 @@
         <!-- Sección de Exportación -->
         <div class="account-section">
           <h3><i class="bi bi-cloud-download-fill"></i> Exportar Datos</h3>
-          <p>Guarda todos tus datos (personajes, DM, jugadores, etc.) en un archivo JSON para tener una copia de seguridad o para transferirlos a otro dispositivo.</p>
-          <button @click="exportData" class="btn btn-primary">
-            <i class="bi bi-download"></i> Exportar a Archivo
+          <p>Guarda una copia de seguridad de todos tus personajes y configuraciones.</p>
+          <button @click="exportData" class="btn btn-primary full-width">
+            <i class="bi bi-download"></i> Descargar Copia de Seguridad
           </button>
         </div>
 
         <!-- Sección de Importación -->
         <div class="account-section">
           <h3><i class="bi bi-cloud-upload-fill"></i> Importar Datos</h3>
-          <p>Pega el contenido de un archivo JSON exportado para cargar todos los datos en esta sesión. <strong>Advertencia:</strong> Esto reemplazará todos los datos actuales.</p>
-          <textarea
-            v-model="importJson"
-            placeholder="Pega aquí el contenido de tu archivo JSON..."
-            rows="6"
-            class="import-textarea"
-          ></textarea>
-          <button @click="importData" :disabled="!importJson.trim()" class="btn btn-success">
-            <i class="bi bi-upload"></i> Importar Datos
+          <p>Restaura tus datos desde un archivo de copia de seguridad. <strong>Esto reemplazará los datos actuales.</strong></p>
+          
+          <div class="file-upload-container">
+            <label for="file-upload" class="file-upload-label">
+              <i class="bi bi-folder2-open"></i>
+              <span>{{ fileName || 'Seleccionar archivo JSON...' }}</span>
+            </label>
+            <input 
+              id="file-upload" 
+              type="file" 
+              accept=".json" 
+              @change="handleFileUpload" 
+              class="file-input"
+            />
+          </div>
+
+          <div v-if="importJson" class="preview-section">
+             <p class="preview-text">Archivo cargado listo para importar.</p>
+          </div>
+
+          <button @click="importData" :disabled="!importJson" class="btn btn-success full-width">
+            <i class="bi bi-upload"></i> Restaurar Datos
           </button>
         </div>
 
         <!-- Sección de Peligro -->
         <div class="account-section danger-zone">
           <h3><i class="bi bi-exclamation-triangle-fill"></i> Zona de Peligro</h3>
-          <p>Esta acción eliminará permanentemente todos los datos de la aplicación de tu navegador. <strong>No se puede deshacer.</strong></p>
-          <button @click="clearAllData" class="btn btn-danger">
-            <i class="bi bi-trash-fill"></i> Borrar Todos los Datos
+          <p>Eliminar todos los datos guardados en este navegador.</p>
+          <button @click="clearAllData" class="btn btn-danger full-width">
+            <i class="bi bi-trash-fill"></i> Borrar Todo
           </button>
         </div>
       </div>
@@ -60,6 +73,7 @@ const props = defineProps({
 
 const accountStore = useAccountStore();
 const importJson = ref('');
+const fileName = ref('');
 
 onMounted(() => {
   document.body.classList.add('modal-open');
@@ -77,6 +91,18 @@ const handleEscape = (event) => {
   }
 };
 
+const handleFileUpload = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  fileName.value = file.name;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    importJson.value = e.target.result;
+  };
+  reader.readAsText(file);
+};
+
 const exportData = () => {
   try {
     const jsonString = accountStore.exportData();
@@ -84,7 +110,7 @@ const exportData = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `dnd-account-data-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `dnd-backup-${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -93,13 +119,15 @@ const exportData = () => {
     Swal.fire({
       icon: 'success',
       title: '¡Exportado!',
-      text: 'Tus datos se han guardado en un archivo JSON.',
+      text: 'Copia de seguridad guardada correctamente.',
       customClass: { container: 'high-z-index' },
+      timer: 2000,
+      showConfirmButton: false
     });
   } catch (error) {
     Swal.fire({
       icon: 'error',
-      title: 'Error al Exportar',
+      title: 'Error',
       text: 'No se pudieron exportar los datos.',
       customClass: { container: 'high-z-index' },
     });
@@ -108,13 +136,13 @@ const exportData = () => {
 
 const importData = () => {
   Swal.fire({
-    title: '¿Estás seguro?',
-    text: 'La importación reemplazará todos tus datos actuales. Esta acción no se puede deshacer.',
+    title: '¿Restaurar datos?',
+    text: 'Se reemplazarán todos los datos actuales por los del archivo.',
     icon: 'warning',
     showCancelButton: true,
-    confirmButtonColor: '#3085d6',
+    confirmButtonColor: '#2ecc71',
     cancelButtonColor: '#d33',
-    confirmButtonText: 'Sí, importar',
+    confirmButtonText: 'Sí, restaurar',
     cancelButtonText: 'Cancelar',
     customClass: { container: 'high-z-index' },
   }).then((result) => {
@@ -122,18 +150,19 @@ const importData = () => {
       const { success, error } = accountStore.importData(importJson.value);
       if (success) {
         Swal.fire({
-          title: '¡Importado!',
-          text: 'Tus datos han sido cargados. La aplicación se recargará.',
+          title: '¡Restaurado!',
+          text: 'Los datos se han cargado correctamente.',
           icon: 'success',
           customClass: { container: 'high-z-index' },
+          timer: 1500,
+          showConfirmButton: false
         }).then(() => {
-          // La recarga ya la maneja el store, aquí solo cerramos el modal
           props.onClose();
         });
       } else {
         Swal.fire({
-          title: 'Error de Importación',
-          text: error,
+          title: 'Error',
+          text: error || 'El archivo no es válido.',
           icon: 'error',
           customClass: { container: 'high-z-index' },
         });
@@ -144,8 +173,8 @@ const importData = () => {
 
 const clearAllData = () => {
   Swal.fire({
-    title: '¿BORRAR TODOS LOS DATOS?',
-    text: 'Esta acción es irreversible y eliminará todo. ¿Estás completamente seguro?',
+    title: '¿Estás seguro?',
+    text: 'Se borrarán todos los personajes y configuraciones. No se puede deshacer.',
     icon: 'error',
     showCancelButton: true,
     confirmButtonColor: '#d33',
@@ -156,14 +185,13 @@ const clearAllData = () => {
   }).then((result) => {
     if (result.isConfirmed) {
       accountStore.clearAllData();
-      // La recarga la maneja el store
+      props.onClose();
     }
   });
 };
 </script>
 
 <style scoped>
-/* Estilos similares a PlayerManager.vue para consistencia */
 :global(body.modal-open) {
   overflow: hidden;
 }
@@ -197,7 +225,7 @@ const clearAllData = () => {
   color: #f0f0f0;
   border-radius: 20px;
   width: 90%;
-  max-width: 700px;
+  max-width: 500px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -224,12 +252,11 @@ const clearAllData = () => {
 
 .account-manager-header h2 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   color: #ffffff;
   display: flex;
   align-items: center;
   gap: 10px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   font-weight: 700;
 }
 
@@ -260,21 +287,26 @@ const clearAllData = () => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
 .account-section {
   background: rgba(0, 0, 0, 0.2);
   padding: 20px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: transform 0.2s ease;
+}
+
+.account-section:hover {
+  background: rgba(0, 0, 0, 0.25);
 }
 
 .account-section h3 {
   color: #f0f0f0;
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   margin-top: 0;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -282,34 +314,49 @@ const clearAllData = () => {
 
 .account-section p {
   color: #b9bbbe;
-  font-size: 0.95rem;
-  line-height: 1.6;
+  font-size: 0.9rem;
+  line-height: 1.5;
   margin-bottom: 16px;
 }
 
-.import-textarea {
-  width: 100%;
-  padding: 12px 14px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 2px solid rgba(255, 255, 255, 0.15);
+.file-upload-container {
+  margin-bottom: 16px;
+}
+
+.file-input {
+  display: none;
+}
+
+.file-upload-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px dashed rgba(255, 255, 255, 0.2);
   border-radius: 10px;
-  color: #f0f0f0;
-  font-family: inherit;
-  font-size: 0.95rem;
-  resize: vertical;
-  margin-bottom: 16px;
-  min-height: 120px;
+  cursor: pointer;
   transition: all 0.3s ease;
+  color: #b9bbbe;
 }
 
-.import-textarea:focus {
-  outline: none;
+.file-upload-label:hover {
   border-color: #3498db;
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+  color: #3498db;
+  background: rgba(52, 152, 219, 0.05);
+}
+
+.preview-text {
+  color: #2ecc71;
+  font-size: 0.85rem;
+  margin-bottom: 12px;
+  text-align: center;
 }
 
 .danger-zone {
-  border-color: rgba(231, 76, 60, 0.4);
+  border-color: rgba(231, 76, 60, 0.3);
+  background: rgba(231, 76, 60, 0.05);
 }
 
 .danger-zone h3 {
@@ -317,27 +364,33 @@ const clearAllData = () => {
 }
 
 .btn {
-  padding: 12px 24px;
+  padding: 12px 20px;
   border: none;
   border-radius: 10px;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.full-width {
+  width: 100%;
 }
 
 .btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
 }
 
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  filter: grayscale(1);
 }
 
 .btn-primary {

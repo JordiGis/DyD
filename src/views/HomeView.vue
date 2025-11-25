@@ -44,15 +44,9 @@
             <span class="btn-icon">🛡️</span>
             <span class="btn-text">Panel del DM</span>
           </button>
-
-          <button @click="showAccountManager = true" class="btn btn-info">
-            <span class="btn-icon">👤</span>
-            <span class="btn-text">Gestionar Cuenta</span>
-          </button>
         </div>
       </div>
     </div>
-    <AccountManager v-if="showAccountManager" :onClose="() => showAccountManager = false" />
   </div>
 </template>
 
@@ -60,14 +54,12 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCharacterStore } from '../stores/useCharacterStore'
-import AccountManager from '../components/AccountManager.vue'
 
 const router = useRouter()
 const characterStore = useCharacterStore()
 
 const isLoading = ref(true)
 const hasExistingCharacter = ref(false)
-const showAccountManager = ref(false)
 
 onMounted(async () => {
   // Cargar datos
@@ -128,7 +120,7 @@ const goToDM = () => {
   color: #ecf0f1;
   font-size: 1.2rem;
   margin-bottom: 30px;
-  opacity: 0.9;
+  font-weight: 300;
 }
 
 .loading-spinner {
@@ -236,6 +228,16 @@ const goToDM = () => {
   color: white;
 }
 
+.btn-success {
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+  color: white;
+}
+
+.btn-info {
+  background: linear-gradient(135deg, #9b59b6, #8e44ad);
+  color: white;
+}
+
 .btn-icon {
   font-size: 1.3rem;
 }
@@ -292,7 +294,8 @@ const goToDM = () => {
   }
   
   .btn {
-    min-width: 100%;
+    width: 100%;
+    min-width: auto;
     padding: 18px 20px;
     min-height: 60px;
     font-size: 1.1rem;
