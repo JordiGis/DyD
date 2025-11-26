@@ -35,9 +35,9 @@
             <span class="btn-text">Crear Nuevo Personaje</span>
           </button>
           
-          <button v-if="hasExistingCharacter" @click="loadExistingCharacter" class="btn btn-secondary">
+          <button v-if="hasExistingCharacters" @click="manageCharacters" class="btn btn-secondary">
             <span class="btn-icon">📖</span>
-            <span class="btn-text">Cargar Personaje Existente</span>
+            <span class="btn-text">Gestionar Personajes</span>
           </button>
           
           <button @click="goToDM" class="btn btn-success">
@@ -51,40 +51,28 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useCharacterStore } from '../stores/useCharacterStore'
+import { computed } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAccountStore } from '../stores/useAccountStore';
+import { storeToRefs } from 'pinia';
 
-const router = useRouter()
-const characterStore = useCharacterStore()
+const router = useRouter();
+const accountStore = useAccountStore();
+const { characters, isLoading } = storeToRefs(accountStore);
 
-const isLoading = ref(true)
-const hasExistingCharacter = ref(false)
-
-onMounted(async () => {
-  // Cargar datos
-  characterStore.loadData()
-  
-  // Verificar si hay un personaje configurado
-  hasExistingCharacter.value = characterStore.character.isConfigured
-  
-  // Simular un pequeño delay para mostrar el spinner
-  setTimeout(() => {
-    isLoading.value = false
-  }, 1000)
-})
+const hasExistingCharacters = computed(() => characters.value.length > 0);
 
 const startNewCharacter = () => {
-  router.push('/config')
-}
+  router.push('/config');
+};
 
-const loadExistingCharacter = () => {
-  router.push('/character')
-}
+const manageCharacters = () => {
+  router.push('/character-manager');
+};
 
 const goToDM = () => {
-  router.push('/dm')
-}
+  router.push('/dm');
+};
 </script>
 
 <style scoped>
