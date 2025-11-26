@@ -15,38 +15,42 @@ export const useAttackStore = defineStore('attack', {
   actions: {
     loadData() {
       const accountStore = useAccountStore();
-      const data = accountStore.getSection('attacks');
+      const activeCharacterId = accountStore.accountData.activeCharacterId;
+      if (!activeCharacterId) {
+        this.attacks = [];
+        this.criticalHit = { rule: 'default', characterLevel: 1 };
+        return;
+      }
 
-      if (data) {
-        // Cargar ataques y migrar formatos viejos si es necesario
-        const parsedAttacks = data.attacks || [];
-        this.attacks = parsedAttacks.map(attack => {
-          // Asegurar compatibilidad hacia atrás
-          return {
-            ...attack,
-            id: attack.id || uuidv4(),
-            rerollDice: attack.rerollDice || [],
-            damageRolls: (attack.damageRolls || []).map(roll => ({
-              ...roll,
-              lifeSteal: roll.lifeSteal || { percentage: 0 },
-            })),
-          };
-        });
-
-        // Cargar configuración de críticos
-        if (data.criticalHit) {
-          this.criticalHit = { ...this.criticalHit, ...data.criticalHit };
-        }
+      const activeCharacter = accountStore.accountData.characters.find(c => c.id === activeCharacterId);
+      if (activeCharacter) {
+        this.attacks = (activeCharacter.attacks || []).map(attack => ({
+          ...attack,
+          id: attack.id || uuidv4(),
+          rerollDice: attack.rerollDice || [],
+          damageRolls: (attack.damageRolls || []).map(roll => ({
+            ...roll,
+            lifeSteal: roll.lifeSteal || { percentage: 0 },
+          })),
+        }));
+        this.criticalHit = activeCharacter.criticalHit || { rule: 'default', characterLevel: 1 };
+      } else {
+        this.attacks = [];
+        this.criticalHit = { rule: 'default', characterLevel: 1 };
       }
     },
 
     saveData() {
       const accountStore = useAccountStore();
-      const dataToSave = {
-        attacks: this.attacks,
-        criticalHit: this.criticalHit,
-      };
-      accountStore.updateSection('attacks', dataToSave);
+      const activeCharacterId = accountStore.accountData.activeCharacterId;
+      if (!activeCharacterId) return;
+
+      const characterIndex = accountStore.accountData.characters.findIndex(c => c.id === activeCharacterId);
+      if (characterIndex !== -1) {
+        accountStore.accountData.characters[characterIndex].attacks = this.attacks;
+        accountStore.accountData.characters[characterIndex].criticalHit = this.criticalHit;
+        accountStore.saveDataToLocalStorage();
+      }
     },
 
     updateCriticalHitConfig(config) {

@@ -1,16 +1,15 @@
 // src/stores/useAccountStore.js
 import { defineStore } from 'pinia';
+import { v4 as uuidv4 } from 'uuid';
 
 export const useAccountStore = defineStore('account', {
   state: () => ({
     accountData: {
-      version: 1,
-      character: null,
+      version: 2, // Bump version for new structure
+      characters: [],
+      activeCharacterId: null,
       dm: null,
       players: null,
-      attacks: null,
-      passiveDamages: null,
-      counters: null,
       // a_very_long_list_of_items_that_is_used_now_in_the_new_version: null,
       characterFolds: null,
       diceHistory: null,
@@ -20,6 +19,7 @@ export const useAccountStore = defineStore('account', {
 
     // Indica si los datos han sido migrados
     migrationCompleted: false,
+    isLoading: true,
   }),
 
   actions: {
@@ -30,26 +30,78 @@ export const useAccountStore = defineStore('account', {
      * Si no existe, intenta migrar los datos antiguos desde localStorage.
      */
     loadInitialData() {
-      const unifiedData = localStorage.getItem('dnd-account-data');
+      const unifiedDataString = localStorage.getItem('dnd-account-data');
+      let dataToProcess;
 
-      if (unifiedData) {
-        // Si ya existen datos unificados, los cargamos
-        this.accountData = JSON.parse(unifiedData);
-        this.migrationCompleted = true;
+      if (unifiedDataString) {
+        dataToProcess = JSON.parse(unifiedDataString);
       } else {
-        // Si no, iniciamos el proceso de migración
-        this.migrateDataFromLocalStorage();
+        const legacyData = this._migrateDataFromLegacyLocalStorage();
+        if (legacyData) {
+          dataToProcess = legacyData;
+          this.clearOldLocalStorageData(); // Limpiamos claves antiguas tras leerlas
+          console.log('Datos antiguos de localStorage cargados para migración.');
+        }
       }
+
+      if (dataToProcess) {
+        if (!dataToProcess.version || dataToProcess.version < 2) {
+          this.accountData = this._migrateV1toV2(dataToProcess);
+          console.log('Migración de V1 a V2 completada.');
+          this.saveDataToLocalStorage(); // Guardamos la nueva estructura
+        } else {
+          this.accountData = dataToProcess;
+        }
+      }
+
+      this.migrationCompleted = true;
+      this.isLoading = false;
     },
 
     /**
-     * Reúne todos los datos de los antiguos keys de localStorage,
-     * los unifica en el nuevo `accountData` y limpia los datos antiguos.
+     * Migra los datos de la estructura V1 (un solo personaje) a V2 (múltiples personajes).
+     * @param {object} v1Data - Los datos en el formato antiguo.
+     * @returns {object} - Los datos en el nuevo formato V2.
      */
-    migrateDataFromLocalStorage() {
-      let migrationPerformed = false;
+    _migrateV1toV2(v1Data) {
+      const v2Data = {
+        version: 2,
+        characters: [],
+        activeCharacterId: null,
+        dm: v1Data.dm || null,
+        players: v1Data.players || null,
+        characterFolds: v1Data.characterFolds || null,
+        diceHistory: v1Data.diceHistory || null,
+        dmTodoItems: v1Data.dmTodoItems || null,
+        dmCollapsedCharacters: v1Data.dmCollapsedCharacters || null,
+      };
 
-      // Función auxiliar para parsear JSON de forma segura
+      // Si existe un personaje, lo migramos
+      if (v1Data.character) {
+        const characterId = uuidv4();
+        const newCharacter = {
+          id: characterId,
+          characterData: v1Data.character,
+          attacks: v1Data.attacks ? (v1Data.attacks.attacks || []) : [],
+          criticalHit: v1Data.attacks ? (v1Data.attacks.criticalHit || { rule: 'default', characterLevel: 1 }) : { rule: 'default', characterLevel: 1 },
+          passiveDamages: v1Data.passiveDamages || [],
+          counters: v1Data.counters ? v1Data.counters.counters : [],
+          characterState: v1Data.counters ? v1Data.counters.states : [], // Basado en la estructura de v1
+        };
+
+        v2Data.characters.push(newCharacter);
+        v2Data.activeCharacterId = characterId;
+      }
+
+      return v2Data;
+    },
+
+
+    /**
+     * Reúne todos los datos de los antiguos keys de localStorage en un solo objeto v1.
+     * No modifica el estado directamente, solo recolecta y devuelve.
+     */
+    _migrateDataFromLegacyLocalStorage() {
       const parseLocalStorage = (key) => {
         const data = localStorage.getItem(key);
         try {
@@ -60,52 +112,27 @@ export const useAccountStore = defineStore('account', {
         }
       };
 
-      // Leemos todos los datos antiguos
       const oldCharacterData = parseLocalStorage('dnd-character-data');
-      const oldDmData = parseLocalStorage('dnd-dm-data');
-      const oldPlayersData = parseLocalStorage('dnd-player-data');
-      const oldAttacksData = parseLocalStorage('dnd-attacks-data');
-      const oldPassiveDamagesData = parseLocalStorage('dnd-passive-damages-data');
-      const oldCountersData = parseLocalStorage('dnd-counters');
-      const oldStatesData = parseLocalStorage('dnd-states'); // Parte de useCounterStore
-      // const oldTodoListData = parseLocalStorage('a_very_long_list_of_items_that_is_used_now_in_the_new_version');
-      const oldCharacterFolds = parseLocalStorage('dnd-character-folds');
-      const oldDiceHistory = parseLocalStorage('dice-roller-history');
-      const oldDmTodoItems = parseLocalStorage('dnd-todo-items');
-      const oldDmCollapsedCharacters = parseLocalStorage('collapsedCharacters');
+      if (!oldCharacterData) return null; // Si no hay datos de personaje, no hay nada que migrar.
 
-      // Si encontramos al menos un dato antiguo, procedemos a migrar
-      if (oldCharacterData || oldDmData || oldPlayersData || oldAttacksData || oldPassiveDamagesData || oldCountersData) {
-        this.accountData.character = oldCharacterData;
-        this.accountData.dm = oldDmData;
-        this.accountData.players = oldPlayersData;
-        this.accountData.attacks = oldAttacksData;
-        this.accountData.passiveDamages = oldPassiveDamagesData;
+      const v1Data = {
+        version: 1,
+        character: oldCharacterData,
+        dm: parseLocalStorage('dnd-dm-data'),
+        players: parseLocalStorage('dnd-player-data'),
+        attacks: parseLocalStorage('dnd-attacks-data'),
+        passiveDamages: parseLocalStorage('dnd-passive-damages-data'),
+        counters: {
+          counters: parseLocalStorage('dnd-counters'),
+          states: parseLocalStorage('dnd-states')
+        },
+        characterFolds: parseLocalStorage('dnd-character-folds'),
+        diceHistory: parseLocalStorage('dice-roller-history'),
+        dmTodoItems: parseLocalStorage('dnd-todo-items'),
+        dmCollapsedCharacters: parseLocalStorage('collapsedCharacters'),
+      };
 
-        // Combinamos counters y states como se hacía en el store original
-        if (oldCountersData || oldStatesData) {
-          this.accountData.counters = {
-            counters: oldCountersData,
-            states: oldStatesData
-          };
-        }
-
-        // this.accountData.a_very_long_list_of_items_that_is_used_now_in_the_new_version = oldTodoListData;
-        this.accountData.characterFolds = oldCharacterFolds;
-        this.accountData.diceHistory = oldDiceHistory;
-        this.accountData.dmTodoItems = oldDmTodoItems;
-        this.accountData.dmCollapsedCharacters = oldDmCollapsedCharacters;
-
-        migrationPerformed = true;
-      }
-
-      if (migrationPerformed) {
-        this.saveDataToLocalStorage();
-        this.clearOldLocalStorageData();
-        console.log('Migración de datos a la nueva estructura completada.');
-      }
-
-      this.migrationCompleted = true;
+      return v1Data;
     },
 
     /**

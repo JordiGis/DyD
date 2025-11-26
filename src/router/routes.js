@@ -5,10 +5,12 @@ import CharacterView from '../views/CharacterView.vue'
 import LogsView from '../views/LogsView.vue'
 import DMView from '../views/DMView.vue'
 import AccountView from '../views/AccountView.vue'
+import CharacterManagerView from '../views/CharacterManagerView.vue'
 
 const routes = [
     { path: '/', component: HomeView, name: 'home' },
     { path: '/account', component: AccountView, name: 'account' },
+    { path: '/character-manager', component: CharacterManagerView, name: 'character-manager' },
     { path: '/config', component: CharacterConfigView, name: 'config' },
     { path: '/character', component: CharacterView, name: 'character' },
     { path: '/logs', component: LogsView, name: 'logs' },

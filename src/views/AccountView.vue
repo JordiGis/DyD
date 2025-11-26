@@ -6,10 +6,24 @@
     </div>
 
     <div class="account-sections">
+      <!-- Sección de Gestión de Personajes -->
+      <div class="account-section character-management-section">
+        <div class="section-header">
+          <h2><i class="bi bi-people-fill"></i> Gestor de Personajes</h2>
+        </div>
+        <div class="section-content">
+          <p>Administra todos tus personajes: crea, elimina, importa, exporta y selecciona cuál quieres usar.</p>
+          <router-link to="/character-manager" class="btn btn-primary">
+            <i class="bi bi-folder-symlink"></i>
+            <span>Ir al Gestor de Personajes</span>
+          </router-link>
+        </div>
+      </div>
+
       <!-- Sección de Exportación -->
       <div class="account-section export-section">
         <div class="section-header">
-          <h2><i class="bi bi-cloud-download-fill"></i> Exportar Datos</h2>
+          <h2><i class="bi bi-cloud-download-fill"></i> Exportar Cuenta Completa</h2>
         </div>
         <div class="section-content">
           <p>Guarda una copia de seguridad de todos tus personajes y configuraciones en un archivo JSON.</p>

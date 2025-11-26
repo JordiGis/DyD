@@ -2,28 +2,34 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
 import { useAccountStore } from './useAccountStore';
+import { useCharacterStateStore } from './useCharacterStateStore';
 
 export const useCounterStore = defineStore('counter', () => {
   // --- State ---
   const counters = ref([]);
-  const states = ref([]);
 
   // --- Data Persistence ---
   function saveData() {
     const accountStore = useAccountStore();
-    accountStore.updateSection('counters', {
-      counters: counters.value,
-      states: states.value,
-    });
+    const activeCharacterId = accountStore.accountData.activeCharacterId;
+    if (!activeCharacterId) return;
+
+    const characterIndex = accountStore.accountData.characters.findIndex(c => c.id === activeCharacterId);
+    if (characterIndex !== -1) {
+      accountStore.accountData.characters[characterIndex].counters = counters.value;
+      accountStore.saveDataToLocalStorage();
+    }
   }
 
   function loadData() {
     const accountStore = useAccountStore();
-    const data = accountStore.getSection('counters');
-    if (data) {
-      counters.value = Array.isArray(data.counters) ? data.counters : [];
-      states.value = Array.isArray(data.states) ? data.states : [];
+    const activeCharacterId = accountStore.accountData.activeCharacterId;
+    if (!activeCharacterId) {
+      counters.value = [];
+      return;
     }
+    const activeCharacter = accountStore.accountData.characters.find(c => c.id === activeCharacterId);
+    counters.value = (activeCharacter && Array.isArray(activeCharacter.counters)) ? activeCharacter.counters : [];
   }
 
   // --- Actions: Counters ---
@@ -69,45 +75,6 @@ export const useCounterStore = defineStore('counter', () => {
     saveData();
   }
 
-  // --- Actions: States ---
-  function addState({ name, linkedCounterId, discountOnActivate, discountType }) {
-    states.value.push({
-      id: uuidv4(),
-      name,
-      linkedCounterId: linkedCounterId || null,
-      discountOnActivate: discountOnActivate || 0,
-      discountType: discountType || 'resta',
-      active: false,
-    });
-    saveData();
-  }
-
-  function toggleStateActive(id) {
-    const state = states.value.find(s => s.id === id);
-    if (!state) return;
-    state.active = !state.active;
-
-    if (state.active && state.linkedCounterId) {
-      const amount = Math.abs(state.discountOnActivate || 1);
-      const delta = state.discountType === 'suma' ? amount : -amount;
-      updateCounterValue(state.linkedCounterId, delta);
-    } else {
-      saveData();
-    }
-  }
-
-  function activateState(id) {
-    const state = states.value.find(s => s.id === id);
-    if (state && state.linkedCounterId && state.discountOnActivate) {
-      updateCounterValue(state.linkedCounterId, -state.discountOnActivate);
-    }
-  }
-
-  function removeState(id) {
-    states.value = states.value.filter(s => s.id !== id);
-    saveData();
-  }
-
   // --- Actions: Rests ---
   function regenerateCountersByRest(type = 'short') {
     counters.value.forEach(counter => {
@@ -120,26 +87,19 @@ export const useCounterStore = defineStore('counter', () => {
         counter.value = Math.min(counter.max, counter.value + counter[restKey]);
       }
     });
-
-    states.value.forEach(state => {
-      state.active = false;
-    });
-
     saveData();
+
+    const characterStateStore = useCharacterStateStore();
+    characterStateStore.resetStatesOnRest();
   }
 
   return {
     counters,
-    states,
     loadData,
     addCounter,
     updateCounterValue,
     setCounterToMax,
     removeCounter,
-    addState,
-    activateState,
-    removeState,
-    toggleStateActive,
     regenerateCountersByRest,
   };
 });

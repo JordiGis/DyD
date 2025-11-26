@@ -3,7 +3,11 @@ import { defineStore } from 'pinia';
 import { v4 as uuidv4 } from 'uuid';
 import { usePassiveDamageStore } from './usePassiveDamageStore';
 import { rollDice } from '../utils/diceParser';
-import { useAccountStore } from './useAccountStore'; // Importar el store de la cuenta
+import { useAccountStore } from './useAccountStore';
+import { useAttackStore } from './useAttackStore';
+import { useCounterStore } from './useCounterStore';
+import { useCharacterStateStore } from './useCharacterStateStore';
+
 
 export const useCharacterStore = defineStore('character', {
     state: () => ({
@@ -252,25 +256,58 @@ export const useCharacterStore = defineStore('character', {
         
         saveData() {
             const accountStore = useAccountStore();
-            const data = {
-                character: this.character,
-                turn: this.turn,
-                logs: this.logs
-            };
-            accountStore.updateSection('character', data);
+            const activeCharacterId = accountStore.accountData.activeCharacterId;
+            if (!activeCharacterId) return;
+
+            const characterIndex = accountStore.accountData.characters.findIndex(c => c.id === activeCharacterId);
+            if (characterIndex !== -1) {
+                const characterData = {
+                    character: this.character,
+                    turn: this.turn,
+                    logs: this.logs
+                };
+                // Actualiza solo la parte de characterData del personaje activo
+                accountStore.accountData.characters[characterIndex].characterData = characterData;
+                accountStore.saveDataToLocalStorage();
+            }
         },
         
         loadData() {
             const accountStore = useAccountStore();
-            const data = accountStore.getSection('character');
-            if (data) {
+            const activeCharacterId = accountStore.accountData.activeCharacterId;
+            if (!activeCharacterId) {
+                this.clearData();
+                return;
+            }
+
+            const activeCharacter = accountStore.accountData.characters.find(c => c.id === activeCharacterId);
+
+            if (activeCharacter && activeCharacter.characterData) {
+                const data = activeCharacter.characterData;
                 this.character = { ...this.character, ...data.character };
                 if (this.character.originalMaxHp === undefined) {
                     this.character.originalMaxHp = this.character.maxHp;
                 }
                 this.turn = { ...this.turn, ...data.turn };
                 this.logs = data.logs || [];
+            } else {
+                this.clearData(); // Si no hay datos, limpia el estado
             }
+        },
+
+        setActiveCharacter(characterId) {
+            const accountStore = useAccountStore();
+            accountStore.accountData.activeCharacterId = characterId;
+            accountStore.saveDataToLocalStorage();
+            this.loadAllCharacterData();
+        },
+
+        loadAllCharacterData() {
+            this.loadData();
+            useAttackStore().loadData();
+            usePassiveDamageStore().loadData();
+            useCounterStore().loadData();
+            useCharacterStateStore().loadData();
         },
         
         clearData() {

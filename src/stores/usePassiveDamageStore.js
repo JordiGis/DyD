@@ -11,29 +11,35 @@ export const usePassiveDamageStore = defineStore('passiveDamage', {
   actions: {
     loadData() {
       const accountStore = useAccountStore();
-      const data = accountStore.getSection('passiveDamages');
-      if (data) {
-        // La lógica de migración de formatos antiguos se mantiene aquí
-        // por si se importan datos con estructuras viejas.
-        this.passiveDamages = data.map(damage => {
-          const newDamage = {
-            id: damage.id || uuidv4(),
-            name: damage.name,
-            duration: damage.duration !== undefined ? damage.duration : 0,
-            damageRolls: [],
-          };
+      const activeCharacterId = accountStore.accountData.activeCharacterId;
+      if (!activeCharacterId) {
+        this.passiveDamages = [];
+        return;
+      }
 
-          if (Array.isArray(damage.damageRolls)) {
-            newDamage.damageRolls = damage.damageRolls;
-          }
-          return newDamage;
-        });
+      const activeCharacter = accountStore.accountData.characters.find(c => c.id === activeCharacterId);
+      if (activeCharacter && activeCharacter.passiveDamages) {
+        this.passiveDamages = activeCharacter.passiveDamages.map(damage => ({
+          ...damage,
+          id: damage.id || uuidv4(),
+          duration: damage.duration !== undefined ? damage.duration : 0,
+          damageRolls: damage.damageRolls || [],
+        }));
+      } else {
+        this.passiveDamages = [];
       }
     },
 
     saveData() {
       const accountStore = useAccountStore();
-      accountStore.updateSection('passiveDamages', this.passiveDamages);
+      const activeCharacterId = accountStore.accountData.activeCharacterId;
+      if (!activeCharacterId) return;
+
+      const characterIndex = accountStore.accountData.characters.findIndex(c => c.id === activeCharacterId);
+      if (characterIndex !== -1) {
+        accountStore.accountData.characters[characterIndex].passiveDamages = this.passiveDamages;
+        accountStore.saveDataToLocalStorage();
+      }
     },
 
     addPassiveDamage(damageData) {
