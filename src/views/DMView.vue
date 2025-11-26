@@ -559,6 +559,18 @@
                 />
               </div>
               <div class="form-group">
+                <label for="challengeRating">Valor de Desafío</label>
+                <input
+                  id="challengeRating"
+                  v-model="newCharacter.challengeRating"
+                  type="number"
+                  class="form-control"
+                  placeholder="0"
+                  min="0"
+                  required
+                />
+              </div>
+              <div class="form-group">
                 <label for="xp">XP:</label>
                 <input
                   id="xp"
@@ -755,6 +767,18 @@
                   type="number"
                   class="form-control"
                   min="0"
+                />
+              </div>
+              <div class="form-group">
+                <label for="challengeRating">Valor de Desafío</label>
+                <input
+                  id="challengeRating"
+                  v-model="editingCharacter.challengeRating"
+                  type="number"
+                  class="form-control"
+                  placeholder="0"
+                  min="0"
+                  required
                 />
               </div>
               <div class="form-group">
@@ -1085,6 +1109,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
+import { useAccountStore } from "../stores/useAccountStore";
 import { useDMStore } from "../stores/useDMStore";
 import { usePlayerStore } from "../stores/usePlayerStore";
 import { storeToRefs } from "pinia";
@@ -1095,6 +1120,7 @@ import DMAttackManager from "../components/DMAttackManager.vue";
 import PlayerManager from "../components/PlayerManager.vue";
 import { showAttackResult } from "../utils/attackExecutor";
 
+const accountStore = useAccountStore();
 const dmStore = useDMStore();
 const playerStore = usePlayerStore();
 const { players } = storeToRefs(playerStore);
@@ -1115,7 +1141,11 @@ const filteredAttacks = (character) => {
 };
 
 const executeAttack = (attack, isCritical) => {
-  showAttackResult(attack, isCritical, dmStore.criticalHit);
+  const criticalConfig = {
+    rule: accountStore.accountData.criticalHitRule,
+    characterLevel: attack.challengeRating || 1,
+  };
+  showAttackResult(attack, isCritical, criticalConfig);
 };
 
 const showDraggableList = ref(false);
@@ -1172,6 +1202,7 @@ const newCharacter = ref({
   carisma: "",
   notas: "",
   ca: "",
+  challengeRating: 0,
   necroDamage: false,
   necroResistantDamage: false
 });
@@ -1206,11 +1237,12 @@ const createCharacter = () => {
       newCharacter.value.sabiduria,
       newCharacter.value.carisma,
       newCharacter.value.notas,
-      newCharacter.value.ca
+      newCharacter.value.ca,
+      newCharacter.value.challengeRating
     );
 
     // Reset form
-    newCharacter.value = { name: "", maxHp: "", regeneration: "", xp: "", resistencias: "", inmunidades: "", fuerza: "", destreza: "", constitucion: "", inteligencia: "", sabiduria: "", carisma: "", notas: "", ca: "", necroDamage: false, necroResistantDamage: false };
+    newCharacter.value = { name: "", maxHp: "", regeneration: "", xp: "", resistencias: "", inmunidades: "", fuerza: "", destreza: "", constitucion: "", inteligencia: "", sabiduria: "", carisma: "", notas: "", ca: "", challengeRating: 0, necroDamage: false, necroResistantDamage: false };
     showCreateModal.value = false;
   }
 };
@@ -1237,7 +1269,8 @@ const saveCharacterEdit = () => {
       sabiduria: editingCharacter.value.sabiduria,
       carisma: editingCharacter.value.carisma,
       notas: editingCharacter.value.notas,
-      ca: editingCharacter.value.ca
+      ca: editingCharacter.value.ca,
+      challengeRating: editingCharacter.value.challengeRating
     });
     showEditModal.value = false;
     editingCharacter.value = null;

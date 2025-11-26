@@ -26,10 +26,11 @@ export const useDMStore = defineStore('dm', {
     },
     
     actions: {
-        createCharacter(name, maxHp, regeneration = 0, xp = '', resistencias = '', inmunidades = '', fuerza = '', destreza = '', constitucion = '', inteligencia = '', sabiduria = '', carisma = '', notas = '', ca = '') {
+        createCharacter(name, maxHp, regeneration = 0, xp = '', resistencias = '', inmunidades = '', fuerza = '', destreza = '', constitucion = '', inteligencia = '', sabiduria = '', carisma = '', notas = '', ca = '', challengeRating = 0) {
             const character = {
                 id: uuidv4(),
                 name: name.trim(),
+                challengeRating,
                 maxHp: parseInt(maxHp),
                 originalMaxHp: parseInt(maxHp),
                 currentHp: parseInt(maxHp),
@@ -66,6 +67,7 @@ export const useDMStore = defineStore('dm', {
                 if (updates.maxHp !== undefined) character.maxHp = parseInt(updates.maxHp, 10);
                 if (updates.currentHp !== undefined) character.currentHp = parseInt(updates.currentHp, 10);
                 if (updates.regeneration !== undefined) character.regeneration = parseInt(updates.regeneration, 10) || 0;
+                if (updates.challengeRating !== undefined) character.challengeRating = parseInt(updates.challengeRating, 10) || 0;
                 
                 this.addLogToCharacter(id, 'Edición', 'Personaje editado');
                 this.saveData();

@@ -99,13 +99,33 @@ export function executeCriticalAttack(attack, criticalConfig) {
     return executeAttack(criticalAttack);
   }
 
+  if (rule === 'fairDamage') {
+    const criticalAttack = JSON.parse(JSON.stringify(attack));
+    criticalAttack.name = `${attack.name} (Crítico Justo)`;
+
+    const attackResult = executeAttack(attack);
+
+    criticalAttack.damageRolls.forEach((roll, index) => {
+      const [numDice, diceSize] = roll.dice.split('d');
+      const maxDamage = parseInt(numDice) * parseInt(diceSize);
+      attackResult.grandTotal += maxDamage;
+
+      const type = roll.type;
+      if (attackResult.results[type]) {
+        attackResult.results[type].total += maxDamage;
+      }
+    });
+
+    return attackResult;
+  }
+
   if (rule === 'dad') {
     const results = {};
     let grandTotal = 0;
     let totalHealed = 0;
 
     // Calcular el bonus de daño DAD
-    const dadBonus = calculateDadBonus(characterLevel);
+    const dadBonus = calculateDadBonus(characterLevel || 1);
 
     attack.damageRolls.forEach(damageRoll => {
       let { dice, min = 1, bonus = 0, type, lifeSteal = { percentage: 0 } } = damageRoll;
