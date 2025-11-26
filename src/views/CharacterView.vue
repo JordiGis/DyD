@@ -178,7 +178,56 @@
 
     <AttackManager v-if="isAttackManagerVisible" @close="isAttackManagerVisible = false" />
     <PassiveDamageManager v-if="isPassiveDamageManagerVisible" @close="isPassiveDamageManagerVisible = false" />
+    <AttackDetailsModal v-if="isAttackDetailsVisible" :attack="selectedAttackForDetails" :show="isAttackDetailsVisible" @close="hideAttackDetails" />
 
+    <!-- Sección de Ataques -->
+    <div class="attacks-section">
+      <h2 class="section-title">Ataques</h2>
+      <div v-if="attackStore.attacks.length === 0" class="no-attacks-info">
+        No tienes ataques guardados. ¡Crea uno en el Gestor de Ataques!
+      </div>
+      <div v-else class="attacks-list">
+        <div v-for="attack in attackStore.attacks" :key="attack.id" class="attack-item-view">
+          <div class="attack-header">
+            <span class="attack-name">{{ attack.name }}</span>
+            <div v-if="attack.isPreparable" class="prepared-toggle">
+              <label :for="'prepared-' + attack.id" class="switch">
+                <input type="checkbox" :id="'prepared-' + attack.id" :checked="attack.isPrepared" @change="toggleAttackPrepared(attack)">
+                <span class="slider round"></span>
+              </label>
+              <span class="prepared-label">{{ attack.isPrepared ? 'Preparado' : 'No Preparado' }}</span>
+            </div>
+          </div>
+          <div class="attack-summary-view">
+            <span v-for="(roll, index) in attack.damageRolls" :key="index" class="damage-tag-view">
+              {{ roll.dice }} {{ roll.type }}
+            </span>
+          </div>
+          <div class="attack-actions-view">
+            <button
+              @click="showAttackDetails(attack)"
+              class="btn-view-attack"
+            >
+              <i class="bi bi-eye-fill"></i> Ver
+            </button>
+            <button
+              @click="attackStore.executeAndShowAttack(attack, false)"
+              class="btn-execute-attack"
+              :disabled="attack.isPreparable && !attack.isPrepared"
+            >
+              <i class="bi bi-hammer"></i> Atacar
+            </button>
+            <button
+              @click="attackStore.executeAndShowAttack(attack, true)"
+              class="btn-critical-attack"
+              :disabled="attack.isPreparable && !attack.isPrepared"
+            >
+              <i class="bi bi-lightning-charge-fill"></i> Crítico
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Botones adicionales -->
     <div class="secondary-actions">
@@ -284,17 +333,38 @@ import CounterManager from '../components/CounterManager.vue';
 import StateManager from '../components/StateManager.vue';
 import AttackManager from '../components/AttackManager.vue';
 import PassiveDamageManager from '../components/PassiveDamageManager.vue';
+import AttackDetailsModal from '../components/AttackDetailsModal.vue';
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCharacterStore } from '../stores/useCharacterStore'
+import { useAttackStore } from '../stores/useAttackStore'
 import { useCounterStore } from '../stores/useCounterStore'
 import { useCharacterStateStore } from '../stores/useCharacterStateStore'
 import Swal from 'sweetalert2'
 
 const router = useRouter()
 const characterStore = useCharacterStore()
+const attackStore = useAttackStore()
 const counterStore = useCounterStore()
 const stateStore = useCharacterStateStore()
+
+const isAttackDetailsVisible = ref(false);
+const selectedAttackForDetails = ref(null);
+
+const showAttackDetails = (attack) => {
+  selectedAttackForDetails.value = attack;
+  isAttackDetailsVisible.value = true;
+};
+
+const hideAttackDetails = () => {
+  isAttackDetailsVisible.value = false;
+  selectedAttackForDetails.value = null;
+};
+
+const toggleAttackPrepared = (attack) => {
+  attack.isPrepared = !attack.isPrepared;
+  attackStore.updateAttack(attack);
+};
 
 const selectedStateImageUrl = computed(() => {
   if (stateStore.selectedState && stateStore.selectedState.image) {
@@ -381,6 +451,7 @@ function toggleStateSelector() {
 onMounted(async () => {
   // Cargar datos
   characterStore.loadData()
+  attackStore.loadData()
   counterStore.loadData()
   await stateStore.loadStates();
   loadFoldState()
@@ -2027,5 +2098,170 @@ const healNecroDamage = (amount) => {
   .btn-end-turn:active {
     transform: scale(0.95);
   }
+}
+
+/* Estilos para la nueva sección de ataques */
+.attacks-section {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 15px;
+  padding: 25px;
+  margin-top: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.section-title {
+  color: #f39c12;
+  font-size: 1.8rem;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.no-attacks-info {
+  text-align: center;
+  color: #bdc3c7;
+  font-style: italic;
+  padding: 20px;
+}
+
+.attacks-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 15px;
+}
+
+.attack-item-view {
+  background: #2c2f33;
+  border-radius: 10px;
+  padding: 15px;
+  border-left: 4px solid #7289da;
+}
+
+.attack-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.attack-name {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.prepared-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.prepared-label {
+  font-size: 0.85rem;
+  color: #bdc3c7;
+  font-weight: 500;
+}
+
+/* The switch - https://www.w3schools.com/howto/howto_css_switch.asp */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 28px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #43b581;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #43b581;
+}
+
+input:checked + .slider:before {
+  transform: translateX(22px);
+}
+
+.slider.round {
+  border-radius: 28px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+.attack-summary-view {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.damage-tag-view {
+  background-color: #23272a;
+  color: #f0f0f0;
+  padding: 4px 10px;
+  border-radius: 15px;
+  font-size: 0.8rem;
+}
+
+.attack-actions-view {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.btn-view-attack, .btn-execute-attack, .btn-critical-attack {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 6px;
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.btn-view-attack { background-color: #5865f2; }
+.btn-execute-attack { background-color: #43b581; }
+.btn-critical-attack { background-color: #e67e22; }
+
+.btn-view-attack:hover, .btn-execute-attack:hover, .btn-critical-attack:hover {
+  opacity: 0.8;
+}
+
+.btn-execute-attack:disabled, .btn-critical-attack:disabled {
+  background-color: #5c6169;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 </style>
