@@ -47,10 +47,11 @@ export const usePlayerStore = defineStore('player', {
       const accountStore = useAccountStore();
       const savedData = accountStore.getSection('players');
       if (savedData) {
-        // Migración: asegurar que los jugadores viejos tengan el sistema de contadores
+        // Migración: asegurar que los jugadores viejos tengan el sistema de contadores y compañeros
         this.players = savedData.map(player => ({
           ...player,
           counters: player.counters || createDefaultCounters(),
+          companions: player.companions || [],
         }));
       }
     },
@@ -70,6 +71,7 @@ export const usePlayerStore = defineStore('player', {
         xpHistory: [],
         notes: '',
         counters: createDefaultCounters(),
+        companions: [],
       };
 
       this.players.push(newPlayer);
@@ -170,6 +172,44 @@ export const usePlayerStore = defineStore('player', {
       const counter = player?.counters.find(c => c.id === counterId);
       if (counter) {
         counter.value += change;
+        this.saveData();
+      }
+    },
+
+    // --- Acciones para Compañeros ---
+
+    addCompanion(playerId, companionData) {
+      const player = this._getPlayer(playerId);
+      if (player) {
+        if (!player.companions) {
+          player.companions = [];
+        }
+        const newCompanion = {
+          id: uuidv4(),
+          name: companionData.name || 'New Companion',
+          notes: companionData.notes || '',
+          image: companionData.image || null,
+        };
+        player.companions.push(newCompanion);
+        this.saveData();
+      }
+    },
+
+    editCompanion(playerId, companionId, updates) {
+      const player = this._getPlayer(playerId);
+      if (player && player.companions) {
+        const companion = player.companions.find(c => c.id === companionId);
+        if (companion) {
+          Object.assign(companion, updates);
+          this.saveData();
+        }
+      }
+    },
+
+    deleteCompanion(playerId, companionId) {
+      const player = this._getPlayer(playerId);
+      if (player && player.companions) {
+        player.companions = player.companions.filter(c => c.id !== companionId);
         this.saveData();
       }
     },

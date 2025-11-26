@@ -127,6 +127,12 @@
               >
                 <i class="bi bi-journal-text"></i> Notas
               </button>
+              <button
+                @click="openCompanionManager(player.id)"
+                class="btn btn-link btn-sm"
+              >
+                <i class="bi bi-person-heart"></i> Compañeros
+              </button>
               <div>
                 <button
                   @click="openEditModal(player)"
@@ -204,6 +210,14 @@
         </div>
       </div>
     </div>
+
+    <!-- Companion Manager Modal -->
+    <CompanionManager
+      v-if="managingCompanionsForPlayerId"
+      :player-id="managingCompanionsForPlayerId"
+      @close="managingCompanionsForPlayerId = null"
+    />
+
     <!-- Modal de Edición de Jugador -->
     <div v-if="showEditModal" class="player-manager-overlay edit-modal" @click.self="showEditModal = false">
       <div class="player-manager-content">
@@ -286,6 +300,7 @@
 import { ref, onMounted, onUnmounted } from "vue";
 import { storeToRefs } from "pinia";
 import { usePlayerStore } from "../stores/usePlayerStore";
+import CompanionManager from "./CompanionManager.vue";
 import Swal from "sweetalert2";
 
 // Definir emits
@@ -302,6 +317,7 @@ const visibleNotes = ref(new Set());
 const visibleCounters = ref(new Set());
 const showEditModal = ref(false);
 const editingPlayer = ref(null);
+const managingCompanionsForPlayerId = ref(null);
 
 // Nuevas refs para el modal de contadores
 const showCounterEditModal = ref(false);
@@ -445,6 +461,10 @@ const toggleNotes = (playerId) => {
 
 const saveNotes = (player) => {
   playerStore.editPlayer(player.id, { notes: player.notes });
+};
+
+const openCompanionManager = (playerId) => {
+  managingCompanionsForPlayerId.value = playerId;
 };
 
 // --- Métodos para Contadores ---
