@@ -324,7 +324,7 @@ const handleEscape = (event) => {
 };
 
 onMounted(() => {
-  playerStore.loadFromLocalStorage();
+  playerStore.loadData();
   document.body.classList.add("modal-open");
   players.value.forEach((p) => {
     playerXpInputs.value[p.id] = null;

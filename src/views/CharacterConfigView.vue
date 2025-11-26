@@ -83,8 +83,8 @@ const regeneration = ref(0)
 const hasExistingData = ref(false)
 
 onMounted(() => {
-  // Cargar datos existentes del localStorage
-  characterStore.loadFromLocalStorage()
+  // Cargar datos existentes
+  characterStore.loadData()
   
   // Verificar si ya hay datos configurados
   if (characterStore.character.isConfigured) {

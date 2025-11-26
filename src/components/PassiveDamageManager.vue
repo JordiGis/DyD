@@ -145,7 +145,7 @@ const currentDamage = reactive({
 
 onMounted(() => {
   document.body.style.overflow = 'hidden';
-  passiveDamageStore.loadPassiveDamages();
+  passiveDamageStore.loadData();
 });
 
 onUnmounted(() => {

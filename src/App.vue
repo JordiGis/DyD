@@ -1,5 +1,23 @@
 <script setup>
-import AppHeader from './components/AppHeader.vue'
+import { onMounted, watch } from 'vue';
+import { storeToRefs } from 'pinia';
+import AppHeader from './components/AppHeader.vue';
+import { useAccountStore } from './stores/useAccountStore';
+import { useCharacterStore } from './stores/useCharacterStore';
+
+const accountStore = useAccountStore();
+const { isLoading } = storeToRefs(accountStore);
+
+onMounted(() => {
+  accountStore.loadInitialData();
+});
+
+watch(isLoading, (loading) => {
+  if (!loading) {
+    const characterStore = useCharacterStore();
+    characterStore.loadAllCharacterData();
+  }
+});
 </script>
 
 <template>

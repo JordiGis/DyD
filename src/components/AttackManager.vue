@@ -323,7 +323,7 @@ onMounted(() => {
   // Deshabilitar scroll en el body
   document.body.style.overflow = 'hidden';
   
-  attackStore.loadAttacks();
+  attackStore.loadData();
   nextTick(() => {
     const listEl = document.querySelector('.attacks-list');
     if (listEl) {

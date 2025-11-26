@@ -1,127 +1,80 @@
 // src/stores/useAttackStore.js
-import { defineStore } from 'pinia'
+import { defineStore } from 'pinia';
 import { v4 as uuidv4 } from 'uuid';
+import { useAccountStore } from './useAccountStore'; // Importar el store de la cuenta
 
 export const useAttackStore = defineStore('attack', {
   state: () => ({
     attacks: [],
     criticalHit: {
-      rule: 'default', // 'default' o 'dad'
+      rule: 'default',
       characterLevel: 1,
     },
   }),
 
   actions: {
-    loadCriticalHitConfig() {
-      const data = localStorage.getItem('dnd-critical-hit-config');
-      if (data) {
-        try {
-          const config = JSON.parse(data);
-          // Asegurarse de que las propiedades existan para evitar errores
-          if (config && typeof config === 'object') {
-            this.criticalHit.rule = config.rule || 'default';
-            this.criticalHit.characterLevel = config.characterLevel || 1;
-          }
-        } catch (error) {
-          console.error('Error loading critical hit config from localStorage:', error);
-        }
+    loadData() {
+      const accountStore = useAccountStore();
+      const activeCharacterId = accountStore.accountData.activeCharacterId;
+      if (!activeCharacterId) {
+        this.attacks = [];
+        this.criticalHit = { rule: 'default', characterLevel: 1 };
+        return;
+      }
+
+      const activeCharacter = accountStore.accountData.characters.find(c => c.id === activeCharacterId);
+      if (activeCharacter) {
+        this.attacks = (activeCharacter.attacks || []).map(attack => ({
+          ...attack,
+          id: attack.id || uuidv4(),
+          rerollDice: attack.rerollDice || [],
+          damageRolls: (attack.damageRolls || []).map(roll => ({
+            ...roll,
+            lifeSteal: roll.lifeSteal || { percentage: 0 },
+          })),
+        }));
+        this.criticalHit = activeCharacter.criticalHit || { rule: 'default', characterLevel: 1 };
+      } else {
+        this.attacks = [];
+        this.criticalHit = { rule: 'default', characterLevel: 1 };
       }
     },
 
-    saveCriticalHitConfig() {
-      localStorage.setItem('dnd-critical-hit-config', JSON.stringify(this.criticalHit));
+    saveData() {
+      const accountStore = useAccountStore();
+      const activeCharacterId = accountStore.accountData.activeCharacterId;
+      if (!activeCharacterId) return;
+
+      const characterIndex = accountStore.accountData.characters.findIndex(c => c.id === activeCharacterId);
+      if (characterIndex !== -1) {
+        accountStore.accountData.characters[characterIndex].attacks = this.attacks;
+        accountStore.accountData.characters[characterIndex].criticalHit = this.criticalHit;
+        accountStore.saveDataToLocalStorage();
+      }
     },
 
     updateCriticalHitConfig(config) {
       this.criticalHit = { ...this.criticalHit, ...config };
-      this.saveCriticalHitConfig();
+      this.saveData();
     },
 
-    // Cargar ataques desde localStorage
-    loadAttacks() {
-      this.loadCriticalHitConfig();
-      const data = localStorage.getItem('dnd-attacks-data');
-      if (data) {
-        try {
-          const parsedAttacks = JSON.parse(data);
-
-          // Migración de datos para el nuevo formato de lifeSteal
-          const migratedAttacks = parsedAttacks.map(attack => {
-            let needsSave = false;
-            // Si existe un lifeSteal a nivel de ataque, es el formato antiguo
-            if (attack.lifeSteal && attack.lifeSteal.percentage > 0) {
-              attack.damageRolls.forEach(roll => {
-                // Solo añadir si no existe ya para no sobrescribir
-                if (!roll.lifeSteal) {
-                  roll.lifeSteal = { percentage: attack.lifeSteal.percentage };
-                }
-              });
-              delete attack.lifeSteal; // Eliminar el obsoleto
-              needsSave = true;
-            }
-
-            // Asegurarse de que todos los rollos tengan la propiedad lifeSteal
-            attack.damageRolls.forEach(roll => {
-              if (!roll.lifeSteal) {
-                roll.lifeSteal = { percentage: 0 };
-                needsSave = true;
-              }
-            });
-
-            // Añadir rerollDice si no existe
-            if (!attack.rerollDice) {
-              attack.rerollDice = [];
-              needsSave = true;
-            }
-
-            // Asignar un ID si falta
-            if (!attack.id) {
-              attack.id = uuidv4();
-              needsSave = true;
-            }
-
-            return attack;
-          });
-
-          this.attacks = migratedAttacks;
-
-          // Si se hizo alguna migración, guardar de nuevo para actualizar el formato en localStorage
-          if (migratedAttacks.some(attack => !parsedAttacks.includes(attack))) {
-              this.saveAttacks();
-          }
-
-        } catch (error) {
-          console.error('Error loading or migrating attacks from localStorage:', error);
-          this.attacks = [];
-        }
-      }
-    },
-
-    // Guardar ataques en localStorage
-    saveAttacks() {
-      localStorage.setItem('dnd-attacks-data', JSON.stringify(this.attacks));
-    },
-
-    // Crear un nuevo ataque
     addAttack(attackData) {
       const newAttack = {
         ...attackData,
         id: uuidv4(),
       };
       this.attacks.push(newAttack);
-      this.saveAttacks();
+      this.saveData();
     },
 
-    // Actualizar un ataque existente
     updateAttack(updatedAttack) {
       const index = this.attacks.findIndex(a => a.id === updatedAttack.id);
       if (index !== -1) {
         this.attacks[index] = updatedAttack;
-        this.saveAttacks();
+        this.saveData();
       }
     },
 
-    // Duplicar un ataque
     duplicateAttack(attackId) {
       const originalAttack = this.attacks.find(a => a.id === attackId);
       if (originalAttack) {
@@ -129,33 +82,26 @@ export const useAttackStore = defineStore('attack', {
         duplicatedAttack.id = uuidv4();
         duplicatedAttack.name = `${originalAttack.name} (Copia)`;
 
-        // Encontrar el índice del ataque original para insertar la copia después
         const originalIndex = this.attacks.findIndex(a => a.id === attackId);
         this.attacks.splice(originalIndex + 1, 0, duplicatedAttack);
-
-        this.saveAttacks();
+        this.saveData();
       }
     },
 
-    // Eliminar un ataque
     deleteAttack(attackId) {
-      const index = this.attacks.findIndex(a => a.id === attackId);
-      if (index !== -1) {
-        this.attacks.splice(index, 1);
-        this.saveAttacks();
-      }
+      this.attacks = this.attacks.filter(a => a.id !== attackId);
+      this.saveData();
     },
 
-    // Obtener un ataque por su ID
     getAttackById(attackId) {
       return this.attacks.find(a => a.id === attackId);
     },
 
-    // Reordenar ataques
     updateAttackOrder(newOrder) {
-      const orderedAttacks = newOrder.map(id => this.attacks.find(a => a.id === id));
-      this.attacks = orderedAttacks.filter(a => a); // Filtrar posibles indefinidos
-      this.saveAttacks();
+      this.attacks = newOrder
+        .map(id => this.attacks.find(a => a.id === id))
+        .filter(Boolean);
+      this.saveData();
     },
   },
 });

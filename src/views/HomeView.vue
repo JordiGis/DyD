@@ -4,7 +4,7 @@
       <h1 class="welcome-title">🎲 D&D Life Tracker</h1>
       <p class="welcome-subtitle">Control de vida para personajes de Dungeons & Dragons</p>
       
-      <div class="loading-spinner" v-if="isLoading">
+      <div class="loading-spinner" v-if="isDataLoading">
         <div class="spinner"></div>
         <p>Cargando...</p>
       </div>
@@ -35,9 +35,9 @@
             <span class="btn-text">Crear Nuevo Personaje</span>
           </button>
           
-          <button v-if="hasExistingCharacter" @click="loadExistingCharacter" class="btn btn-secondary">
+          <button v-if="hasExistingCharacters" @click="manageCharacters" class="btn btn-secondary">
             <span class="btn-icon">📖</span>
-            <span class="btn-text">Cargar Personaje Existente</span>
+            <span class="btn-text">Gestionar Personajes</span>
           </button>
           
           <button @click="goToDM" class="btn btn-success">
@@ -51,40 +51,28 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useCharacterStore } from '../stores/useCharacterStore'
+import { computed } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAccountStore } from '../stores/useAccountStore';
 
-const router = useRouter()
-const characterStore = useCharacterStore()
+const router = useRouter();
+const accountStore = useAccountStore();
 
-const isLoading = ref(true)
-const hasExistingCharacter = ref(false)
-
-onMounted(async () => {
-  // Cargar datos del localStorage
-  characterStore.loadFromLocalStorage()
-  
-  // Verificar si hay un personaje configurado
-  hasExistingCharacter.value = characterStore.character.isConfigured
-  
-  // Simular un pequeño delay para mostrar el spinner
-  setTimeout(() => {
-    isLoading.value = false
-  }, 1000)
-})
+const characters = computed(() => accountStore.characters);
+const isDataLoading = computed(() => accountStore.isDataLoading);
+const hasExistingCharacters = computed(() => characters.value && characters.value.length > 0);
 
 const startNewCharacter = () => {
-  router.push('/config')
-}
+  router.push('/config');
+};
 
-const loadExistingCharacter = () => {
-  router.push('/character')
-}
+const manageCharacters = () => {
+  router.push('/character-manager');
+};
 
 const goToDM = () => {
-  router.push('/dm')
-}
+  router.push('/dm');
+};
 </script>
 
 <style scoped>
@@ -120,7 +108,7 @@ const goToDM = () => {
   color: #ecf0f1;
   font-size: 1.2rem;
   margin-bottom: 30px;
-  opacity: 0.9;
+  font-weight: 300;
 }
 
 .loading-spinner {
@@ -228,6 +216,16 @@ const goToDM = () => {
   color: white;
 }
 
+.btn-success {
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+  color: white;
+}
+
+.btn-info {
+  background: linear-gradient(135deg, #9b59b6, #8e44ad);
+  color: white;
+}
+
 .btn-icon {
   font-size: 1.3rem;
 }
@@ -284,7 +282,8 @@ const goToDM = () => {
   }
   
   .btn {
-    min-width: 100%;
+    width: 100%;
+    min-width: auto;
     padding: 18px 20px;
     min-height: 60px;
     font-size: 1.1rem;

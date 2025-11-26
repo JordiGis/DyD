@@ -1,44 +1,41 @@
-
 import { defineStore } from 'pinia';
-import { ref, watch } from 'vue';
-import { nanoid } from 'nanoid';
+import { ref } from 'vue';
+import { v4 as uuidv4 } from 'uuid';
+import { useAccountStore } from './useAccountStore';
+import { useCharacterStateStore } from './useCharacterStateStore';
 
 export const useCounterStore = defineStore('counter', () => {
-  // Contadores
+  // --- State ---
   const counters = ref([]);
-  const states = ref([]);
 
+  // --- Data Persistence ---
+  function saveData() {
+    const accountStore = useAccountStore();
+    const activeCharacterId = accountStore.accountData.activeCharacterId;
+    if (!activeCharacterId) return;
 
-  // Cargar de localStorage al iniciar (asegurando estructura y reactividad)
-  try {
-    const savedCounters = JSON.parse(localStorage.getItem('dnd-counters'));
-    if (Array.isArray(savedCounters)) {
-      counters.value = savedCounters.map(c => ({ ...c }));
+    const characterIndex = accountStore.accountData.characters.findIndex(c => c.id === activeCharacterId);
+    if (characterIndex !== -1) {
+      accountStore.accountData.characters[characterIndex].counters = counters.value;
+      accountStore.saveDataToLocalStorage();
     }
-  } catch {}
-  try {
-    const savedStates = JSON.parse(localStorage.getItem('dnd-states'));
-    if (Array.isArray(savedStates)) {
-      states.value = savedStates.map(s => ({
-        active: false, // por defecto
-        ...s,
-        active: typeof s.active === 'boolean' ? s.active : false,
-      }));
+  }
+
+  function loadData() {
+    const accountStore = useAccountStore();
+    const activeCharacterId = accountStore.accountData.activeCharacterId;
+    if (!activeCharacterId) {
+      counters.value = [];
+      return;
     }
-  } catch {}
+    const activeCharacter = accountStore.accountData.characters.find(c => c.id === activeCharacterId);
+    counters.value = (activeCharacter && Array.isArray(activeCharacter.counters)) ? activeCharacter.counters : [];
+  }
 
-  // Guardar automáticamente en localStorage cuando cambian
-  watch(counters, val => {
-    localStorage.setItem('dnd-counters', JSON.stringify(val));
-  }, { deep: true });
-  watch(states, val => {
-    localStorage.setItem('dnd-states', JSON.stringify(val));
-  }, { deep: true });
-
-  // --- Contadores ---
+  // --- Actions: Counters ---
   function addCounter({ name, initial, min, max, buttons, shortRest = 0, longRest = 0 }) {
     counters.value.push({
-      id: nanoid() + '-' + Date.now() + '-' + Math.random().toString(36).slice(2),
+      id: uuidv4(),
       name,
       value: initial,
       min,
@@ -52,107 +49,57 @@ export const useCounterStore = defineStore('counter', () => {
         { label: '-1', increment: -1 },
       ],
     });
+    saveData();
   }
 
   function updateCounterValue(id, delta) {
     const counter = counters.value.find(c => c.id === id);
     if (!counter) return;
     let newValue = counter.value + delta;
-    if (newValue > counter.max) newValue = counter.max;
-    if (newValue < counter.min) newValue = counter.min;
+    if (counter.max !== undefined) newValue = Math.min(newValue, counter.max);
+    if (counter.min !== undefined) newValue = Math.max(newValue, counter.min);
     counter.value = newValue;
+    saveData();
   }
 
   function setCounterToMax(id) {
     const counter = counters.value.find(c => c.id === id);
-    if (counter) counter.value = counter.max;
+    if (counter && counter.max !== undefined) {
+      counter.value = counter.max;
+      saveData();
+    }
   }
 
   function removeCounter(id) {
-  // Forzar nueva referencia para asegurar reactividad
-  const nuevaLista = counters.value.filter(c => c.id !== id);
-  counters.value.splice(0, counters.value.length, ...nuevaLista);
+    counters.value = counters.value.filter(c => c.id !== id);
+    saveData();
   }
 
-  // --- Estados ---
-
-  function addState({ name, shortRest, longRest, linkedCounterId, discountOnActivate, discountType }) {
-    states.value.push({
-      id: nanoid(),
-      name,
-      linkedCounterId: linkedCounterId || null,
-      discountOnActivate: discountOnActivate || 0,
-      discountType: discountType || 'resta', // 'suma' o 'resta'
-      active: false,
-    });
-  }
-
-  function toggleStateActive(id) {
-    const state = states.value.find(s => s.id === id);
-    if (!state) return;
-    state.active = !state.active;
-    // Si se activa y está vinculado, suma o resta al contador según discountType
-    if (state.active && state.linkedCounterId) {
-      const amount = Math.abs(state.discountOnActivate || 1);
-      const delta = state.discountType === 'suma' ? amount : -amount;
-      updateCounterValue(state.linkedCounterId, delta);
-    }
-  }
-
-  // Regenerar contadores según descanso corto/largo
+  // --- Actions: Rests ---
   function regenerateCountersByRest(type = 'short') {
-    // Recargar todos los contadores según el tipo de descanso
     counters.value.forEach(counter => {
-      if (type === 'short') {
-        if (counter.shortRestReset) {
-          // Resetear al valor indicado
-          counter.value = counter.shortRest;
-        } else {
-          const amount = counter.shortRest;
-          if (amount && typeof amount === 'number') {
-            counter.value = Math.min(counter.max, counter.value + amount);
-          }
-        }
-      } else if (type === 'long') {
-        if (counter.longRestReset) {
-          counter.value = counter.longRest;
-        } else {
-          const amount = counter.longRest;
-          if (amount && typeof amount === 'number') {
-            counter.value = Math.min(counter.max, counter.value + amount);
-          }
-        }
+      const restKey = type === 'short' ? 'shortRest' : 'longRest';
+      const resetKey = type === 'short' ? 'shortRestReset' : 'longRestReset';
+
+      if (counter[resetKey]) {
+        counter.value = counter[restKey];
+      } else if (typeof counter[restKey] === 'number') {
+        counter.value = Math.min(counter.max, counter.value + counter[restKey]);
       }
     });
-    // Desactivar todos los estados
-    states.value.forEach(state => {
-      state.active = false;
-    });
-  }
+    saveData();
 
-  function activateState(id) {
-    const state = states.value.find(s => s.id === id);
-    if (!state) return;
-    if (state.linkedCounterId && state.discountOnActivate) {
-      updateCounterValue(state.linkedCounterId, -state.discountOnActivate);
-    }
-  }
-
-  function removeState(id) {
-    states.value = states.value.filter(s => s.id !== id);
+    const characterStateStore = useCharacterStateStore();
+    characterStateStore.resetStatesOnRest();
   }
 
   return {
     counters,
-    states,
+    loadData,
     addCounter,
     updateCounterValue,
     setCounterToMax,
     removeCounter,
-    addState,
-    activateState,
-    removeState,
-    toggleStateActive,
     regenerateCountersByRest,
   };
 });

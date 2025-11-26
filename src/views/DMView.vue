@@ -67,13 +67,13 @@
             <i class="bi bi-dice-6"></i>
             <span class="btn-text">Lanzar Dados</span>
           </button>
-          <button @click="showDMAttackManager = true" class="btn btn-outline-warning">
-            <i class="bi bi-hammer"></i>
-            <span class="btn-text">Gestor de Ataques</span>
-          </button>
           <button @click="showPlayerManager = true" class="btn btn-outline-info">
             <i class="bi bi-person-badge"></i>
             <span class="btn-text">Gestión de Jugadores</span>
+          </button>
+          <button @click="showSettingsModal = true" class="btn btn-outline-secondary">
+            <i class="bi bi-gear-fill"></i>
+            <span class="btn-text">Configuración</span>
           </button>
         </div>
       </div>
@@ -84,8 +84,9 @@
       @close="showDiceRoller = false"
     />
     <DMAttackManager
-      v-if="showDMAttackManager"
-      @close="showDMAttackManager = false"
+      v-if="editingAttacksForCharacterId"
+      :character-id="editingAttacksForCharacterId"
+      @close="editingAttacksForCharacterId = null"
     />
     <PlayerManager
       v-if="showPlayerManager"
@@ -467,6 +468,40 @@
     >
       <i class="bi bi-heart-pulse"></i>
       Revivir
+    </button>
+  </div>
+  <div class="character-attacks-section">
+    <div class="attacks-header">
+      <h4>Ataques</h4>
+      <button @click="toggleAttackSearch(character.id)" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+    <div v-if="showAttackSearch[character.id]" class="attack-search-bar">
+      <input type="text" v-model="attackSearchQuery[character.id]" placeholder="Buscar ataque..." class="form-control form-control-sm">
+    </div>
+    <div class="attacks-preview-list" v-if="character.attacks && character.attacks.length > 0">
+      <div v-for="attack in filteredAttacks(character)" :key="attack.id" class="attack-preview-item">
+        <div class="attack-preview-info">
+          <span class="attack-preview-name">{{ attack.name }}</span>
+          <div class="attack-preview-summary">
+            <span v-for="(roll, index) in attack.damageRolls" :key="index" class="damage-tag">
+              {{ roll.dice }} {{ roll.type }}
+            </span>
+          </div>
+        </div>
+        <div class="attack-preview-actions">
+          <button @click="executeAttack(attack, false)" class="btn btn-sm btn-primary">Lanzar</button>
+          <button @click="executeAttack(attack, true)" class="btn btn-sm btn-danger">Crítico</button>
+        </div>
+      </div>
+    </div>
+    <div v-else class="no-attacks-preview">
+      <p>No hay ataques definidos.</p>
+    </div>
+    <button @click="openAttackManager(character.id)" class="btn btn-sm btn-outline-warning w-100 mt-2">
+      <i class="bi bi-hammer"></i>
+      Gestionar Ataques
     </button>
   </div>
         </div>
@@ -865,6 +900,32 @@
         style="display: none"
       />
 
+      <!-- Modal de configuración -->
+      <div v-if="showSettingsModal" class="modal-overlay" @click="showSettingsModal = false">
+        <div class="modal-content" @click.stop>
+          <div class="modal-header">
+            <h3>Configuración de Críticos</h3>
+            <button @click="showSettingsModal = false" class="btn-close"><i class="bi bi-x-lg"></i></button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="critical-rule">Regla de Daño Crítico</label>
+              <select id="critical-rule" v-model="criticalHitConfig.rule" class="form-control">
+                <option value="default">Regla por Defecto (Duplicar Dados)</option>
+                <option value="dad">Daño Masivo (DAD)</option>
+              </select>
+            </div>
+            <div v-if="criticalHitConfig.rule === 'dad'" class="form-group">
+              <label for="character-level">Nivel del Personaje</label>
+              <input type="number" id="character-level" v-model.number="criticalHitConfig.characterLevel" min="1" max="20" class="form-control">
+            </div>
+            <div class="modal-actions">
+              <button @click="saveCriticalHitConfig" class="btn btn-primary">Guardar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Modal para importar -->
       <div
         v-if="showImportModal"
@@ -1031,17 +1092,49 @@ import Swal from "sweetalert2";
 import DraggableList from "../components/DraggableList.vue";
 import DiceRoller from "../components/DiceRoller.vue";
 import DMAttackManager from "../components/DMAttackManager.vue";
-import PlayerManager from "../components/PlayerManager.vue"; // Importar el nuevo componente
+import PlayerManager from "../components/PlayerManager.vue";
+import { showAttackResult } from "../utils/attackExecutor";
 
 const dmStore = useDMStore();
 const playerStore = usePlayerStore();
 const { players } = storeToRefs(playerStore);
 
+const showAttackSearch = ref({});
+const attackSearchQuery = ref({});
+
+const toggleAttackSearch = (characterId) => {
+  showAttackSearch.value[characterId] = !showAttackSearch.value[characterId];
+};
+
+const filteredAttacks = (character) => {
+  const query = (attackSearchQuery.value[character.id] || '').toLowerCase();
+  if (!query) {
+    return character.attacks;
+  }
+  return character.attacks.filter(attack => attack.name.toLowerCase().includes(query));
+};
+
+const executeAttack = (attack, isCritical) => {
+  showAttackResult(attack, isCritical, dmStore.criticalHit);
+};
+
 const showDraggableList = ref(false);
 const showDiceRoller = ref(false);
-const showDMAttackManager = ref(false);
+const editingAttacksForCharacterId = ref(null);
 const showPlayerManager = ref(false); // Estado para el nuevo modal
 const showMobileMenu = ref(false); // Estado para el menú móvil
+const showSettingsModal = ref(false);
+
+const criticalHitConfig = ref({
+  rule: dmStore.criticalHit.rule,
+  characterLevel: dmStore.criticalHit.characterLevel,
+});
+
+const saveCriticalHitConfig = () => {
+  dmStore.updateCriticalHitConfig(criticalHitConfig.value);
+  showSettingsModal.value = false;
+  Swal.fire('Guardado', 'La configuración de daño crítico ha sido actualizada.', 'success');
+};
 
 // Estado local
 const showCreateModal = ref(false);
@@ -1158,27 +1251,11 @@ const deleteCharacter = (id) => {
 };
 
 const duplicateCharacter = (character) => {
-  // Clonación profunda del personaje
-  const duplicatedCharacter = JSON.parse(JSON.stringify(character));
-  // Generar nuevo id y fecha
-  duplicatedCharacter.id = Date.now() + Math.random();
-  duplicatedCharacter.createdAt = new Date().toISOString();
-  // Cambiar el nombre, asegurando que sea único
-  let duplicatedName = `${character.name} (Copia)`;
-  let finalName = duplicatedName;
-  let counter = 1;
-  while (dmStore.getCharacterByName(finalName)) {
-    finalName = `${character.name} (Copia ${counter})`;
-    counter++;
-  }
-  duplicatedCharacter.name = finalName;
-  // Opcional: limpiar logs si no quieres copiar el historial
-  // duplicatedCharacter.logs = [];
-  // Agregar el personaje clonado directamente al array y guardar
-  dmStore.characters.push(duplicatedCharacter);
-  dmStore.saveToLocalStorage();
-  // Agregar log de clonación
-  dmStore.addLogToCharacter(duplicatedCharacter.id, 'Clonación', `Personaje clonado de ${character.name}`);
+  dmStore.duplicateCharacter(character.id);
+};
+
+const openAttackManager = (characterId) => {
+  editingAttacksForCharacterId.value = characterId;
 };
 
 const applyDamage = (character) => {
@@ -1673,8 +1750,8 @@ onMounted(() => {
   // Load todo items
   loadTodoItems();
 
-  dmStore.loadFromLocalStorage();
-  playerStore.loadFromLocalStorage(); // Cargar jugadores
+  dmStore.loadData();
+  playerStore.loadData(); // Cargar jugadores
   initializeCharacterInputs();
 });
 </script>
@@ -3206,5 +3283,70 @@ textarea.form-control {
   .modal-header h3 {
     font-size: 1.2rem;
   }
+}
+
+.character-attacks-section {
+  border-top: 1px solid #444;
+  margin-top: 15px;
+  padding-top: 15px;
+}
+
+.attacks-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.attacks-header h4 {
+  margin: 0;
+  color: #f39c12;
+}
+
+.attack-search-bar {
+  margin-bottom: 10px;
+}
+
+.attacks-preview-list {
+  max-height: 220px; /* Altura aprox. para 3 items */
+  overflow-y: auto;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 8px;
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.attack-preview-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  border-bottom: 1px solid #444;
+}
+
+.attack-preview-item:last-child {
+  border-bottom: none;
+}
+
+.attack-preview-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.attack-preview-name {
+  font-weight: bold;
+  color: #eee;
+}
+
+.attack-preview-summary {
+  display: flex;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.no-attacks-preview {
+  text-align: center;
+  color: #888;
+  padding: 20px;
 }
 </style>

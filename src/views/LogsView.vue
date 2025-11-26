@@ -141,8 +141,8 @@ const selectedAction = ref('')
 const selectedTurn = ref('')
 
 onMounted(() => {
-  // Cargar datos del localStorage
-  characterStore.loadFromLocalStorage()
+  // Cargar datos
+  characterStore.loadData()
   
   // Si no hay personaje configurado, redirigir a configuración
   if (!characterStore.character.isConfigured) {
