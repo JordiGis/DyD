@@ -4,7 +4,7 @@
       <h1 class="welcome-title">🎲 D&D Life Tracker</h1>
       <p class="welcome-subtitle">Control de vida para personajes de Dungeons & Dragons</p>
       
-      <div class="loading-spinner" v-if="isLoading">
+      <div class="loading-spinner" v-if="isDataLoading">
         <div class="spinner"></div>
         <p>Cargando...</p>
       </div>
@@ -54,13 +54,13 @@
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAccountStore } from '../stores/useAccountStore';
-import { storeToRefs } from 'pinia';
 
 const router = useRouter();
 const accountStore = useAccountStore();
-const { characters, isLoading } = storeToRefs(accountStore);
 
-const hasExistingCharacters = computed(() => characters.value.length > 0);
+const characters = computed(() => accountStore.characters);
+const isDataLoading = computed(() => accountStore.isDataLoading);
+const hasExistingCharacters = computed(() => characters.value && characters.value.length > 0);
 
 const startNewCharacter = () => {
   router.push('/config');

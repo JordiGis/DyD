@@ -22,6 +22,11 @@ export const useAccountStore = defineStore('account', {
     isLoading: true,
   }),
 
+  getters: {
+    characters: (state) => state.accountData.characters,
+    isDataLoading: (state) => state.isLoading,
+  },
+
   actions: {
     // --- Lógica de unificación y migración ---
 
@@ -30,32 +35,38 @@ export const useAccountStore = defineStore('account', {
      * Si no existe, intenta migrar los datos antiguos desde localStorage.
      */
     loadInitialData() {
-      const unifiedDataString = localStorage.getItem('dnd-account-data');
-      let dataToProcess;
+      try {
+        const unifiedDataString = localStorage.getItem('dnd-account-data');
+        let dataToProcess;
 
-      if (unifiedDataString) {
-        dataToProcess = JSON.parse(unifiedDataString);
-      } else {
-        const legacyData = this._migrateDataFromLegacyLocalStorage();
-        if (legacyData) {
-          dataToProcess = legacyData;
-          this.clearOldLocalStorageData(); // Limpiamos claves antiguas tras leerlas
-          console.log('Datos antiguos de localStorage cargados para migración.');
-        }
-      }
-
-      if (dataToProcess) {
-        if (!dataToProcess.version || dataToProcess.version < 2) {
-          this.accountData = this._migrateV1toV2(dataToProcess);
-          console.log('Migración de V1 a V2 completada.');
-          this.saveDataToLocalStorage(); // Guardamos la nueva estructura
+        if (unifiedDataString) {
+          dataToProcess = JSON.parse(unifiedDataString);
         } else {
-          this.accountData = dataToProcess;
+          const legacyData = this._migrateDataFromLegacyLocalStorage();
+          if (legacyData) {
+            dataToProcess = legacyData;
+            this.clearOldLocalStorageData(); // Limpiamos claves antiguas tras leerlas
+            console.log('Datos antiguos de localStorage cargados para migración.');
+          }
         }
-      }
 
-      this.migrationCompleted = true;
-      this.isLoading = false;
+        if (dataToProcess) {
+          if (!dataToProcess.version || dataToProcess.version < 2) {
+            this.accountData = this._migrateV1toV2(dataToProcess);
+            console.log('Migración de V1 a V2 completada.');
+            this.saveDataToLocalStorage(); // Guardamos la nueva estructura
+          } else {
+            this.accountData = dataToProcess;
+          }
+        }
+      } catch (error) {
+        console.error('Error al cargar o migrar los datos. Empezando con un estado limpio.', error);
+        // Opcional: limpiar datos corruptos si se detecta un error
+        localStorage.removeItem('dnd-account-data');
+      } finally {
+        this.migrationCompleted = true;
+        this.isLoading = false;
+      }
     },
 
     /**

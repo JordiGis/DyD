@@ -276,7 +276,7 @@ export const useCharacterStore = defineStore('character', {
             const accountStore = useAccountStore();
             const activeCharacterId = accountStore.accountData.activeCharacterId;
             if (!activeCharacterId) {
-                this.clearData();
+                this._clearLocalState(); // No intentes guardar si no hay personaje
                 return;
             }
 
@@ -291,7 +291,7 @@ export const useCharacterStore = defineStore('character', {
                 this.turn = { ...this.turn, ...data.turn };
                 this.logs = data.logs || [];
             } else {
-                this.clearData(); // Si no hay datos, limpia el estado
+                this._clearLocalState(); // Limpia localmente si el personaje activo no tiene datos
             }
         },
 
@@ -310,13 +310,17 @@ export const useCharacterStore = defineStore('character', {
             useCharacterStateStore().loadData();
         },
         
-        clearData() {
+        _clearLocalState() {
             this.character = {
                 name: '', maxHp: 0, originalMaxHp: 0, currentHp: 0,
                 tempHp: 0, regeneration: 0, isConfigured: false
             };
             this.turn = { current: 0, isActive: false };
             this.clearLogs();
+        },
+
+        clearData() {
+            this._clearLocalState();
             this.saveData(); // Guarda el estado limpio en el store de la cuenta
         }
     }
