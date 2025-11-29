@@ -38,10 +38,23 @@ export const useAccountStore = defineStore('account', {
       try {
         const unifiedDataString = localStorage.getItem('dnd-account-data');
         let dataToProcess;
+        let shouldMigrate = false;
 
         if (unifiedDataString) {
           dataToProcess = JSON.parse(unifiedDataString);
+          // Verificar si los datos unificados están vacíos (sin personajes) pero existen datos antiguos
+          // Esto maneja el caso donde un usuario visitó la app (creando un estado vacío V2) pero tiene datos V1
+          const isV2Empty = !dataToProcess.characters || dataToProcess.characters.length === 0;
+          const hasLegacyData = localStorage.getItem('dnd-character-data') !== null;
+
+          if (isV2Empty && hasLegacyData) {
+            shouldMigrate = true;
+          }
         } else {
+          shouldMigrate = true;
+        }
+
+        if (shouldMigrate) {
           const legacyData = this._migrateDataFromLegacyLocalStorage();
           if (legacyData) {
             dataToProcess = legacyData;
@@ -90,11 +103,32 @@ export const useAccountStore = defineStore('account', {
       // Si existe un personaje, lo migramos
       if (v1Data.character) {
         const characterId = uuidv4();
+
+        // Lógica robusta para migrar ataques (puede ser array u objeto según la versión legacy)
+        let attacks = [];
+        let criticalHit = { rule: 'default', characterLevel: 1 };
+
+        if (v1Data.attacks) {
+          if (Array.isArray(v1Data.attacks)) {
+            attacks = v1Data.attacks;
+          } else {
+            attacks = v1Data.attacks.attacks || [];
+            if (v1Data.attacks.criticalHit) {
+              criticalHit = v1Data.attacks.criticalHit;
+            }
+          }
+        }
+
+        // Si existe configuración de críticos separada (legacy muy antiguo o específico), usarla si no se encontró en attacks
+        if (v1Data.criticalHitConfig && (!v1Data.attacks || !v1Data.attacks.criticalHit)) {
+          criticalHit = v1Data.criticalHitConfig;
+        }
+
         const newCharacter = {
           id: characterId,
           characterData: v1Data.character,
-          attacks: v1Data.attacks ? (v1Data.attacks.attacks || []) : [],
-          criticalHit: v1Data.attacks ? (v1Data.attacks.criticalHit || { rule: 'default', characterLevel: 1 }) : { rule: 'default', characterLevel: 1 },
+          attacks: attacks,
+          criticalHit: criticalHit,
           passiveDamages: v1Data.passiveDamages || [],
           counters: v1Data.counters ? v1Data.counters.counters : [],
           characterState: v1Data.counters ? v1Data.counters.states : [], // Basado en la estructura de v1
@@ -132,6 +166,7 @@ export const useAccountStore = defineStore('account', {
         dm: parseLocalStorage('dnd-dm-data'),
         players: parseLocalStorage('dnd-player-data'),
         attacks: parseLocalStorage('dnd-attacks-data'),
+        criticalHitConfig: parseLocalStorage('dnd-critical-hit-config'),
         passiveDamages: parseLocalStorage('dnd-passive-damages-data'),
         counters: {
           counters: parseLocalStorage('dnd-counters'),
