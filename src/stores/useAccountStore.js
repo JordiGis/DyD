@@ -119,6 +119,49 @@ export const useAccountStore = defineStore('account', {
           }
         }
 
+        // Normalizar los ataques para asegurar que tengan todos los campos necesarios
+        console.log('🔧 Normalizando ataques. Total:', attacks.length);
+        attacks = attacks.map((attack, index) => {
+          console.log(`⚔️ Ataque ${index + 1} (${attack.name}):`, {
+            tieneId: !!attack.id,
+            tieneRerollDice: !!attack.rerollDice,
+            tieneLifeStealAntiguo: !!attack.lifeSteal,
+            damageRollsCount: attack.damageRolls?.length || 0
+          });
+
+          // Migración de lifeSteal del formato antiguo (a nivel de ataque) al nuevo (a nivel de damageRoll)
+          const legacyLifeStealPercentage = (attack.lifeSteal && attack.lifeSteal.percentage > 0) 
+            ? attack.lifeSteal.percentage 
+            : 0;
+
+          if (legacyLifeStealPercentage > 0) {
+            console.log(`  💚 Migrando lifeSteal antiguo (${legacyLifeStealPercentage}%) a damageRolls`);
+          }
+
+          const normalizedAttack = {
+            ...attack,
+            id: attack.id || uuidv4(),
+            rerollDice: attack.rerollDice || [],
+            damageRolls: (attack.damageRolls || []).map(roll => ({
+              ...roll,
+              // Si el roll no tiene lifeSteal pero el ataque sí tenía (formato antiguo), usar ese valor
+              lifeSteal: roll.lifeSteal || { percentage: legacyLifeStealPercentage },
+            })),
+          };
+
+          // Eliminar el lifeSteal antiguo a nivel de ataque si existía
+          delete normalizedAttack.lifeSteal;
+
+          console.log(`  ✅ Ataque normalizado:`, {
+            id: normalizedAttack.id,
+            rerollDiceCount: normalizedAttack.rerollDice.length,
+            damageRollsWithLifeSteal: normalizedAttack.damageRolls.filter(r => r.lifeSteal?.percentage > 0).length
+          });
+
+          return normalizedAttack;
+        });
+        console.log('✅ Normalización de ataques completada');
+
         // Si existe configuración de críticos separada (legacy muy antiguo o específico), usarla si no se encontró en attacks
         if (v1Data.criticalHitConfig && (!v1Data.attacks || !v1Data.attacks.criticalHit)) {
           criticalHit = v1Data.criticalHitConfig;
@@ -160,12 +203,16 @@ export const useAccountStore = defineStore('account', {
       const oldCharacterData = parseLocalStorage('dnd-character-data');
       if (!oldCharacterData) return null; // Si no hay datos de personaje, no hay nada que migrar.
 
+      const attacksData = parseLocalStorage('dnd-attacks-data');
+      console.log('🔄 Migrando datos antiguos de localStorage');
+      console.log('📦 Ataques encontrados en dnd-attacks-data:', attacksData);
+
       const v1Data = {
         version: 1,
         character: oldCharacterData,
         dm: parseLocalStorage('dnd-dm-data'),
         players: parseLocalStorage('dnd-player-data'),
-        attacks: parseLocalStorage('dnd-attacks-data'),
+        attacks: attacksData,
         criticalHitConfig: parseLocalStorage('dnd-critical-hit-config'),
         passiveDamages: parseLocalStorage('dnd-passive-damages-data'),
         counters: {

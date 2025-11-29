@@ -32,14 +32,6 @@
       </button>
     </form>
 
-    <div class="storage-usage">
-      <h3 class="storage-title">Uso del Almacenamiento</h3>
-      <progress :value="storageUsed" :max="storageQuota" class="storage-bar"></progress>
-      <p class="storage-text">
-        {{ (storageUsed / 1024 / 1024).toFixed(2) }} MB / {{ (storageQuota / 1024 / 1024).toFixed(2) }} MB
-      </p>
-    </div>
-
     <div class="state-list">
       <h3 class="list-title">Estados Guardados</h3>
       <div v-if="states.length === 0" class="empty-list">
@@ -75,16 +67,9 @@ const { states, selectedStateId, isLoading } = storeToRefs(stateStore);
 
 const newStateTitle = ref('');
 const newStateImage = ref(null);
-const storageUsed = ref(0);
-const storageQuota = ref(50 * 1024 * 1024); // 50MB quota for example
-
-const fetchStorageUsage = async () => {
-  storageUsed.value = await stateStore.getStorageUsage();
-};
 
 onMounted(async () => {
-  await stateStore.loadStates();
-  await fetchStorageUsage();
+  await stateStore.loadData();
 });
 
 const handleImageUpload = (event) => {

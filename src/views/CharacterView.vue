@@ -382,7 +382,7 @@ onMounted(async () => {
   // Cargar datos
   characterStore.loadData()
   counterStore.loadData()
-  await stateStore.loadStates();
+  await stateStore.loadData();
   loadFoldState()
   // Si no hay personaje configurado, redirigir a configuración
   if (!characterStore.character.isConfigured) {
