@@ -302,6 +302,12 @@ export const useDMStore = defineStore('dm', {
                     if (!character.attacks) {
                         character.attacks = [];
                     }
+                    character.attacks = character.attacks.map(attack => ({
+                        ...attack,
+                        isPreparable: attack.isPreparable || false,
+                        isPrepared: attack.isPrepared || false,
+                        description: attack.description || '',
+                    }));
                 });
             }
         },

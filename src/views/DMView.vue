@@ -491,9 +491,17 @@
           </div>
         </div>
         <div class="attack-preview-actions">
-          <button @click="executeAttack(attack, false)" class="btn btn-sm btn-primary">Lanzar</button>
-          <button @click="executeAttack(attack, true)" class="btn btn-sm btn-danger">Crítico</button>
+          <button @click="showAttackDetails(attack)" class="btn btn-sm btn-info"><i class="bi bi-eye"></i></button>
+          <button @click="executeAttack(attack, false)" class="btn btn-sm btn-primary" :disabled="attack.isPreparable && !attack.isPrepared">Lanzar</button>
+          <button @click="executeAttack(attack, true)" class="btn btn-sm btn-danger" :disabled="attack.isPreparable && !attack.isPrepared">Crítico</button>
         </div>
+      </div>
+      <div v-if="attack.isPreparable" class="prepared-toggle-dm">
+        <label :for="'prepared-dm-' + character.id + '-' + attack.id" class="switch-dm">
+          <input type="checkbox" :id="'prepared-dm-' + character.id + '-' + attack.id" :checked="attack.isPrepared" @change="toggleAttackPrepared(character.id, attack)">
+          <span class="slider-dm round-dm"></span>
+        </label>
+        <span class="prepared-label-dm">{{ attack.isPrepared ? 'Preparado' : 'No Preparado' }}</span>
       </div>
     </div>
     <div v-else class="no-attacks-preview">
@@ -1080,6 +1088,7 @@
       :players="players"
       @close="showDraggableList = false"
     />
+    <AttackDetailsModal v-if="isAttackDetailsVisible" :attack="selectedAttackForDetails" :show="isAttackDetailsVisible" @close="hideAttackDetails" />
   </div>
 </template>
 
@@ -1093,10 +1102,29 @@ import DraggableList from "../components/DraggableList.vue";
 import DiceRoller from "../components/DiceRoller.vue";
 import DMAttackManager from "../components/DMAttackManager.vue";
 import PlayerManager from "../components/PlayerManager.vue";
+import AttackDetailsModal from '../components/AttackDetailsModal.vue';
 import { showAttackResult } from "../utils/attackExecutor";
 
 const dmStore = useDMStore();
 const playerStore = usePlayerStore();
+
+const isAttackDetailsVisible = ref(false);
+const selectedAttackForDetails = ref(null);
+
+const showAttackDetails = (attack) => {
+  selectedAttackForDetails.value = attack;
+  isAttackDetailsVisible.value = true;
+};
+
+const hideAttackDetails = () => {
+  isAttackDetailsVisible.value = false;
+  selectedAttackForDetails.value = null;
+};
+
+const toggleAttackPrepared = (characterId, attack) => {
+  attack.isPrepared = !attack.isPrepared;
+  dmStore.updateAttackInCharacter(characterId, attack);
+};
 const { players } = storeToRefs(playerStore);
 
 const showAttackSearch = ref({});
@@ -3348,5 +3376,74 @@ textarea.form-control {
   text-align: center;
   color: #888;
   padding: 20px;
+}
+
+.prepared-toggle-dm {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid #444;
+}
+
+.prepared-label-dm {
+  font-size: 0.8rem;
+  color: #bdc3c7;
+}
+
+.switch-dm {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 24px;
+}
+
+.switch-dm input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider-dm {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+}
+
+.slider-dm:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+}
+
+input:checked + .slider-dm {
+  background-color: #43b581;
+}
+
+input:focus + .slider-dm {
+  box-shadow: 0 0 1px #43b581;
+}
+
+input:checked + .slider-dm:before {
+  transform: translateX(16px);
+}
+
+.slider-dm.round-dm {
+  border-radius: 24px;
+}
+
+.slider-dm.round-dm:before {
+  border-radius: 50%;
 }
 </style>

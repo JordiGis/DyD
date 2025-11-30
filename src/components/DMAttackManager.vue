@@ -68,6 +68,28 @@
                 >
               </div>
 
+              <!-- Campo de Descripción -->
+              <div class="form-group">
+                <label for="attack-description">Descripción</label>
+                <textarea
+                  id="attack-description"
+                  v-model="currentAttack.description"
+                  placeholder="Ej: Un ataque rápido que puede dejar al enemigo sangrando."
+                  rows="3"
+                ></textarea>
+              </div>
+
+              <!-- Checkbox para Ataque Preparable -->
+              <div class="form-group-checkbox">
+                <input
+                  id="attack-preparable"
+                  type="checkbox"
+                  v-model="currentAttack.isPreparable"
+                >
+                <label for="attack-preparable">Ataque Preparable</label>
+                <i class="bi bi-info-circle-fill" title="Si se marca, este ataque deberá ser 'preparado' desde la lista de ataques antes de poder ser lanzado."></i>
+              </div>
+
               <!-- Tiradas de daño -->
               <div class="damage-rolls-section">
                 <h4><i class="bi bi-dice-6-fill"></i> Tiradas de Daño</h4>
@@ -320,6 +342,8 @@ const dadBonusDamage = computed(() => {
 const currentAttack = reactive({
   id: null,
   name: '',
+  description: '',
+  isPreparable: false,
   damageRolls: [],
   rerollDice: [],
 });
@@ -415,6 +439,8 @@ const setupForm = (attack) => {
   // Rellenar el formulario de forma reactiva para evitar problemas
   currentAttack.id = attackCopy.id;
   currentAttack.name = attackCopy.name;
+  currentAttack.description = attackCopy.description || '';
+  currentAttack.isPreparable = attackCopy.isPreparable || false;
 
   // Limpiar y rellenar los arrays para mantener la reactividad
   currentAttack.damageRolls.splice(0, currentAttack.damageRolls.length, ...attackCopy.damageRolls);
@@ -428,6 +454,9 @@ const showAttackForm = () => {
   const newAttackBase = {
     id: null,
     name: '',
+    description: '',
+    isPreparable: false,
+    isPrepared: false,
     damageRolls: [
       {
         dice: '1d6',
@@ -854,7 +883,8 @@ const executeAndShowAttack = (attack, isCritical = false) => {
 }
 
 .form-group input,
-.form-group select {
+.form-group select,
+.form-group textarea {
   width: 100%;
   padding: 12px;
   background: #1a1d21;
@@ -864,6 +894,41 @@ const executeAndShowAttack = (attack, isCritical = false) => {
   font-size: 0.95rem;
   transition: all 0.2s ease;
 }
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-group-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 12px;
+  border-radius: 6px;
+}
+
+.form-group-checkbox input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: #7289da;
+  cursor: pointer;
+}
+
+.form-group-checkbox label {
+  color: #b9bbbe;
+  font-weight: 500;
+  cursor: pointer;
+  margin-bottom: 0;
+}
+
+.form-group-checkbox .bi-info-circle-fill {
+  color: #7289da;
+  cursor: help;
+}
+
 
 .form-group input:focus,
 .form-group select:focus {

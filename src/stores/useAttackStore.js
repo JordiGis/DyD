@@ -2,6 +2,8 @@
 import { defineStore } from 'pinia';
 import { v4 as uuidv4 } from 'uuid';
 import { useAccountStore } from './useAccountStore'; // Importar el store de la cuenta
+import { executeAttack as executeAttackLogic, executeCriticalAttack as executeCriticalAttackLogic } from '../utils/attackLogic';
+import { showAttackResult as showAttackResultLogic } from '../utils/attackExecutor';
 
 export const useAttackStore = defineStore('attack', {
   state: () => ({
@@ -32,6 +34,9 @@ export const useAttackStore = defineStore('attack', {
             ...roll,
             lifeSteal: roll.lifeSteal || { percentage: 0 },
           })),
+          isPreparable: attack.isPreparable || false,
+          isPrepared: attack.isPrepared || false,
+          description: attack.description || '',
         }));
         this.criticalHit = activeCharacter.criticalHit || { rule: 'default', characterLevel: 1 };
       } else {
@@ -102,6 +107,10 @@ export const useAttackStore = defineStore('attack', {
         .map(id => this.attacks.find(a => a.id === id))
         .filter(Boolean);
       this.saveData();
+    },
+    executeAndShowAttack(attack, isCritical = false) {
+      const result = isCritical ? executeCriticalAttackLogic(attack, this.criticalHit) : executeAttackLogic(attack);
+      showAttackResultLogic(result, attack.rerollDice);
     },
   },
 });
