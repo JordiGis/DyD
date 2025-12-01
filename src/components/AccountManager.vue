@@ -54,6 +54,15 @@
             <i class="bi bi-trash-fill"></i> Borrar Todo
           </button>
         </div>
+
+        <!-- Sección de Ajustes de Reglas -->
+        <div class="account-section">
+          <h3><i class="bi bi-gear-fill"></i> Ajustes de Reglas</h3>
+          <p>Personaliza las reglas de la partida, como el cálculo del daño crítico.</p>
+          <button @click="openRulesModal" class="btn btn-secondary full-width">
+            <i class="bi bi-book-half"></i> Configurar Reglas de Críticos
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -74,6 +83,41 @@ const props = defineProps({
 const accountStore = useAccountStore();
 const importJson = ref('');
 const fileName = ref('');
+const criticalHitRule = ref(accountStore.accountData.criticalHitRule || 'default');
+
+const openRulesModal = () => {
+  Swal.fire({
+    title: 'Ajustes de Reglas de Críticos',
+    html: `
+      <select id="critical-rule-selector" class="swal2-select">
+        <option value="default" ${criticalHitRule.value === 'default' ? 'selected' : ''}>Por Defecto (Dobla los dados)</option>
+        <option value="dad" ${criticalHitRule.value === 'dad' ? 'selected' : ''}>Daño Adicional de Dado (DAD)</option>
+        <option value="fairDamage" ${criticalHitRule.value === 'fairDamage' ? 'selected' : ''}>Daño Justo (Máximo + Dados)</option>
+      </select>
+    `,
+    showCancelButton: true,
+    confirmButtonText: 'Guardar',
+    cancelButtonText: 'Cancelar',
+    customClass: { container: 'high-z-index' },
+    preConfirm: () => {
+      const selector = document.getElementById('critical-rule-selector');
+      return selector.value;
+    }
+  }).then((result) => {
+    if (result.isConfirmed) {
+      criticalHitRule.value = result.value;
+      accountStore.updateCriticalHitRule(result.value);
+      Swal.fire({
+        icon: 'success',
+        title: 'Reglas actualizadas',
+        text: 'La nueva regla de críticos ha sido guardada.',
+        customClass: { container: 'high-z-index' },
+        timer: 1500,
+        showConfirmButton: false
+      });
+    }
+  });
+};
 
 onMounted(() => {
   document.body.classList.add('modal-open');

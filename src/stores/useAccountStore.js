@@ -15,6 +15,7 @@ export const useAccountStore = defineStore('account', {
       diceHistory: null,
       dmTodoItems: null,
       dmCollapsedCharacters: null,
+      criticalHitRule: 'default',
     },
 
     // Indica si los datos han sido migrados
@@ -98,6 +99,7 @@ export const useAccountStore = defineStore('account', {
         diceHistory: v1Data.diceHistory || null,
         dmTodoItems: v1Data.dmTodoItems || null,
         dmCollapsedCharacters: v1Data.dmCollapsedCharacters || null,
+        criticalHitRule: 'default',
       };
 
       // Si existe un personaje, lo migramos
@@ -277,6 +279,11 @@ export const useAccountStore = defineStore('account', {
      */
     getSection(key) {
       return this.accountData[key];
+    },
+
+    updateCriticalHitRule(newRule) {
+      this.accountData.criticalHitRule = newRule;
+      this.saveDataToLocalStorage();
     },
 
     // --- Importación / Exportación ---

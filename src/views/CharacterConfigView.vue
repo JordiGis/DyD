@@ -17,6 +17,20 @@
         </div>
         
         <div class="form-group">
+          <label for="level" class="form-label">Nivel del Personaje</label>
+          <input
+            id="level"
+            v-model.number="level"
+            type="number"
+            class="form-control"
+            min="0"
+            max="100"
+            placeholder="Ej: 1"
+            required
+          />
+        </div>
+
+        <div class="form-group">
           <label for="maxHp" class="form-label">Puntos de Vida Máximos</label>
           <input
             id="maxHp"
@@ -80,6 +94,7 @@ const characterStore = useCharacterStore()
 const characterName = ref('')
 const maxHp = ref(50)
 const regeneration = ref(0)
+const level = ref(1)
 const hasExistingData = ref(false)
 
 onMounted(() => {
@@ -90,6 +105,7 @@ onMounted(() => {
   if (characterStore.character.isConfigured) {
     hasExistingData.value = true
     characterName.value = characterStore.character.name
+    level.value = characterStore.character.level
     maxHp.value = characterStore.character.maxHp
     regeneration.value = characterStore.character.regeneration
   }
@@ -109,7 +125,8 @@ const saveConfiguration = () => {
     characterStore.configureCharacter(
       characterName.value.trim(),
       maxHp.value,
-      regeneration.value
+      regeneration.value,
+      level.value
     )
     
     Swal.fire({
@@ -148,6 +165,7 @@ const clearExistingData = () => {
       characterStore.clearData()
       hasExistingData.value = false
       characterName.value = ''
+      level.value = 1
       maxHp.value = 50
       regeneration.value = 0
       
