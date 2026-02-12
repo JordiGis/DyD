@@ -67,12 +67,24 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
 import { useCounterStore } from '../stores/useCounterStore';
+import { useCharacterStateStore } from '../stores/useCharacterStateStore';
 
-const store = useCounterStore();
-const { states, addState, activateState, removeState, counters, updateCounterValue } = store;
+const counterStore = useCounterStore();
+const stateStore = useCharacterStateStore();
+
+const { states } = storeToRefs(stateStore);
+const { counters } = storeToRefs(counterStore);
+const { addState, removeState, toggleStateActive } = stateStore;
+
 const showModal = ref(false);
+
+onMounted(async () => {
+  await counterStore.loadData();
+  await stateStore.loadData();
+});
 const newState = ref({
   name: '',
   linkedCounterId: '',
@@ -81,7 +93,7 @@ const newState = ref({
 });
 
 function toggleState(state) {
-  store.toggleStateActive(state.id);
+  stateStore.toggleStateActive(state.id);
 }
 
 function addNewState() {
@@ -97,7 +109,7 @@ function addNewState() {
 
 function canActivateState(state) {
   if (!state.linkedCounterId) return true;
-  const counter = counters.find(c => c.id === state.linkedCounterId);
+  const counter = counters.value.find(c => c.id === state.linkedCounterId);
   if (!counter) return false;
   const cost = Math.abs(state.discountOnActivate || 1);
   if ((state.discountType === 'resta') && (counter.value - cost < counter.min)) {
@@ -107,7 +119,7 @@ function canActivateState(state) {
 }
 
 function getCounterName(id) {
-  const c = counters.find(c => c.id === id);
+  const c = counters.value.find(c => c.id === id);
   return c ? c.name : 'Desconocido';
 }
 
@@ -128,12 +140,12 @@ function openEditModal(state) {
 }
 
 function saveEditState() {
-  const idx = states.findIndex(s => s.id === editingId);
+  const idx = states.value.findIndex(s => s.id === editingId);
   if (idx !== -1) {
-    states[idx].name = newState.value.name;
-    states[idx].linkedCounterId = newState.value.linkedCounterId || null;
-    states[idx].discountOnActivate = newState.value.discountOnActivate;
-    states[idx].discountType = newState.value.discountType;
+    states.value[idx].name = newState.value.name;
+    states.value[idx].linkedCounterId = newState.value.linkedCounterId || null;
+    states.value[idx].discountOnActivate = newState.value.discountOnActivate;
+    states.value[idx].discountType = newState.value.discountType;
   }
   closeModal();
 }

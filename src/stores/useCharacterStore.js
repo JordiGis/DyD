@@ -3,6 +3,7 @@ import { defineStore } from 'pinia';
 import { v4 as uuidv4 } from 'uuid';
 import { usePassiveDamageStore } from './usePassiveDamageStore';
 import { rollDice } from '../utils/diceParser';
+import { damageTypes } from '../utils/damageTypes';
 import { useAccountStore } from './useAccountStore';
 import { useAttackStore } from './useAttackStore';
 import { useCounterStore } from './useCounterStore';
@@ -133,12 +134,21 @@ export const useCharacterStore = defineStore('character', {
             passiveDamageStore.passiveDamages.forEach(effect => {
                 if (effect.duration === 0 || effect.duration > 0) {
                     let totalEffectDamage = 0;
+                    let damageTypesList = [];
                     effect.damageRolls.forEach(roll => {
-                        totalEffectDamage += rollDice(roll.numDice, roll.diceType, roll.bonus);
+                        const damage = rollDice(roll.numDice, roll.diceType, roll.bonus);
+                        totalEffectDamage += damage;
+                        const damageType = damageTypes.find(dt => dt.id === roll.type);
+                        damageTypesList.push(damageType ? damageType.name : roll.type);
                     });
                     if (totalEffectDamage > 0) {
                         totalPassiveDamage += totalEffectDamage;
-                        passiveDamageDetails.push({ name: effect.name, damage: totalEffectDamage });
+                        const damageTypesStr = damageTypesList.join(', ');
+                        passiveDamageDetails.push({ 
+                            name: effect.name, 
+                            damage: totalEffectDamage,
+                            details: damageTypesStr
+                        });
                     }
                 }
             });

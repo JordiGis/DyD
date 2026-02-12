@@ -386,63 +386,7 @@ onMounted(async () => {
   counterStore.loadData()
   await stateStore.loadData();
   loadFoldState()
-  
-  // Mostrar modal con información de migración si acabamos de migrar
-  if (accountStore.migrationCompleted && !sessionStorage.getItem('migration-modal-shown')) {
-    const activeCharacter = accountStore.accountData.characters.find(
-      c => c.id === accountStore.accountData.activeCharacterId
-    );
-    
-    if (activeCharacter && activeCharacter.attacks && activeCharacter.attacks.length > 0) {
-      const attacksInfo = activeCharacter.attacks.map((attack, index) => {
-        const hasReroll = attack.rerollDice && attack.rerollDice.length > 0;
-        const lifeStealRolls = attack.damageRolls?.filter(r => r.lifeSteal?.percentage > 0) || [];
-        
-        return `
-          <div style="margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; text-align: left;">
-            <div style="color: #d4af37; font-weight: bold; margin-bottom: 5px;">⚔️ ${attack.name}</div>
-            <div style="font-size: 0.9em; color: #ecf0f1;">
-              • ID: ${attack.id ? '✅' : '❌'}<br>
-              • Reroll Dice: ${hasReroll ? `✅ (${attack.rerollDice.length})` : '❌'}<br>
-              • Life Steal: ${lifeStealRolls.length > 0 ? `✅ (${lifeStealRolls.length} rolls)` : '❌'}<br>
-              • Damage Rolls: ${attack.damageRolls?.length || 0}
-            </div>
-          </div>
-        `;
-      }).join('');
-      
-      Swal.fire({
-        title: '<span style="color: #d4af37;">🔄 Migración Completada</span>',
-        html: `
-          <div style="text-align: left; padding: 10px;">
-            <p style="font-size: 1.1rem; margin-bottom: 15px; color: #ecf0f1;">
-              Se han migrado tus datos del modelo antiguo. Aquí está el resumen:
-            </p>
-            <div style="margin-bottom: 15px;">
-              <strong style="color: #d4af37;">Total de ataques:</strong> 
-              <span style="color: #ecf0f1;">${activeCharacter.attacks.length}</span>
-            </div>
-            <div style="max-height: 400px; overflow-y: auto;">
-              ${attacksInfo}
-            </div>
-            <p style="margin-top: 15px; font-size: 0.9em; color: #95a5a6;">
-              Los datos antiguos han sido convertidos al nuevo formato. Revisa la consola del navegador (F12) para más detalles.
-            </p>
-          </div>
-        `,
-        icon: 'info',
-        confirmButtonText: 'Entendido',
-        customClass: {
-          popup: 'dnd-modal-popup',
-          confirmButton: 'dnd-modal-confirm-btn'
-        },
-        width: '600px'
-      });
-      
-      sessionStorage.setItem('migration-modal-shown', 'true');
-    }
-  }
-  
+
   // Si no hay personaje configurado, redirigir a configuración
   if (!characterStore.character.isConfigured) {
     router.push('/config')
