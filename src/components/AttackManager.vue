@@ -282,6 +282,7 @@
 import { ref, onMounted, onUnmounted, reactive, nextTick, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import Sortable from 'sortablejs';
+import { useAccountStore } from '../stores/useAccountStore';
 import { useAttackStore } from '../stores/useAttackStore';
 import { useCharacterStore } from '../stores/useCharacterStore';
 import { executeAttack, executeCriticalAttack, rollRerollDice, replaceDice } from '../utils/attackLogic';
@@ -291,6 +292,7 @@ import Swal from 'sweetalert2';
 
 const emit = defineEmits(['close']);
 
+const accountStore = useAccountStore();
 const attackStore = useAttackStore();
 const characterStore = useCharacterStore();
 const { criticalHit } = storeToRefs(attackStore);
@@ -554,7 +556,11 @@ const confirmDelete = (attackId) => {
 const executeAndShowAttack = (attack, isCritical = false) => {
   let attackResult;
   if (isCritical) {
-    attackResult = executeCriticalAttack(attack, attackStore.criticalHit);
+    const criticalConfig = {
+      rule: accountStore.accountData.criticalHitRule,
+      characterLevel: characterStore.character.level || 1,
+    };
+    attackResult = executeCriticalAttack(attack, criticalConfig);
   } else {
     attackResult = executeAttack(attack);
   }

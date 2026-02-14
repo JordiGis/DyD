@@ -15,6 +15,7 @@ export const useCharacterStore = defineStore('character', {
         // Configuración del personaje
         character: {
             name: '',
+            level: 1,
             maxHp: 0,
             originalMaxHp: 0,
             currentHp: 0,
@@ -78,13 +79,14 @@ export const useCharacterStore = defineStore('character', {
             }
         },
         
-        configureCharacter(name, maxHp, regeneration = 0) {
+        configureCharacter(name, maxHp, regeneration = 0, level) {
             this.character.name = name;
             this.character.maxHp = maxHp;
             this.character.originalMaxHp = maxHp;
             this.character.currentHp = maxHp;
             this.character.tempHp = 0;
             this.character.regeneration = regeneration;
+            this.character.level = level;
             this.character.isConfigured = true;
             this.addLog('Configuración', `${name} configurado con ${maxHp} HP máximo${regeneration > 0 ? ` y regeneración de ${regeneration} HP/turno` : ''}`, 0);
             this.saveData();
