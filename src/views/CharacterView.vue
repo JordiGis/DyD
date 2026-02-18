@@ -221,8 +221,8 @@
             >
               <div class="state-preview">
                 <img 
-                  v-if="state.image" 
-                  :src="getStateImageUrl(state)" 
+                  v-if="stateImageUrls[state.id]" 
+                  :src="stateImageUrls[state.id]" 
                   :alt="state.title"
                   class="state-preview-image"
                 />
@@ -284,12 +284,13 @@ import CounterManager from '../components/CounterManager.vue';
 import StateManager from '../components/StateManager.vue';
 import AttackManager from '../components/AttackManager.vue';
 import PassiveDamageManager from '../components/PassiveDamageManager.vue';
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCharacterStore } from '../stores/useCharacterStore'
 import { useCounterStore } from '../stores/useCounterStore'
 import { useCharacterStateStore } from '../stores/useCharacterStateStore'
 import { useAccountStore } from '../stores/useAccountStore'
+import localforage from '../utils/localforage'
 import Swal from 'sweetalert2'
 
 const router = useRouter()
@@ -298,18 +299,54 @@ const counterStore = useCounterStore()
 const stateStore = useCharacterStateStore()
 const accountStore = useAccountStore()
 
+const stateImageUrls = ref({});
+
 const selectedStateImageUrl = computed(() => {
   if (stateStore.selectedState && stateStore.selectedState.image) {
-    return URL.createObjectURL(stateStore.selectedState.image);
+    return stateImageUrls.value[stateStore.selectedState.id];
   }
   return null;
 });
 
 const getStateImageUrl = (state) => {
-  if (state && state.image) {
-    return URL.createObjectURL(state.image);
+  if (state) {
+    const url = stateImageUrls.value[state.id];
+    console.log(`getStateImageUrl(${state.id}): ${url}`);
+    return url || null;
   }
   return null;
+};
+
+const loadStateImages = async () => {
+  console.log('Cargando imágenes de estados en CharacterView');
+  console.log('stateStore.states:', stateStore.states);
+  stateImageUrls.value = {};
+  
+  for (const state of stateStore.states) {
+    console.log(`Procesando estado ${state.id}:`, state);
+    
+    if (state.image) {
+      try {
+        console.log(`Buscando imagen en localforage para ${state.id} (image key: ${state.image})`);
+        const imageBlob = await stateStore.getStateImage(state.image);
+        console.log(`getStateImage retornó:`, imageBlob);
+        
+        if (imageBlob) {
+          const url = URL.createObjectURL(imageBlob);
+          stateImageUrls.value[state.id] = url;
+          console.log(`✓ Imagen cargada para estado ${state.id}, URL: ${url}`);
+        } else {
+          console.log(`✗ No se encontró blob para ${state.id}`);
+        }
+      } catch (error) {
+        console.error(`Error cargando imagen para estado ${state.id}:`, error);
+      }
+    } else {
+      console.log(`Estado ${state.id} no tiene propiedad image o es null`);
+    }
+  }
+  
+  console.log('stateImageUrls final:', stateImageUrls.value);
 };
 
 const handleStateChange = (stateId) => {
@@ -385,6 +422,7 @@ onMounted(async () => {
   characterStore.loadData()
   counterStore.loadData()
   await stateStore.loadData();
+  await loadStateImages();
   loadFoldState()
 
   // Si no hay personaje configurado, redirigir a configuración
@@ -392,6 +430,12 @@ onMounted(async () => {
     router.push('/config')
   }
 })
+
+// Watch para detectar cambios en los estados
+watch(() => stateStore.states, async (newStates) => {
+  console.log('Estados cambiados, recargando imágenes');
+  await loadStateImages();
+}, { deep: true });
 
 const startTurn = () => {
   const passiveDamageResult = characterStore.startTurn()

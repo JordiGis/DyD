@@ -45,7 +45,10 @@
           :class="{ selected: state.id === selectedStateId }"
           @click="selectState(state.id)"
         >
-          <img :src="getImageUrl(state.image)" :alt="state.title" class="state-image" />
+          <img v-if="getImageUrl(state.id)" :src="getImageUrl(state.id)" :alt="state.title" class="state-image" />
+          <div v-else class="state-image state-image-placeholder">
+            <p>Sin imagen</p>
+          </div>
           <p class="state-title">{{ state.title }}</p>
           <button @click.stop="removeState(state.id)" class="btn-delete">
             Eliminar
@@ -57,7 +60,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useCharacterStateStore } from '../stores/useCharacterStateStore';
 import Swal from 'sweetalert2';
@@ -67,9 +70,49 @@ const { states, selectedStateId, isLoading } = storeToRefs(stateStore);
 
 const newStateTitle = ref('');
 const newStateImage = ref(null);
+const imageUrls = ref({});
+
+const loadStateImages = async () => {
+  console.log('Cargando imágenes para estados:', states.value);
+  
+  for (const state of states.value) {
+    console.log(`Procesando estado ${state.id}:`, state);
+    
+    // Si ya tiene URL, saltar
+    if (imageUrls.value[state.id]) {
+      console.log(`URL ya existe para ${state.id}`);
+      continue;
+    }
+    
+    if (state.image) {
+      console.log(`Buscando imagen en localforage para ${state.id} (image: ${state.image})`);
+      try {
+        const imageBlob = await stateStore.getStateImage(state.image);
+        console.log(`Blob recibido para ${state.id}:`, imageBlob);
+        
+        if (imageBlob) {
+          imageUrls.value[state.id] = URL.createObjectURL(imageBlob);
+          console.log(`URL creada para ${state.id}:`, imageUrls.value[state.id]);
+        } else {
+          console.log(`No se encontró blob para ${state.id}`);
+        }
+      } catch (error) {
+        console.error(`Error cargando imagen para ${state.id}:`, error);
+      }
+    } else {
+      console.log(`Estado ${state.id} no tiene propiedad image`);
+    }
+  }
+};
 
 onMounted(async () => {
   await stateStore.loadData();
+  await loadStateImages();
+});
+
+// Watch para detectar cuando se añaden nuevos estados
+watch(() => states.value.length, async () => {
+  await loadStateImages();
 });
 
 const handleImageUpload = (event) => {
@@ -86,12 +129,12 @@ const addNewState = async () => {
   }
 
   await stateStore.addState(newStateTitle.value, newStateImage.value);
+  
+  await loadStateImages();
 
   newStateTitle.value = '';
   newStateImage.value = null;
   document.getElementById('stateImage').value = '';
-
-  await fetchStorageUsage();
 
   Swal.fire('¡Éxito!', 'Nuevo estado añadido correctamente.', 'success');
 };
@@ -112,16 +155,16 @@ const removeState = async (stateId) => {
 
   if (result.isConfirmed) {
     await stateStore.deleteState(stateId);
-    await fetchStorageUsage();
+    if (imageUrls.value[stateId]) {
+      URL.revokeObjectURL(imageUrls.value[stateId]);
+      delete imageUrls.value[stateId];
+    }
     Swal.fire('Eliminado', 'El estado ha sido eliminado.', 'success');
   }
 };
 
-const getImageUrl = (imageBlob) => {
-  if (imageBlob instanceof Blob) {
-    return URL.createObjectURL(imageBlob);
-  }
-  return '';
+const getImageUrl = (stateId) => {
+  return imageUrls.value[stateId] || '';
 };
 </script>
 
@@ -313,6 +356,15 @@ const getImageUrl = (imageBlob) => {
   border-radius: 8px;
   margin-bottom: 10px;
   border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.state-image-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+  color: rgba(236, 240, 241, 0.6);
+  font-size: 0.85rem;
 }
 
 .state-title {
