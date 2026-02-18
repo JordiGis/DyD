@@ -49,8 +49,6 @@
         </button>
       </form>
       
-      <CharacterStateManager />
-
       <div v-if="hasExistingData" class="existing-data">
         <h3>Datos Existentes</h3>
         <p>Ya tienes un personaje configurado. ¿Quieres cargarlo o crear uno nuevo?</p>
@@ -63,6 +61,8 @@
           </button>
         </div>
       </div>
+
+      <CharacterStateManager />
     </div>
   </div>
 </template>
