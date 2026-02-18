@@ -29,6 +29,19 @@
             </div>
             
             <div class="attack-actions">
+              <div class="attack-count-control">
+                <label>Ataques:</label>
+                <input 
+                  type="number" 
+                  v-model.number="numberOfAttacksPerAttack[attack.id]" 
+                  min="1" 
+                  max="10" 
+                  class="attack-count-input"
+                  @click.stop
+                  @input="validateAttackCount(attack.id)"
+                  @blur="validateAttackCount(attack.id, true)"
+                >
+              </div>
               <button @click="executeAndShowAttack(attack, false)" class="action-btn btn-execute">Atacar</button>
               <button @click="executeAndShowAttack(attack, true)" class="action-btn btn-critical">Crítico</button>
               <button @click="editAttack(attack)" class="action-btn btn-edit">Editar</button>
@@ -551,13 +564,67 @@ const confirmDelete = (attackId) => {
   });
 };
 
-const executeAndShowAttack = (attack, isCritical = false) => {
-  let attackResult;
-  if (isCritical) {
-    attackResult = executeCriticalAttack(attack, attackStore.criticalHit);
-  } else {
-    attackResult = executeAttack(attack);
+const numberOfAttacksPerAttack = reactive({});
+
+const getAttackCount = (attackId) => {
+  const val = numberOfAttacksPerAttack[attackId];
+  if (val === undefined || val === null || val === '' || val < 1) {
+    numberOfAttacksPerAttack[attackId] = 1;
+    return 1;
   }
+  return val;
+};
+
+const validateAttackCount = (attackId, isBlur = false) => {
+  const val = numberOfAttacksPerAttack[attackId];
+  if (isBlur) {
+    if (val === '' || val === undefined || val === null || val < 1) {
+      numberOfAttacksPerAttack[attackId] = 1;
+    }
+  } else {
+    if (val !== '' && val !== undefined && val !== null && val < 1) {
+      numberOfAttacksPerAttack[attackId] = 1;
+    }
+  }
+};
+
+const executeAndShowAttack = (attack, isCritical = false) => {
+  const count = getAttackCount(attack.id);
+  const allResults = [];
+  
+  for (let i = 0; i < count; i++) {
+    let result;
+    if (isCritical) {
+      result = executeCriticalAttack(attack, attackStore.criticalHit);
+    } else {
+      result = executeAttack(attack);
+    }
+    allResults.push(result);
+  }
+
+  const aggregateResults = (resultsList) => {
+    const summary = {
+      results: {},
+      grandTotal: 0,
+      totalHealed: 0
+    };
+
+    resultsList.forEach(res => {
+      summary.grandTotal += res.grandTotal;
+      summary.totalHealed += res.totalHealed;
+      
+      for (const type in res.results) {
+        if (!summary.results[type]) {
+          summary.results[type] = { total: 0 };
+        }
+        summary.results[type].total += res.results[type].total;
+      }
+    });
+
+    return summary;
+  };
+
+  const summaryData = aggregateResults(allResults);
 
   const getRollsHTML = (rolls) => {
     return rolls.map(r =>
@@ -575,44 +642,74 @@ const executeAndShowAttack = (attack, isCritical = false) => {
     return html;
   };
 
-  const renderModalContent = (result, rerollResults = null) => {
+  const renderModalContent = (resultsList, summary, currentRerollData = null) => {
     let htmlResult = `<div class="attack-result-modal">`;
-    htmlResult += `<h3 class="dnd-title-modern">${result.name}</h3>`;
-
-    for (const type in result.results) {
-      const data = result.results[type];
-      const typeColor = getColorForType(type);
-      const typeInfo = damageTypes.find(t => t.id === type) || { name: type };
-      const typeName = typeInfo.name.toUpperCase();
-
-      htmlResult += `
-        <div class="damage-type-block-modern" style="border-left-color: ${typeColor};">
-          <div class="damage-header">
-            <span class="damage-type-modern" style="color: ${typeColor};">${typeName}</span>
-            <span class="damage-total-modern">${data.total}</span>
-          </div>
-          <div class="damage-details">
-            <span><strong>Tiradas:</strong> [${getRollsHTML(data.rolls)}]</span>
-            <span><strong>Bonus:</strong> ${data.bonus > 0 ? '+' : ''}${data.bonus}</span>
-          </div>
-      `;
-      if (data.lifeSteal) {
+    
+    // Summary Section
+    if (resultsList.length > 1) {
+      htmlResult += `<h3 class="dnd-title-modern">RESUMEN TOTAL (${resultsList.length} ataques)</h3>`;
+      htmlResult += `<div class="summary-grid">`;
+      for (const type in summary.results) {
+        const typeColor = getColorForType(type);
+        const typeInfo = damageTypes.find(t => t.id === type) || { name: type };
         htmlResult += `
-          <div class="lifesteal-details">
-            <i class="bi bi-heart-fill"></i>
-            <span><strong>Curado:</strong> ${data.lifeSteal.healed} (${data.lifeSteal.percentage_display})</span>
+          <div class="summary-item" style="border-left-color: ${typeColor};">
+            <span class="summary-type" style="color: ${typeColor}">${typeInfo.name}</span>
+            <span class="summary-value">${summary.results[type].total}</span>
           </div>
         `;
       }
       htmlResult += `</div>`;
+      htmlResult += `<div class="grand-total-modern">Total Acumulado: ${summary.grandTotal}</div>`;
+      if (summary.totalHealed > 0) {
+        htmlResult += `<div class="total-healed-modern">Curación Acumulada: ${summary.totalHealed}</div>`;
+      }
+      htmlResult += `<hr class="divider-modern">`;
     }
 
-    htmlResult += getRerollResultsHTML(rerollResults);
+    // Individual Attacks Breakdown
+    resultsList.forEach((result, idx) => {
+      htmlResult += `<h4 class="attack-title-modern">ATAQUE #${idx + 1}: ${result.name}</h4>`;
+      for (const type in result.results) {
+        const data = result.results[type];
+        const typeColor = getColorForType(type);
+        const typeInfo = damageTypes.find(t => t.id === type) || { name: type };
+        const typeName = typeInfo.name.toUpperCase();
 
-    htmlResult += `<div class="grand-total-modern">Daño Total: ${result.grandTotal}</div>`;
-    if (result.totalHealed > 0) {
-      htmlResult += `<div class="total-healed-modern">Curación Total: ${result.totalHealed}</div>`;
+        htmlResult += `
+          <div class="damage-type-block-modern" style="border-left-color: ${typeColor};">
+            <div class="damage-header">
+              <span class="damage-type-modern" style="color: ${typeColor};">${typeName}</span>
+              <span class="damage-total-modern">${data.total}</span>
+            </div>
+            <div class="damage-details">
+              <span><strong>Tiradas:</strong> [${getRollsHTML(data.rolls)}]</span>
+              <span><strong>Bonus:</strong> ${data.bonus > 0 ? '+' : ''}${data.bonus}</span>
+            </div>
+        `;
+        if (data.lifeSteal) {
+          htmlResult += `
+            <div class="lifesteal-details">
+              <i class="bi bi-heart-fill"></i>
+              <span><strong>Curado:</strong> ${data.lifeSteal.healed} (${data.lifeSteal.percentage_display})</span>
+            </div>
+          `;
+        }
+        htmlResult += `</div>`;
+      }
+      htmlResult += `<div class="attack-foot-total">Daño Ataque: ${result.grandTotal}</div>`;
+      if (idx < resultsList.length - 1) htmlResult += `<hr class="sub-divider">`;
+    });
+
+    htmlResult += getRerollResultsHTML(currentRerollData);
+    
+    if (resultsList.length === 1) {
+      htmlResult += `<div class="grand-total-modern">Daño Total: ${summary.grandTotal}</div>`;
+      if (summary.totalHealed > 0) {
+        htmlResult += `<div class="total-healed-modern">Curación Total: ${summary.totalHealed}</div>`;
+      }
     }
+
     htmlResult += `</div>`;
     return htmlResult;
   };
@@ -621,16 +718,24 @@ const executeAndShowAttack = (attack, isCritical = false) => {
   const originalStyles = `
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Teko:wght@700&display=swap');
         .dnd-modern-swal-popup { background: #1e1e1e; border: 1px solid #444; border-radius: 10px; color: #f0f0f0; box-shadow: 0 5px 20px rgba(0,0,0,0.5); }
-        .dnd-modern-swal-container { padding: 0 !important; }
-        .dnd-title-modern { font-family: 'Teko', sans-serif; font-size: 2.5rem; color: #f0f0f0; text-align: center; padding: 15px; background: #111; border-top-left-radius: 9px; border-top-right-radius: 9px; }
+        .dnd-modern-swal-container { padding: 0 !important; max-height: 85vh; overflow-y: auto !important; }
+        .dnd-title-modern { font-family: 'Teko', sans-serif; font-size: 2.2rem; color: #f0f0f0; text-align: center; padding: 15px; background: #111; border-top-left-radius: 9px; border-top-right-radius: 9px; margin-top: 0; }
         .dnd-modern-swal-popup .attack-result-modal { padding: 20px; font-family: 'Roboto', sans-serif; }
-        .damage-type-block-modern { background: #2a2a2a; border-left: 4px solid; margin-bottom: 15px; padding: 15px; border-radius: 4px; }
-        .damage-type-modern { font-family: 'Teko', sans-serif; font-size: 1.5rem; }
-        .damage-total-modern { font-family: 'Teko', sans-serif; font-size: 2.8rem; color: #ff4d4d; }
-        .grand-total-modern, .total-healed-modern { font-family: 'Teko', sans-serif; font-size: 2rem; text-align: center; margin-top: 20px; padding: 10px; border-radius: 5px; }
+        .damage-type-block-modern { background: #2a2a2a; border-left: 4px solid; margin-bottom: 10px; padding: 12px; border-radius: 4px; }
+        .damage-type-modern { font-family: 'Teko', sans-serif; font-size: 1.3rem; }
+        .damage-total-modern { font-family: 'Teko', sans-serif; font-size: 2.2rem; color: #ff4d4d; }
+        .grand-total-modern, .total-healed-modern { font-family: 'Teko', sans-serif; font-size: 2rem; text-align: center; margin-top: 15px; padding: 8px; border-radius: 5px; }
         .grand-total-modern { background: rgba(255, 77, 77, 0.1); color: #ff4d4d; }
         .total-healed-modern { background: rgba(77, 255, 126, 0.1); color: #4dff7e; }
-        .dnd-modern-swal-popup .lifesteal-details { color: #4dff7e; }`;
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
+        .summary-item { background: #181818; padding: 10px; border-radius: 6px; border-left: 3px solid; display: flex; flex-direction: column; align-items: center; }
+        .summary-type { font-family: 'Teko', sans-serif; font-size: 1.1rem; text-transform: uppercase; }
+        .summary-value { font-family: 'Teko', sans-serif; font-size: 1.8rem; }
+        .divider-modern { border: 0; border-top: 2px solid #444; margin: 25px 0; }
+        .sub-divider { border: 0; border-top: 1px dashed #555; margin: 15px 0; }
+        .attack-title-modern { font-family: 'Teko', sans-serif; font-size: 1.6rem; color: #aaa; margin-bottom: 15px; }
+        .attack-foot-total { text-align: right; font-family: 'Teko', sans-serif; font-size: 1.3rem; color: #888; }
+  `;
   const newStyles = `
     .roll-value.replaced { color: #ffd700; font-weight: bold; text-shadow: 0 0 5px #ffd700; background-color: rgba(255, 215, 0, 0.1); padding: 2px 4px; border-radius: 3px; }
     .reroll-results-block-modern { background: #2a2a2a; padding: 15px; border-radius: 6px; margin: 20px 0; border: 1px solid #444; }
@@ -641,15 +746,13 @@ const executeAndShowAttack = (attack, isCritical = false) => {
     .dnd-replace-button { background-color: #f39c12 !important; color: white !important; }`;
 
   let rerollData = null;
-  // Estado local para controlar si ya se ha aplicado el reemplazo
-  let hasReplaced = false;
 
   Swal.fire({
-    width: 600,
-    html: renderModalContent(attackResult),
+    width: allResults.length > 1 ? 800 : 500,
+    html: renderModalContent(allResults, summaryData),
     showConfirmButton: true,
     confirmButtonText: 'Cerrar',
-    showDenyButton: attack.rerollDice && attack.rerollDice.length > 0,
+    showDenyButton: !isCritical && attack.rerollDice && attack.rerollDice.length > 0 && allResults.length === 1,
     denyButtonText: 'Lanzar Reroll',
     showCancelButton: false,
     showCloseButton: true,
@@ -667,70 +770,39 @@ const executeAndShowAttack = (attack, isCritical = false) => {
       document.head.appendChild(style);
     },
     didClose: () => {
-      if (attackResult.totalHealed > 0) characterStore.heal(attackResult.totalHealed);
-      characterStore.addLog(`Ataque: ${attack.name}`, `Daño total: ${attackResult.grandTotal}. Curación por robo de vida: ${attackResult.totalHealed}.`);
+      if (summaryData.totalHealed > 0) characterStore.heal(summaryData.totalHealed);
+      characterStore.addLog(`Ataque: ${attack.name} (x${allResults.length})`, `Daño total: ${summaryData.grandTotal}. Curación: ${summaryData.totalHealed}.`);
     },
     preDeny: () => {
-      // Generar reroll pero no aplicar aún. Mostrar los resultados de reroll y ofrecer 'Reemplazar Dados'.
       rerollData = rollRerollDice(attack.rerollDice);
-      hasReplaced = false;
       Swal.update({
-        html: renderModalContent(attackResult, rerollData),
+        html: renderModalContent(allResults, summaryData, rerollData),
         showDenyButton: false,
         showCancelButton: false,
         footer: '<button id="swal-replace-btn" class="swal2-styled dnd-replace-button">Reemplazar Dados</button>',
       });
 
-      // Añadir listener al botón normal de "Reemplazar Dados"
-      // Usamos setTimeout para esperar a que SweetAlert haya renderizado el footer
       setTimeout(() => {
         const replaceBtn = document.getElementById('swal-replace-btn');
         if (!replaceBtn) return;
         replaceBtn.onclick = () => {
-          if (!rerollData) {
-            rerollData = rollRerollDice(attack.rerollDice);
-          }
-          // Aplicar reemplazo y actualizar modal (sin cerrarlo)
-          attackResult = replaceDice(attackResult, rerollData);
-          hasReplaced = true;
+          if (!rerollData) rerollData = rollRerollDice(attack.rerollDice);
+          allResults[0] = replaceDice(allResults[0], rerollData);
+          const newSummary = aggregateResults(allResults);
           Swal.update({
-            html: renderModalContent(attackResult, rerollData),
+            html: renderModalContent(allResults, newSummary, rerollData),
             showConfirmButton: true,
             showDenyButton: false,
             showCancelButton: false,
-            footer: '' // quitar el botón para evitar reaplicaciones
+            footer: ''
           });
         };
       }, 0);
-      // Evitar que el modal se cierre por defecto
-      return false;
-    },
-    preCancel: () => {
-      // Reemplazar dados NUNCA debe cerrar el modal. Siempre aplicamos el reemplazo
-      // (si no hay rerollData, lo generamos) y actualizamos el modal. Devolvemos false
-      // para evitar el cierre del modal.
-      if (!rerollData) {
-        rerollData = rollRerollDice(attack.rerollDice);
-      }
-
-      // Aplicar reemplazo: sustituir los dados más bajos por los mejores reroll
-      attackResult = replaceDice(attackResult, rerollData);
-      hasReplaced = true;
-
-      // Actualizar el modal mostrando los dados reemplazados; mantener el modal abierto.
-      // Ocultamos el botón de reemplazo para evitar re-aplicaciones.
-      Swal.update({
-        html: renderModalContent(attackResult, rerollData),
-        showCancelButton: false,
-        showConfirmButton: true,
-        confirmButtonText: 'Cerrar'
-      });
-
-      // Evitar cierre del modal
       return false;
     }
   });
 };
+
 </script>
 
 <style scoped>
@@ -839,6 +911,46 @@ const executeAndShowAttack = (attack, isCritical = false) => {
   font-size: 1.2rem;
   font-weight: bold;
   margin-bottom: 8px;
+}
+
+/* Acciones del ataque */
+.attack-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.attack-count-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #23272a;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid #444;
+}
+
+.attack-count-control label {
+  font-size: 0.85rem;
+  color: #99aab5;
+  font-weight: bold;
+}
+
+.attack-count-input {
+  width: 50px;
+  background: #1e1e1e;
+  border: 1px solid #555;
+  color: #fff;
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.attack-count-input:focus {
+  outline: none;
+  border-color: #7289da;
 }
 
 .attack-summary {
